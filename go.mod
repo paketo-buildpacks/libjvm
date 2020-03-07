@@ -9,7 +9,7 @@ require (
 	github.com/magiconair/properties v1.8.1
 	github.com/miekg/dns v1.1.27
 	github.com/onsi/gomega v1.9.0
-	github.com/paketoio/libpak v1.3.0
+	github.com/paketoio/libpak v1.3.1
 	github.com/sclevine/spec v1.4.0
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073 // indirect
