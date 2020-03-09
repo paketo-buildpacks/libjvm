@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/paketoio/libjvm/provider"
-	"github.com/paketoio/libpak/sherpa"
+	"github.com/paketo-buildpacks/libjvm/provider"
+	"github.com/paketo-buildpacks/libpak/sherpa"
 	"github.com/spf13/pflag"
 )
 

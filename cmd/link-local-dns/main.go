@@ -21,8 +21,8 @@ import (
 	"os"
 
 	ddns "github.com/miekg/dns"
-	"github.com/paketoio/libjvm/dns"
-	"github.com/paketoio/libpak/sherpa"
+	"github.com/paketo-buildpacks/libjvm/dns"
+	"github.com/paketo-buildpacks/libpak/sherpa"
 )
 
 func main() {

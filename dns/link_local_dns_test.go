@@ -23,7 +23,7 @@ import (
 
 	ddns "github.com/miekg/dns"
 	. "github.com/onsi/gomega"
-	"github.com/paketoio/libjvm/dns"
+	"github.com/paketo-buildpacks/libjvm/dns"
 	"github.com/sclevine/spec"
 )
 

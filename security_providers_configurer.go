@@ -23,9 +23,9 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/buildpacks/libcnb"
-	"github.com/paketoio/libpak"
-	"github.com/paketoio/libpak/bard"
-	"github.com/paketoio/libpak/sherpa"
+	"github.com/paketo-buildpacks/libpak"
+	"github.com/paketo-buildpacks/libpak/bard"
+	"github.com/paketo-buildpacks/libpak/sherpa"
 )
 
 type SecurityProvidersConfigurer struct {

@@ -21,8 +21,8 @@ import (
 	"math"
 	"os"
 
-	"github.com/paketoio/libjvm/count"
-	"github.com/paketoio/libpak/sherpa"
+	"github.com/paketo-buildpacks/libjvm/count"
+	"github.com/paketo-buildpacks/libpak/sherpa"
 	"github.com/spf13/pflag"
 )
 

@@ -21,9 +21,9 @@ import (
 	"os"
 
 	"github.com/buildpacks/libcnb"
-	"github.com/paketoio/libpak"
-	"github.com/paketoio/libpak/bard"
-	"github.com/paketoio/libpak/crush"
+	"github.com/paketo-buildpacks/libpak"
+	"github.com/paketo-buildpacks/libpak/bard"
+	"github.com/paketo-buildpacks/libpak/crush"
 )
 
 type JRE struct {

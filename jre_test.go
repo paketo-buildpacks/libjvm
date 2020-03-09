@@ -23,8 +23,8 @@ import (
 
 	"github.com/buildpacks/libcnb"
 	. "github.com/onsi/gomega"
-	"github.com/paketoio/libjvm"
-	"github.com/paketoio/libpak"
+	"github.com/paketo-buildpacks/libjvm"
+	"github.com/paketo-buildpacks/libpak"
 	"github.com/sclevine/spec"
 )
 

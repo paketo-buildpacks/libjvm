@@ -21,9 +21,9 @@ import (
 
 	"github.com/buildpacks/libcnb"
 	"github.com/heroku/color"
-	"github.com/paketoio/libpak"
-	"github.com/paketoio/libpak/bard"
-	"github.com/paketoio/libpak/sherpa"
+	"github.com/paketo-buildpacks/libpak"
+	"github.com/paketo-buildpacks/libpak/bard"
+	"github.com/paketo-buildpacks/libpak/sherpa"
 )
 
 type Build struct {

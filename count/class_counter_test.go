@@ -23,7 +23,7 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"github.com/paketoio/libjvm/count"
+	"github.com/paketo-buildpacks/libjvm/count"
 	"github.com/sclevine/spec"
 )
 
