@@ -69,7 +69,7 @@ done
 JAVA_OPTS="$JAVA_OPTS -Djava.ext.dirs=$EXT_DIRS"`))
 			Expect(layer.Profile["security-providers-configurer"]).To(Equal(fmt.Sprintf(`SECURITY_PROVIDERS=$(echo $SECURITY_PROVIDERS | tr ' ' ,)
 
-security-provider-configurer --source "$JAVA_HOME"/lib/security/java.security --additional-providers "$SECURITY_PROVIDERS"
+security-providers-configurer --source "$JAVA_HOME"/lib/security/java.security --additional-providers "$SECURITY_PROVIDERS"
 `)))
 		})
 	})
@@ -91,7 +91,7 @@ security-provider-configurer --source "$JAVA_HOME"/lib/security/java.security --
 			Expect(layer.Profile["security-providers-classpath"]).To(Equal("export CLASSPATH=$CLASSPATH:$SECURITY_PROVIDERS_CLASSPATH"))
 			Expect(layer.Profile["security-providers-configurer"]).To(Equal(fmt.Sprintf(`SECURITY_PROVIDERS=$(echo $SECURITY_PROVIDERS | tr ' ' ,)
 
-security-provider-configurer --source "$JAVA_HOME"/conf/security/java.security --additional-providers "$SECURITY_PROVIDERS"
+security-providers-configurer --source "$JAVA_HOME"/conf/security/java.security --additional-providers "$SECURITY_PROVIDERS"
 `)))
 		})
 

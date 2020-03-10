@@ -76,7 +76,7 @@ JAVA_OPTS="$JAVA_OPTS -Djava.ext.dirs=$EXT_DIRS"`)
 		layer.Profile.Add("security-providers-configurer",
 			`SECURITY_PROVIDERS=$(echo $SECURITY_PROVIDERS | tr ' ' ,)
 
-security-provider-configurer --source "$JAVA_HOME"/%s --additional-providers "$SECURITY_PROVIDERS"
+security-providers-configurer --source "$JAVA_HOME"/%s --additional-providers "$SECURITY_PROVIDERS"
 `, source)
 
 		layer.Launch = true
