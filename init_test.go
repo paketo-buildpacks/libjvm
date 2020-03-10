@@ -33,6 +33,7 @@ func TestUnit(t *testing.T) {
 	suite("JRE", testJRE)
 	suite("JVMKill", testJVMKill)
 	suite("LinkLocalDNS", testLinkLocalDNS)
+	suite("Manifest", testManifest)
 	suite("MemoryCalculator", testMemoryCalculator)
 	suite("SecurityProvidersConfigurer", testSecurityProvidersConfigurer)
 	suite.Run(t)
