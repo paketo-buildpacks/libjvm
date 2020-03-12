@@ -54,7 +54,7 @@ func testJavaSecurityProperties(t *testing.T, context spec.G, it spec.S) {
 
 		file := filepath.Join(layer.Path, "java-security.properties")
 		Expect(file).To(BeARegularFile())
-		Expect(layer.LaunchEnvironment["JAVA_OPTS.append"]).To(Equal(fmt.Sprintf(` -Djava.security.properties="%s"`, file)))
+		Expect(layer.LaunchEnvironment["JAVA_OPTS.append"]).To(Equal(fmt.Sprintf(` -Djava.security.properties=%s`, file)))
 		Expect(layer.LaunchEnvironment["JAVA_SECURITY_PROPERTIES.override"]).To(Equal(file))
 	})
 }
