@@ -38,8 +38,8 @@ func NewSecurityProvidersConfigurer(buildpack libcnb.Buildpack, javaVersion stri
 	return SecurityProvidersConfigurer{
 		JavaVersion: javaVersion,
 		LayerContributor: libpak.NewHelperLayerContributor(filepath.Join(buildpack.Path, "bin", "security-providers-configurer"),
-		"Security Providers Configurer", buildpack.Info, plan),
-		Logger:      bard.NewLogger(os.Stdout),
+			"Security Providers Configurer", buildpack.Info, plan),
+		Logger: bard.NewLogger(os.Stdout),
 	}
 }
 
@@ -60,24 +60,26 @@ func (s SecurityProvidersConfigurer) Contribute(layer libcnb.Layer) (libcnb.Laye
 		if v.LessThan(j9) {
 			source = filepath.Join("lib", "security", "java.security")
 
-			layer.Profile.Add("security-providers-classpath", `EXT_DIRS="$JAVA_HOME/lib/ext"
+			layer.Profile.Add("security-providers-classpath", `[[ -z "${SECURITY_PROVIDERS_CLASSPATH+x}" ]] && return
+
+EXT_DIRS="${JAVA_HOME}/lib/ext"
 
 for I in ${SECURITY_PROVIDERS_CLASSPATH//:/$'\n'}; do
-  EXT_DIRS="$EXT_DIRS:$(dirname $I)"
+  EXT_DIRS="${EXT_DIRS}:$(dirname "${I}")"
 done
 
-JAVA_OPTS="$JAVA_OPTS -Djava.ext.dirs=$EXT_DIRS"`)
+export JAVA_OPTS="${JAVA_OPTS} -Djava.ext.dirs=${EXT_DIRS}"`)
 		} else {
 			source = filepath.Join("conf", "security", "java.security")
 
-			layer.Profile.Add("security-providers-classpath", "export CLASSPATH=$CLASSPATH:$SECURITY_PROVIDERS_CLASSPATH")
+			layer.Profile.Add("security-providers-classpath", `[[ -z "${SECURITY_PROVIDERS_CLASSPATH+x}" ]] && return
+
+export CLASSPATH="${CLASSPATH}:${SECURITY_PROVIDERS_CLASSPATH}"`)
 		}
 
 		layer.Profile.Add("security-providers-configurer",
-			`SECURITY_PROVIDERS=$(echo $SECURITY_PROVIDERS | tr ' ' ,)
-
-security-providers-configurer --source "$JAVA_HOME"/%s --additional-providers "$SECURITY_PROVIDERS"
-`, source)
+			`security-providers-configurer --source "${JAVA_HOME}"/%s --additional-providers "$(echo "${SECURITY_PROVIDERS}" | tr ' ' ,)"`,
+			source)
 
 		layer.Launch = true
 		return layer, nil

@@ -52,7 +52,8 @@ func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 
 		layer.SharedEnvironment.Override("JAVA_HOME", layer.Path)
 		layer.SharedEnvironment.Override("MALLOC_ARENA_MAX", "2")
-		layer.Profile.Add("active-processor-count", `export JAVA_OPTS="$JAVA_OPTS -XX:ActiveProcessorCount=$(nproc)"`)
+		layer.Profile.Add("active-processor-count", `JAVA_OPTS="${JAVA_OPTS} -XX:ActiveProcessorCount=$(nproc)"
+export JAVA_OPTS`)
 
 		if v, ok := j.Metadata["build"].(bool); ok && v {
 			layer.Build = true

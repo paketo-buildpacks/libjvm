@@ -74,7 +74,7 @@ THREAD_COUNT=${BPL_THREAD_COUNT:=250}
 
 TOTAL_MEMORY=$(cat /sys/fs/cgroup/memory/memory.limit_in_bytes)
 
-if [ ${TOTAL_MEMORY} -eq 9223372036854771712 ]; then
+if [ "${TOTAL_MEMORY}" -eq 9223372036854771712 ]; then
   printf "Container memory limit unset. Configuring JVM for 1G container.\n"
   TOTAL_MEMORY=1073741824
 elif [ ${TOTAL_MEMORY} -gt 70368744177664 ]; then
@@ -90,8 +90,8 @@ MEMORY_CONFIGURATION=$(java-buildpack-memory-calculator \
     --total-memory "${TOTAL_MEMORY}")
 
 printf "Calculated JVM Memory Configuration: ${MEMORY_CONFIGURATION} (Head Room: ${HEAD_ROOM}%%%%, Loaded Class Count: ${LOADED_CLASS_COUNT}, Thread Count: ${THREAD_COUNT}, Total Memory: ${TOTAL_MEMORY})\n"
-export JAVA_OPTS="${JAVA_OPTS} ${MEMORY_CONFIGURATION}"
-`, ctx.Application.Path)))
+export JAVA_OPTS="${JAVA_OPTS} ${MEMORY_CONFIGURATION}"`,
+			ctx.Application.Path)))
 	})
 
 	context("jvmClassCount", func() {

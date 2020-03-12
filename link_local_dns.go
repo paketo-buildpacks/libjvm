@@ -47,7 +47,7 @@ func (l LinkLocalDNS) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 			return libcnb.Layer{}, fmt.Errorf("unable to copy: %w", err)
 		}
 
-		layer.Profile.Add("link-local-dns", "link-local-dns")
+		layer.Profile.Add("link-local-dns", `link-local-dns`)
 
 		layer.Launch = true
 		return layer, nil

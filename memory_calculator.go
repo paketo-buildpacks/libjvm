@@ -50,7 +50,7 @@ func NewMemoryCalculator(applicationPath string, dependency libpak.BuildpackDepe
 func (m MemoryCalculator) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 	return m.LayerContributor.Contribute(layer, func(artifact *os.File) (libcnb.Layer, error) {
 		m.Logger.Body(bard.FormatUserConfig("BPL_HEAD_ROOM", "the headroom in memory calculation", "0"))
-		m.Logger.Body(bard.FormatUserConfig("BPL_LOADED_CLASS_COUNT", "the number of loaded classes in memory calculation", "35% of classes"))
+		m.Logger.Body(bard.FormatUserConfig("BPL_LOADED_CLASS_COUNT", "the number of loaded classes in memory calculation", "35%% of classes"))
 		m.Logger.Body(bard.FormatUserConfig("BPL_THREAD_COUNT", "the number of threads in memory calculation", "250"))
 
 		m.Logger.Body("Expanding to %s", layer.Path)
@@ -75,7 +75,7 @@ THREAD_COUNT=${BPL_THREAD_COUNT:=250}
 
 TOTAL_MEMORY=$(cat /sys/fs/cgroup/memory/memory.limit_in_bytes)
 
-if [ ${TOTAL_MEMORY} -eq 9223372036854771712 ]; then
+if [ "${TOTAL_MEMORY}" -eq 9223372036854771712 ]; then
   printf "Container memory limit unset. Configuring JVM for 1G container.\n"
   TOTAL_MEMORY=1073741824
 elif [ ${TOTAL_MEMORY} -gt 70368744177664 ]; then
@@ -91,8 +91,8 @@ MEMORY_CONFIGURATION=$(java-buildpack-memory-calculator \
     --total-memory "${TOTAL_MEMORY}")
 
 printf "Calculated JVM Memory Configuration: ${MEMORY_CONFIGURATION} (Head Room: ${HEAD_ROOM}%%%%, Loaded Class Count: ${LOADED_CLASS_COUNT}, Thread Count: ${THREAD_COUNT}, Total Memory: ${TOTAL_MEMORY})\n"
-export JAVA_OPTS="${JAVA_OPTS} ${MEMORY_CONFIGURATION}"
-`, m.ApplicationPath, jvmClassCount)
+export JAVA_OPTS="${JAVA_OPTS} ${MEMORY_CONFIGURATION}"`,
+			m.ApplicationPath, jvmClassCount)
 
 		layer.Launch = true
 		return layer, nil
