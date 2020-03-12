@@ -49,9 +49,9 @@ func NewMemoryCalculator(applicationPath string, dependency libpak.BuildpackDepe
 
 func (m MemoryCalculator) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 	return m.LayerContributor.Contribute(layer, func(artifact *os.File) (libcnb.Layer, error) {
-		m.Logger.Body("%s", bard.LaunchConfigFormatter{Name: "BPL_HEAD_ROOM", Default: "0"})
-		m.Logger.Body("%s", bard.LaunchConfigFormatter{Name: "BPL_LOADED_CLASS_COUNT", Default: "35% of classes"})
-		m.Logger.Body("%s", bard.LaunchConfigFormatter{Name: "BPL_THREAD_COUNT", Default: "250"})
+		m.Logger.Body(bard.FormatUserConfig("BPL_HEAD_ROOM", "the headroom in memory calculation", "0"))
+		m.Logger.Body(bard.FormatUserConfig("BPL_LOADED_CLASS_COUNT", "the number of loaded classes in memory calculation", "35% of classes"))
+		m.Logger.Body(bard.FormatUserConfig("BPL_THREAD_COUNT", "the number of threads in memory calculation", "250"))
 
 		m.Logger.Body("Expanding to %s", layer.Path)
 		if err := m.Crush.ExtractTarGz(artifact, filepath.Join(layer.Path, "bin"), 0); err != nil {
