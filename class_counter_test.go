@@ -38,6 +38,8 @@ func testClassCounter(t *testing.T, context spec.G, it spec.S) {
 	it.Before(func() {
 		var err error
 
+		ctx.Buildpack.Info.Name = "test-name"
+
 		ctx.Buildpack.Path, err = ioutil.TempDir("", "class-counter-buildpack")
 		Expect(err).NotTo(HaveOccurred())
 

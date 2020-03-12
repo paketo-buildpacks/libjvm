@@ -33,15 +33,8 @@ type JavaSecurityProperties struct {
 }
 
 func NewJavaSecurityProperties(info libcnb.BuildpackInfo) JavaSecurityProperties {
-	expected := map[string]interface{}{
-		"id":        info.ID,
-		"name":      info.Name,
-		"version":   info.Version,
-		"clear-env": info.ClearEnvironment,
-	}
-
 	return JavaSecurityProperties{
-		LayerContributor: libpak.NewLayerContributor(fmt.Sprintf("Java Security Properties %s", info.Version), expected),
+		LayerContributor: libpak.NewLayerContributor("Java Security Properties", info),
 		Logger:           bard.NewLogger(os.Stdout),
 	}
 }

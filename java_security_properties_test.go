@@ -38,6 +38,8 @@ func testJavaSecurityProperties(t *testing.T, context spec.G, it spec.S) {
 	it.Before(func() {
 		var err error
 
+		ctx.Buildpack.Info.Name = "test-name"
+
 		ctx.Layers.Path, err = ioutil.TempDir("", "java-security-properties-layers")
 		Expect(err).NotTo(HaveOccurred())
 	})
