@@ -39,11 +39,12 @@ func NewSecurityProvidersConfigurer(buildpack libcnb.Buildpack, javaVersion stri
 		JavaVersion: javaVersion,
 		LayerContributor: libpak.NewHelperLayerContributor(filepath.Join(buildpack.Path, "bin", "security-providers-configurer"),
 			"Security Providers Configurer", buildpack.Info, plan),
-		Logger: bard.NewLogger(os.Stdout),
 	}
 }
 
 func (s SecurityProvidersConfigurer) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
+	s.LayerContributor.Logger = s.Logger
+
 	return s.LayerContributor.Contribute(layer, func(artifact *os.File) (libcnb.Layer, error) {
 		s.Logger.Body("Copying to %s", layer.Path)
 		if err := sherpa.CopyFile(artifact, filepath.Join(layer.Path, "bin", "security-providers-configurer")); err != nil {

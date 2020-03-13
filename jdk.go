@@ -27,22 +27,20 @@ import (
 )
 
 type JDK struct {
-	Crush            crush.Crush
 	LayerContributor libpak.DependencyLayerContributor
 	Logger           bard.Logger
 }
 
 func NewJDK(dependency libpak.BuildpackDependency, cache libpak.DependencyCache, plan *libcnb.BuildpackPlan) JDK {
-	return JDK{
-		LayerContributor: libpak.NewDependencyLayerContributor(dependency, cache, plan),
-		Logger:           bard.NewLogger(os.Stdout),
-	}
+	return JDK{LayerContributor: libpak.NewDependencyLayerContributor(dependency, cache, plan)}
 }
 
 func (j JDK) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
+	j.LayerContributor.Logger = j.Logger
+
 	return j.LayerContributor.Contribute(layer, func(artifact *os.File) (libcnb.Layer, error) {
 		j.Logger.Body("Expanding to %s", layer.Path)
-		if err := j.Crush.ExtractTarGz(artifact, layer.Path, 1); err != nil {
+		if err := crush.ExtractTarGz(artifact, layer.Path, 1); err != nil {
 			return libcnb.Layer{}, fmt.Errorf("unable to expand JDK: %w", err)
 		}
 

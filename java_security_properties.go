@@ -19,7 +19,6 @@ package libjvm
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 
 	"github.com/buildpacks/libcnb"
@@ -33,13 +32,12 @@ type JavaSecurityProperties struct {
 }
 
 func NewJavaSecurityProperties(info libcnb.BuildpackInfo) JavaSecurityProperties {
-	return JavaSecurityProperties{
-		LayerContributor: libpak.NewLayerContributor("Java Security Properties", info),
-		Logger:           bard.NewLogger(os.Stdout),
-	}
+	return JavaSecurityProperties{LayerContributor: libpak.NewLayerContributor("Java Security Properties", info)}
 }
 
 func (j JavaSecurityProperties) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
+	j.LayerContributor.Logger = j.Logger
+
 	return j.LayerContributor.Contribute(layer, func() (libcnb.Layer, error) {
 		file := filepath.Join(layer.Path, "java-security.properties")
 		if err := ioutil.WriteFile(file, []byte{}, 0644); err != nil {

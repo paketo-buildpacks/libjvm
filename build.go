@@ -44,6 +44,7 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 	}
 
 	dc := libpak.NewDependencyCache(context.Buildpack)
+	dc.Logger = b.Logger
 
 	b.Logger.Title(context.Buildpack)
 	result := libcnb.BuildResult{}
@@ -56,7 +57,9 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 			return libcnb.BuildResult{}, fmt.Errorf("unable to find depdency: %w", err)
 		}
 
-		result.Layers = append(result.Layers, NewJDK(dep, dc, &result.Plan))
+		jdk := NewJDK(dep, dc, &result.Plan)
+		jdk.Logger = b.Logger
+		result.Layers = append(result.Layers, jdk)
 	}
 
 	if e, ok, err := pr.Resolve("jre"); err != nil {
@@ -75,25 +78,43 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 			return libcnb.BuildResult{}, fmt.Errorf("unable to find depdency: %w", err)
 		}
 
-		result.Layers = append(result.Layers, NewJRE(depJRE, dc, e.Metadata, &result.Plan))
+		jre := NewJRE(depJRE, dc, e.Metadata, &result.Plan)
+		jre.Logger = b.Logger
+		result.Layers = append(result.Layers, jre)
 
 		depJVMKill, err := dr.Resolve("jvmkill", "")
 		if err != nil {
 			return libcnb.BuildResult{}, fmt.Errorf("unable to find depdency: %w", err)
 		}
-		result.Layers = append(result.Layers, NewJVMKill(depJVMKill, dc, &result.Plan))
 
-		result.Layers = append(result.Layers, NewLinkLocalDNS(context.Buildpack, &result.Plan))
+		jk := NewJVMKill(depJVMKill, dc, &result.Plan)
+		jk.Logger = b.Logger
+		result.Layers = append(result.Layers, jk)
+
+		lld := NewLinkLocalDNS(context.Buildpack, &result.Plan)
+		lld.Logger = b.Logger
+		result.Layers = append(result.Layers, lld)
 
 		depMemCalc, err := dr.Resolve("memory-calculator", "")
 		if err != nil {
 			return libcnb.BuildResult{}, fmt.Errorf("unable to find depdency: %w", err)
 		}
-		result.Layers = append(result.Layers, NewMemoryCalculator(context.Application.Path, depMemCalc, dc, depJRE.Version, &result.Plan))
-		result.Layers = append(result.Layers, NewClassCounter(context.Buildpack, &result.Plan))
 
-		result.Layers = append(result.Layers, NewJavaSecurityProperties(context.Buildpack.Info))
-		result.Layers = append(result.Layers, NewSecurityProvidersConfigurer(context.Buildpack, depJRE.Version, &result.Plan))
+		mc := NewMemoryCalculator(context.Application.Path, depMemCalc, dc, depJRE.Version, &result.Plan)
+		mc.Logger = b.Logger
+		result.Layers = append(result.Layers, mc)
+
+		cc := NewClassCounter(context.Buildpack, &result.Plan)
+		cc.Logger = b.Logger
+		result.Layers = append(result.Layers, cc)
+
+		jsp := NewJavaSecurityProperties(context.Buildpack.Info)
+		jsp.Logger = b.Logger
+		result.Layers = append(result.Layers, jsp)
+
+		spc := NewSecurityProvidersConfigurer(context.Buildpack, depJRE.Version, &result.Plan)
+		spc.Logger = b.Logger
+		result.Layers = append(result.Layers, spc)
 	}
 
 	return result, nil

@@ -27,7 +27,6 @@ import (
 )
 
 type JRE struct {
-	Crush            crush.Crush
 	LayerContributor libpak.DependencyLayerContributor
 	Logger           bard.Logger
 	Metadata         map[string]interface{}
@@ -38,15 +37,16 @@ func NewJRE(dependency libpak.BuildpackDependency, cache libpak.DependencyCache,
 
 	return JRE{
 		LayerContributor: libpak.NewDependencyLayerContributor(dependency, cache, plan),
-		Logger:           bard.NewLogger(os.Stdout),
 		Metadata:         metadata,
 	}
 }
 
 func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
+	j.LayerContributor.Logger = j.Logger
+
 	return j.LayerContributor.Contribute(layer, func(artifact *os.File) (libcnb.Layer, error) {
 		j.Logger.Body("Expanding to %s", layer.Path)
-		if err := j.Crush.ExtractTarGz(artifact, layer.Path, 1); err != nil {
+		if err := crush.ExtractTarGz(artifact, layer.Path, 1); err != nil {
 			return libcnb.Layer{}, fmt.Errorf("unable to expand JRE: %w", err)
 		}
 

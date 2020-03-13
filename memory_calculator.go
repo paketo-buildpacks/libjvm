@@ -30,7 +30,6 @@ import (
 
 type MemoryCalculator struct {
 	ApplicationPath  string
-	Crush            crush.Crush
 	JavaVersion      string
 	LayerContributor libpak.DependencyLayerContributor
 	Logger           bard.Logger
@@ -43,7 +42,6 @@ func NewMemoryCalculator(applicationPath string, dependency libpak.BuildpackDepe
 		ApplicationPath:  applicationPath,
 		LayerContributor: libpak.NewDependencyLayerContributor(dependency, cache, plan),
 		JavaVersion:      javaVersion,
-		Logger:           bard.NewLogger(os.Stdout),
 	}
 }
 
@@ -52,9 +50,11 @@ func (m MemoryCalculator) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 	m.Logger.Body(bard.FormatUserConfig("BPL_LOADED_CLASS_COUNT", "the number of loaded classes in memory calculation", "35%% of classes"))
 	m.Logger.Body(bard.FormatUserConfig("BPL_THREAD_COUNT", "the number of threads in memory calculation", "250"))
 
+	m.LayerContributor.Logger = m.Logger
+
 	return m.LayerContributor.Contribute(layer, func(artifact *os.File) (libcnb.Layer, error) {
 		m.Logger.Body("Expanding to %s", layer.Path)
-		if err := m.Crush.ExtractTarGz(artifact, filepath.Join(layer.Path, "bin"), 0); err != nil {
+		if err := crush.ExtractTarGz(artifact, filepath.Join(layer.Path, "bin"), 0); err != nil {
 			return libcnb.Layer{}, fmt.Errorf("unable to expand Memory Calculator: %w", err)
 		}
 

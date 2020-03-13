@@ -36,11 +36,12 @@ func NewLinkLocalDNS(buildpack libcnb.Buildpack, plan *libcnb.BuildpackPlan) Lin
 	return LinkLocalDNS{
 		LayerContributor: libpak.NewHelperLayerContributor(filepath.Join(buildpack.Path, "bin", "link-local-dns"),
 			"Link-Local DNS", buildpack.Info, plan),
-		Logger: bard.NewLogger(os.Stdout),
 	}
 }
 
 func (l LinkLocalDNS) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
+	l.LayerContributor.Logger = l.Logger
+
 	return l.LayerContributor.Contribute(layer, func(artifact *os.File) (libcnb.Layer, error) {
 		l.Logger.Body("Copying to %s", layer.Path)
 		if err := sherpa.CopyFile(artifact, filepath.Join(layer.Path, "bin", "link-local-dns")); err != nil {

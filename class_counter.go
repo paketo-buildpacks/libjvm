@@ -36,11 +36,12 @@ func NewClassCounter(buildpack libcnb.Buildpack, plan *libcnb.BuildpackPlan) Cla
 	return ClassCounter{
 		LayerContributor: libpak.NewHelperLayerContributor(filepath.Join(buildpack.Path, "bin", "class-counter"),
 			"Class Counter", buildpack.Info, plan),
-		Logger: bard.NewLogger(os.Stdout),
 	}
 }
 
 func (c ClassCounter) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
+	c.LayerContributor.Logger = c.Logger
+
 	return c.LayerContributor.Contribute(layer, func(artifact *os.File) (libcnb.Layer, error) {
 		c.Logger.Body("Copying to %s", layer.Path)
 		if err := sherpa.CopyFile(artifact, filepath.Join(layer.Path, "bin", "class-counter")); err != nil {
