@@ -42,7 +42,7 @@ func (s *SecurityProvidersConfigurer) Execute() error {
 
 	p, err := properties.LoadFile(s.SourcePath, properties.UTF8)
 	if err != nil {
-		return fmt.Errorf("unable to read properties file %s: %w", s.SourcePath, err)
+		return fmt.Errorf("unable to read properties file %s\n%w", s.SourcePath, err)
 	}
 	p = p.FilterStripPrefix("security.provider.")
 
@@ -77,7 +77,7 @@ func (s *SecurityProvidersConfigurer) Execute() error {
 
 		i, err := strconv.Atoi(matches[1])
 		if err != nil {
-			return fmt.Errorf("index %s is not a number: %w", matches[1], err)
+			return fmt.Errorf("index %s is not a number\n%w", matches[1], err)
 		}
 
 		providers = append(providers, "")
@@ -87,22 +87,22 @@ func (s *SecurityProvidersConfigurer) Execute() error {
 
 	file := filepath.Dir(s.DestinationPath)
 	if err := os.MkdirAll(file, 0755); err != nil {
-		return fmt.Errorf("unable to create directory %s: %w", file, err)
+		return fmt.Errorf("unable to create directory %s\n%w", file, err)
 	}
 
 	out, err := os.OpenFile(s.DestinationPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
-		return fmt.Errorf("unable to open file %s: %w", s.DestinationPath, err)
+		return fmt.Errorf("unable to open file %s\n%w", s.DestinationPath, err)
 	}
 	defer out.Close()
 
 	if _, err := out.WriteString("\n"); err != nil {
-		return fmt.Errorf("unable to write to %s: %w", s.DestinationPath, err)
+		return fmt.Errorf("unable to write to %s\n%w", s.DestinationPath, err)
 	}
 
 	for i, p := range providers {
 		if _, err := out.WriteString(fmt.Sprintf("security.provider.%d=%s\n", i+1, p)); err != nil {
-			return fmt.Errorf("unable to write to %s: %w", s.DestinationPath, err)
+			return fmt.Errorf("unable to write to %s\n%w", s.DestinationPath, err)
 		}
 	}
 

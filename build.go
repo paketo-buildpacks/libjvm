@@ -35,12 +35,12 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 
 	md, err := libpak.NewBuildpackMetadata(context.Buildpack.Metadata)
 	if err != nil {
-		return libcnb.BuildResult{}, fmt.Errorf("unable to unmarshal buildpack metadata: %w", err)
+		return libcnb.BuildResult{}, fmt.Errorf("unable to unmarshal buildpack metadata\n%w", err)
 	}
 
 	dr, err := libpak.NewDependencyResolver(context)
 	if err != nil {
-		return libcnb.BuildResult{}, fmt.Errorf("unable to create dependency resolver: %w", err)
+		return libcnb.BuildResult{}, fmt.Errorf("unable to create dependency resolver\n%w", err)
 	}
 
 	dc := libpak.NewDependencyCache(context.Buildpack)
@@ -50,11 +50,11 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 	result := libcnb.BuildResult{}
 
 	if e, ok, err := pr.Resolve("jdk"); err != nil {
-		return libcnb.BuildResult{}, fmt.Errorf("unable to resolve jdk plan entry: %w", err)
+		return libcnb.BuildResult{}, fmt.Errorf("unable to resolve jdk plan entry\n%w", err)
 	} else if ok {
 		dep, err := dr.Resolve("jdk", sherpa.ResolveVersion("BP_JAVA_VERSION", e, "jdk", md.DefaultVersions))
 		if err != nil {
-			return libcnb.BuildResult{}, fmt.Errorf("unable to find depdency: %w", err)
+			return libcnb.BuildResult{}, fmt.Errorf("unable to find depdency\n%w", err)
 		}
 
 		jdk := NewJDK(dep, dc, &result.Plan)
@@ -63,7 +63,7 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 	}
 
 	if e, ok, err := pr.Resolve("jre"); err != nil {
-		return libcnb.BuildResult{}, fmt.Errorf("unable to resolve jre plan entry: %w", err)
+		return libcnb.BuildResult{}, fmt.Errorf("unable to resolve jre plan entry\n%w", err)
 	} else if ok {
 		depJRE, err := dr.Resolve("jre", sherpa.ResolveVersion("BP_JAVA_VERSION", e, "jre", md.DefaultVersions))
 
@@ -75,7 +75,7 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 		}
 
 		if err != nil {
-			return libcnb.BuildResult{}, fmt.Errorf("unable to find depdency: %w", err)
+			return libcnb.BuildResult{}, fmt.Errorf("unable to find depdency\n%w", err)
 		}
 
 		jre := NewJRE(depJRE, dc, e.Metadata, &result.Plan)
@@ -84,7 +84,7 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 
 		depJVMKill, err := dr.Resolve("jvmkill", "")
 		if err != nil {
-			return libcnb.BuildResult{}, fmt.Errorf("unable to find depdency: %w", err)
+			return libcnb.BuildResult{}, fmt.Errorf("unable to find depdency\n%w", err)
 		}
 
 		jk := NewJVMKill(depJVMKill, dc, &result.Plan)
@@ -97,7 +97,7 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 
 		depMemCalc, err := dr.Resolve("memory-calculator", "")
 		if err != nil {
-			return libcnb.BuildResult{}, fmt.Errorf("unable to find depdency: %w", err)
+			return libcnb.BuildResult{}, fmt.Errorf("unable to find depdency\n%w", err)
 		}
 
 		mc := NewMemoryCalculator(context.Application.Path, depMemCalc, dc, depJRE.Version, &result.Plan)

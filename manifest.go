@@ -35,13 +35,13 @@ func NewManifest(applicationPath string) (*properties.Properties, error) {
 	if os.IsNotExist(err) {
 		return properties.NewProperties(), nil
 	} else if err != nil {
-		return nil, fmt.Errorf("unable to open %s: %w", file, err)
+		return nil, fmt.Errorf("unable to open %s\n%w", file, err)
 	}
 	defer in.Close()
 
 	b, err := ioutil.ReadAll(in)
 	if err != nil {
-		return nil, fmt.Errorf("unable to read %s: %w", file, err)
+		return nil, fmt.Errorf("unable to read %s\n%w", file, err)
 	}
 
 	// The full grammar for manifests can be found here:
@@ -62,7 +62,7 @@ func NewManifest(applicationPath string) (*properties.Properties, error) {
 
 	p, err := properties.Load(b, properties.UTF8)
 	if err != nil {
-		return nil, fmt.Errorf("unable to parse properties from %s: %w", file, err)
+		return nil, fmt.Errorf("unable to parse properties from %s\n%w", file, err)
 	}
 
 	return p, nil

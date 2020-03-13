@@ -38,7 +38,7 @@ func (l *LinkLocalDNS) Execute() error {
 
 	f, err := os.OpenFile(l.SecurityPath, os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
-		return fmt.Errorf("unable to open %s: %w", l.SecurityPath, err)
+		return fmt.Errorf("unable to open %s\n%w", l.SecurityPath, err)
 	}
 	defer f.Close()
 
@@ -47,7 +47,7 @@ networkaddress.cache.ttl=0
 networkaddress.cache.negative.ttl=0
 `)
 	if err != nil {
-		return fmt.Errorf("unable to write DNS configuration to %s: %w", l.SecurityPath, err)
+		return fmt.Errorf("unable to write DNS configuration to %s\n%w", l.SecurityPath, err)
 	}
 
 	return nil

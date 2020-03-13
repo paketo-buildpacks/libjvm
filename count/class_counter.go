@@ -34,7 +34,7 @@ type ClassCounter struct {
 func (c ClassCounter) Execute() (int, error) {
 	count, err := c.directory(c.SourcePath)
 	if err != nil {
-		return 0, fmt.Errorf("unable to count classes in %s: %w", c.SourcePath, err)
+		return 0, fmt.Errorf("unable to count classes in %s\n%w", c.SourcePath, err)
 	}
 	count += c.JVMClassCount
 
@@ -46,7 +46,7 @@ func (c ClassCounter) archive(path string) (int, error) {
 
 	z, err := zip.OpenReader(path)
 	if err != nil {
-		return 0, fmt.Errorf("unable to open %s: %w", path, err)
+		return 0, fmt.Errorf("unable to open %s\n%w", path, err)
 	}
 	defer z.Close()
 
@@ -83,7 +83,7 @@ func (c ClassCounter) directory(path string) (int, error) {
 		if strings.HasSuffix(path, ".jar") {
 			a, err := c.archive(path)
 			if err != nil {
-				return fmt.Errorf("unable to count classes in archive %s: %w", path, err)
+				return fmt.Errorf("unable to count classes in archive %s\n%w", path, err)
 			}
 
 			count += a
@@ -94,7 +94,7 @@ func (c ClassCounter) directory(path string) (int, error) {
 
 		return nil
 	}); err != nil {
-		return 0, fmt.Errorf("unable to walk %s: %w", path, err)
+		return 0, fmt.Errorf("unable to walk %s\n%w", path, err)
 	}
 
 	return count, nil

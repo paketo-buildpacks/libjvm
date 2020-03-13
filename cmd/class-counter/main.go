@@ -35,7 +35,7 @@ func main() {
 		flagSet.StringVar(&cc.SourcePath, "source", "", "path to application to count classes in")
 
 		if err := flagSet.Parse(os.Args[1:]); err != nil {
-			return fmt.Errorf("unable to parse flags: %w", err)
+			return fmt.Errorf("unable to parse flags\n%w", err)
 		}
 
 		c, err := cc.Execute()

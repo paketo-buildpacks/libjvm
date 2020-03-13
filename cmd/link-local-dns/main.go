@@ -36,7 +36,7 @@ func main() {
 		file := "/etc/resolv.conf"
 		l.Config, err = ddns.ClientConfigFromFile(file)
 		if err != nil {
-			return fmt.Errorf("unable to read DNS client configuration from %s: %w", file, err)
+			return fmt.Errorf("unable to read DNS client configuration from %s\n%w", file, err)
 		}
 
 		if l.SecurityPath, ok = os.LookupEnv("JAVA_SECURITY_PROPERTIES"); !ok {

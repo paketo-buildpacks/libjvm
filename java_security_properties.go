@@ -41,7 +41,7 @@ func (j JavaSecurityProperties) Contribute(layer libcnb.Layer) (libcnb.Layer, er
 	return j.LayerContributor.Contribute(layer, func() (libcnb.Layer, error) {
 		file := filepath.Join(layer.Path, "java-security.properties")
 		if err := ioutil.WriteFile(file, []byte{}, 0644); err != nil {
-			return libcnb.Layer{}, fmt.Errorf("unable to touch file %s: %w", file, err)
+			return libcnb.Layer{}, fmt.Errorf("unable to touch file %s\n%w", file, err)
 		}
 
 		layer.LaunchEnvironment.Append("JAVA_OPTS", ` -Djava.security.properties=%s`, file)

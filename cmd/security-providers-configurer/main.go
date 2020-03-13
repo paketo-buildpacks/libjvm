@@ -37,7 +37,7 @@ func main() {
 		flagSet.StringVar(&s.SourcePath, "source", "", "path to security.properties file containing existing providers")
 
 		if err := flagSet.Parse(os.Args[1:]); err != nil {
-			return fmt.Errorf("unable to parse flags: %w", err)
+			return fmt.Errorf("unable to parse flags\n%w", err)
 		}
 
 		if s.DestinationPath, ok = os.LookupEnv("JAVA_SECURITY_PROPERTIES"); !ok {

@@ -48,13 +48,13 @@ func (s SecurityProvidersConfigurer) Contribute(layer libcnb.Layer) (libcnb.Laye
 	return s.LayerContributor.Contribute(layer, func(artifact *os.File) (libcnb.Layer, error) {
 		s.Logger.Body("Copying to %s", layer.Path)
 		if err := sherpa.CopyFile(artifact, filepath.Join(layer.Path, "bin", "security-providers-configurer")); err != nil {
-			return libcnb.Layer{}, fmt.Errorf("unable to copy: %w", err)
+			return libcnb.Layer{}, fmt.Errorf("unable to copy\n%w", err)
 		}
 
 		j9, _ := semver.NewVersion("9")
 		v, err := semver.NewVersion(s.JavaVersion)
 		if err != nil {
-			return libcnb.Layer{}, fmt.Errorf("unable to parse Java version %s: %w", s.JavaVersion, err)
+			return libcnb.Layer{}, fmt.Errorf("unable to parse Java version %s\n%w", s.JavaVersion, err)
 		}
 
 		var source string

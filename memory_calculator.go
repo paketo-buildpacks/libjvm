@@ -55,12 +55,12 @@ func (m MemoryCalculator) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 	return m.LayerContributor.Contribute(layer, func(artifact *os.File) (libcnb.Layer, error) {
 		m.Logger.Body("Expanding to %s", layer.Path)
 		if err := crush.ExtractTarGz(artifact, filepath.Join(layer.Path, "bin"), 0); err != nil {
-			return libcnb.Layer{}, fmt.Errorf("unable to expand Memory Calculator: %w", err)
+			return libcnb.Layer{}, fmt.Errorf("unable to expand Memory Calculator\n%w", err)
 		}
 
 		jvmClassCount, err := m.JvmClassCount()
 		if err != nil {
-			return libcnb.Layer{}, fmt.Errorf("unable to calculate JVM class count for %s: %w", m.JavaVersion, err)
+			return libcnb.Layer{}, fmt.Errorf("unable to calculate JVM class count for %s\n%w", m.JavaVersion, err)
 		}
 
 		layer.Profile.Add("memory-calculator", `HEAD_ROOM=${BPL_HEAD_ROOM:=0}
@@ -106,7 +106,7 @@ func (MemoryCalculator) Name() string {
 func (m MemoryCalculator) JvmClassCount() (int, error) {
 	v, err := semver.NewVersion(m.JavaVersion)
 	if err != nil {
-		return 0, fmt.Errorf("unable to parse Java version %s: %w", m.JavaVersion, err)
+		return 0, fmt.Errorf("unable to parse Java version %s\n%w", m.JavaVersion, err)
 	}
 
 	if c, _ := semver.NewConstraint("^8"); c.Check(v) {

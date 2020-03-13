@@ -45,7 +45,7 @@ func (l LinkLocalDNS) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 	return l.LayerContributor.Contribute(layer, func(artifact *os.File) (libcnb.Layer, error) {
 		l.Logger.Body("Copying to %s", layer.Path)
 		if err := sherpa.CopyFile(artifact, filepath.Join(layer.Path, "bin", "link-local-dns")); err != nil {
-			return libcnb.Layer{}, fmt.Errorf("unable to copy: %w", err)
+			return libcnb.Layer{}, fmt.Errorf("unable to copy\n%w", err)
 		}
 
 		layer.Profile.Add("link-local-dns", `link-local-dns`)
