@@ -43,8 +43,8 @@ github.com/onsi/ginkgo v1.12.0/go.mod h1:oUhWkIvk5aDxtKvDDuw8gItl8pKl42LzjC9KZE0
 github.com/onsi/gomega v1.7.1/go.mod h1:XdKZgCCFLUoM/7CFJVPcG8C1xQ1AJ0vpAezJrB7JYyY=
 github.com/onsi/gomega v1.9.0 h1:R1uwffexN6Pr340GtYRIdZmAiN4J+iw6WG4wog1DUXg=
 github.com/onsi/gomega v1.9.0/go.mod h1:Ho0h+IUsWyvy1OpqCwxlQ/21gkhVunqlU8fDGcoTdcA=
-github.com/paketo-buildpacks/libpak v1.12.0 h1:YvpKAo0Kc12lKlutHrE5koVQse0Sy4bi4WeCY+rEpwQ=
-github.com/paketo-buildpacks/libpak v1.12.0/go.mod h1:ZPsEZludrCEgdJR1aGWh+NipxCmiNXu0iSLOjXljaR8=
+github.com/paketo-buildpacks/libpak v1.13.0 h1:dgCeJUSfxN1fzgylRzImpOEUF/f6+Aiaco9MoMicFjY=
+github.com/paketo-buildpacks/libpak v1.13.0/go.mod h1:ZPsEZludrCEgdJR1aGWh+NipxCmiNXu0iSLOjXljaR8=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/sclevine/spec v1.4.0 h1:z/Q9idDcay5m5irkZ28M7PtQM4aOISzOpj4bUPkDee8=
