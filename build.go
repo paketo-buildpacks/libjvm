@@ -31,6 +31,9 @@ type Build struct {
 }
 
 func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
+	b.Logger.Title(context.Buildpack)
+	result := libcnb.BuildResult{}
+
 	pr := libpak.PlanEntryResolver{Plan: context.Plan}
 
 	md, err := libpak.NewBuildpackMetadata(context.Buildpack.Metadata)
@@ -45,9 +48,6 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 
 	dc := libpak.NewDependencyCache(context.Buildpack)
 	dc.Logger = b.Logger
-
-	b.Logger.Title(context.Buildpack)
-	result := libcnb.BuildResult{}
 
 	if e, ok, err := pr.Resolve("jdk"); err != nil {
 		return libcnb.BuildResult{}, fmt.Errorf("unable to resolve jdk plan entry\n%w", err)
