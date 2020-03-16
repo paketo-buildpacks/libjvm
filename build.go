@@ -54,7 +54,7 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 	} else if ok {
 		dep, err := dr.Resolve("jdk", sherpa.ResolveVersion("BP_JAVA_VERSION", e, "jdk", md.DefaultVersions))
 		if err != nil {
-			return libcnb.BuildResult{}, fmt.Errorf("unable to find depdency\n%w", err)
+			return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)
 		}
 
 		jdk := NewJDK(dep, dc, &result.Plan)
@@ -67,15 +67,14 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 	} else if ok {
 		depJRE, err := dr.Resolve("jre", sherpa.ResolveVersion("BP_JAVA_VERSION", e, "jre", md.DefaultVersions))
 
-		switch err.(type) {
-		case libpak.NoValidDependenciesError:
+		if libpak.IsNoValidDependencies(err) {
 			warn := color.New(color.FgYellow, color.Bold)
 			b.Logger.Header(warn.Sprint("No valid JRE available, providing matching JDK instead. Using a JDK at runtime has security implications."))
 			depJRE, err = dr.Resolve("jdk", sherpa.ResolveVersion("BP_JAVA_VERSION", e, "jdk", md.DefaultVersions))
 		}
 
 		if err != nil {
-			return libcnb.BuildResult{}, fmt.Errorf("unable to find depdency\n%w", err)
+			return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)
 		}
 
 		jre := NewJRE(depJRE, dc, e.Metadata, &result.Plan)
@@ -84,7 +83,7 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 
 		depJVMKill, err := dr.Resolve("jvmkill", "")
 		if err != nil {
-			return libcnb.BuildResult{}, fmt.Errorf("unable to find depdency\n%w", err)
+			return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)
 		}
 
 		jk := NewJVMKill(depJVMKill, dc, &result.Plan)
@@ -97,7 +96,7 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 
 		depMemCalc, err := dr.Resolve("memory-calculator", "")
 		if err != nil {
-			return libcnb.BuildResult{}, fmt.Errorf("unable to find depdency\n%w", err)
+			return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)
 		}
 
 		mc := NewMemoryCalculator(context.Application.Path, depMemCalc, dc, depJRE.Version, &result.Plan)
