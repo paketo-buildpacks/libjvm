@@ -18,12 +18,12 @@ package libjvm
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/buildpacks/libcnb"
 	"github.com/heroku/color"
 	"github.com/paketo-buildpacks/libpak"
 	"github.com/paketo-buildpacks/libpak/bard"
-	"github.com/paketo-buildpacks/libpak/sherpa"
 )
 
 type Build struct {
@@ -49,10 +49,15 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 	dc := libpak.NewDependencyCache(context.Buildpack)
 	dc.Logger = b.Logger
 
-	if e, ok, err := pr.Resolve("jdk"); err != nil {
+	if _, ok, err := pr.Resolve("jdk"); err != nil {
 		return libcnb.BuildResult{}, fmt.Errorf("unable to resolve jdk plan entry\n%w", err)
 	} else if ok {
-		dep, err := dr.Resolve("jdk", sherpa.ResolveVersion("BP_JAVA_VERSION", e, "jdk", md.DefaultVersions))
+		v := md.DefaultVersions["jdk"]
+		if s, ok := os.LookupEnv("BP_JAVA_VERSION"); ok {
+			v = s
+		}
+
+		dep, err := dr.Resolve("jdk", v)
 		if err != nil {
 			return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)
 		}
@@ -65,12 +70,23 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 	if e, ok, err := pr.Resolve("jre"); err != nil {
 		return libcnb.BuildResult{}, fmt.Errorf("unable to resolve jre plan entry\n%w", err)
 	} else if ok {
-		depJRE, err := dr.Resolve("jre", sherpa.ResolveVersion("BP_JAVA_VERSION", e, "jre", md.DefaultVersions))
+		v := md.DefaultVersions["jdk"]
+		if s, ok := os.LookupEnv("BP_JAVA_VERSION"); ok {
+			v = s
+		}
+
+		depJRE, err := dr.Resolve("jre", v)
 
 		if libpak.IsNoValidDependencies(err) {
 			warn := color.New(color.FgYellow, color.Bold)
 			b.Logger.Header(warn.Sprint("No valid JRE available, providing matching JDK instead. Using a JDK at runtime has security implications."))
-			depJRE, err = dr.Resolve("jdk", sherpa.ResolveVersion("BP_JAVA_VERSION", e, "jdk", md.DefaultVersions))
+
+			v := md.DefaultVersions["jdk"]
+			if s, ok := os.LookupEnv("BP_JAVA_VERSION"); ok {
+				v = s
+			}
+
+			depJRE, err = dr.Resolve("jdk", v)
 		}
 
 		if err != nil {

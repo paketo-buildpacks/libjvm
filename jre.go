@@ -44,6 +44,8 @@ func NewJRE(dependency libpak.BuildpackDependency, cache libpak.DependencyCache,
 func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 	j.LayerContributor.Logger = j.Logger
 
+	j.Logger.Body(bard.FormatUserConfig("BP_JAVA_VERSION", "the JRE version", "11.*"))
+
 	return j.LayerContributor.Contribute(layer, func(artifact *os.File) (libcnb.Layer, error) {
 		j.Logger.Body("Expanding to %s", layer.Path)
 		if err := crush.ExtractTarGz(artifact, layer.Path, 1); err != nil {
