@@ -26,8 +26,6 @@ import (
 	"github.com/paketo-buildpacks/libpak/bard"
 )
 
-//go:generate statik -src . -include *.sh
-
 type Build struct {
 	Logger bard.Logger
 }

@@ -43,6 +43,8 @@ func NewSecurityProvidersConfigurer(buildpack libcnb.Buildpack, javaVersion stri
 	}
 }
 
+//go:generate statik -src . -include *.sh
+
 func (s SecurityProvidersConfigurer) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 	s.LayerContributor.Logger = s.Logger
 

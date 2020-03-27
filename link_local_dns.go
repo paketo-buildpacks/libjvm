@@ -40,6 +40,8 @@ func NewLinkLocalDNS(buildpack libcnb.Buildpack, plan *libcnb.BuildpackPlan) Lin
 	}
 }
 
+//go:generate statik -src . -include *.sh
+
 func (l LinkLocalDNS) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 	l.LayerContributor.Logger = l.Logger
 
@@ -53,6 +55,7 @@ func (l LinkLocalDNS) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 		if err != nil {
 			return libcnb.Layer{}, fmt.Errorf("unable to load link-local-dns.sh\n%w", err)
 		}
+
 		layer.Profile.Add("link-local-dns.sh", s)
 
 		layer.Launch = true

@@ -43,6 +43,8 @@ func NewJRE(dependency libpak.BuildpackDependency, cache libpak.DependencyCache,
 	}
 }
 
+//go:generate statik -src . -include *.sh
+
 func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 	j.LayerContributor.Logger = j.Logger
 
@@ -61,6 +63,7 @@ func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 		if err != nil {
 			return libcnb.Layer{}, fmt.Errorf("unable to load active-processor-count.sh\n%w", err)
 		}
+
 		layer.Profile.Add("active-processor-count.sh", s)
 
 		if v, ok := j.Metadata["build"].(bool); ok && v {
