@@ -49,14 +49,14 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 	dc := libpak.NewDependencyCache(context.Buildpack)
 	dc.Logger = b.Logger
 
+	v := md.DefaultVersions["java"]
+	if s, ok := os.LookupEnv("BP_JAVA_VERSION"); ok {
+		v = s
+	}
+
 	if _, ok, err := pr.Resolve("jdk"); err != nil {
 		return libcnb.BuildResult{}, fmt.Errorf("unable to resolve jdk plan entry\n%w", err)
 	} else if ok {
-		v := md.DefaultVersions["jdk"]
-		if s, ok := os.LookupEnv("BP_JAVA_VERSION"); ok {
-			v = s
-		}
-
 		dep, err := dr.Resolve("jdk", v)
 		if err != nil {
 			return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)
@@ -70,21 +70,11 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 	if e, ok, err := pr.Resolve("jre"); err != nil {
 		return libcnb.BuildResult{}, fmt.Errorf("unable to resolve jre plan entry\n%w", err)
 	} else if ok {
-		v := md.DefaultVersions["jdk"]
-		if s, ok := os.LookupEnv("BP_JAVA_VERSION"); ok {
-			v = s
-		}
-
 		depJRE, err := dr.Resolve("jre", v)
 
 		if libpak.IsNoValidDependencies(err) {
 			warn := color.New(color.FgYellow, color.Bold)
 			b.Logger.Header(warn.Sprint("No valid JRE available, providing matching JDK instead. Using a JDK at runtime has security implications."))
-
-			v := md.DefaultVersions["jdk"]
-			if s, ok := os.LookupEnv("BP_JAVA_VERSION"); ok {
-				v = s
-			}
 
 			depJRE, err = dr.Resolve("jdk", v)
 		}
