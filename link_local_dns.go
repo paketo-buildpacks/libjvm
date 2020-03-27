@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 
 	"github.com/buildpacks/libcnb"
+	_ "github.com/paketo-buildpacks/libjvm/statik"
 	"github.com/paketo-buildpacks/libpak"
 	"github.com/paketo-buildpacks/libpak/bard"
 	"github.com/paketo-buildpacks/libpak/sherpa"
@@ -43,12 +44,16 @@ func (l LinkLocalDNS) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 	l.LayerContributor.Logger = l.Logger
 
 	return l.LayerContributor.Contribute(layer, func(artifact *os.File) (libcnb.Layer, error) {
-		l.Logger.Body("Copying to %s", layer.Path)
+		l.Logger.Bodyf("Copying to %s", layer.Path)
 		if err := sherpa.CopyFile(artifact, filepath.Join(layer.Path, "bin", "link-local-dns")); err != nil {
 			return libcnb.Layer{}, fmt.Errorf("unable to copy\n%w", err)
 		}
 
-		layer.Profile.Add("link-local-dns", `link-local-dns`)
+		s, err := sherpa.StaticFile("/link-local-dns.sh")
+		if err != nil {
+			return libcnb.Layer{}, fmt.Errorf("unable to load link-local-dns.sh\n%w", err)
+		}
+		layer.Profile.Add("link-local-dns.sh", s)
 
 		layer.Launch = true
 		return layer, nil

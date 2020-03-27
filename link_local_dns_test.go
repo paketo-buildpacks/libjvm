@@ -60,6 +60,7 @@ func testLinkLocalDNS(t *testing.T, context spec.G, it spec.S) {
 
 		Expect(layer.Launch).To(BeTrue())
 		Expect(filepath.Join(layer.Path, "bin", "link-local-dns")).To(BeARegularFile())
-		Expect(layer.Profile["link-local-dns"]).To(Equal(`link-local-dns`))
+		Expect(layer.Profile["link-local-dns.sh"]).To(Equal(`link-local-dns
+`))
 	})
 }

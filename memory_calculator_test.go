@@ -62,7 +62,7 @@ func testMemoryCalculator(t *testing.T, context spec.G, it spec.S) {
 
 		Expect(layer.Launch).To(BeTrue())
 		Expect(filepath.Join(layer.Path, "bin", "java-buildpack-memory-calculator")).To(BeARegularFile())
-		Expect(layer.Profile["memory-calculator"]).To(Equal(fmt.Sprintf(`HEAD_ROOM=${BPL_HEAD_ROOM:=0}
+		Expect(layer.Profile["memory-calculator.sh"]).To(Equal(fmt.Sprintf(`HEAD_ROOM=${BPL_HEAD_ROOM:=0}
 
 if [[ -z "${BPL_LOADED_CLASS_COUNT+x}" ]]; then
     LOADED_CLASS_COUNT=$(class-counter --source "%s" --jvm-class-count "27867")
@@ -90,8 +90,8 @@ MEMORY_CONFIGURATION=$(java-buildpack-memory-calculator \
     --total-memory "${TOTAL_MEMORY}")
 
 printf "Calculated JVM Memory Configuration: ${MEMORY_CONFIGURATION} (Head Room: ${HEAD_ROOM}%%%%, Loaded Class Count: ${LOADED_CLASS_COUNT}, Thread Count: ${THREAD_COUNT}, Total Memory: ${TOTAL_MEMORY})\n"
-export JAVA_OPTS="${JAVA_OPTS} ${MEMORY_CONFIGURATION}"`,
-			ctx.Application.Path)))
+export JAVA_OPTS="${JAVA_OPTS} ${MEMORY_CONFIGURATION}"
+`, ctx.Application.Path)))
 	})
 
 	context("jvmClassCount", func() {

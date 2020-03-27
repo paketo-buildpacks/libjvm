@@ -23,9 +23,11 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/buildpacks/libcnb"
+	_ "github.com/paketo-buildpacks/libjvm/statik"
 	"github.com/paketo-buildpacks/libpak"
 	"github.com/paketo-buildpacks/libpak/bard"
 	"github.com/paketo-buildpacks/libpak/crush"
+	"github.com/paketo-buildpacks/libpak/sherpa"
 )
 
 type MemoryCalculator struct {
@@ -53,7 +55,7 @@ func (m MemoryCalculator) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 	m.LayerContributor.Logger = m.Logger
 
 	return m.LayerContributor.Contribute(layer, func(artifact *os.File) (libcnb.Layer, error) {
-		m.Logger.Body("Expanding to %s", layer.Path)
+		m.Logger.Bodyf("Expanding to %s", layer.Path)
 		if err := crush.ExtractTarGz(artifact, filepath.Join(layer.Path, "bin"), 0); err != nil {
 			return libcnb.Layer{}, fmt.Errorf("unable to expand Memory Calculator\n%w", err)
 		}
@@ -63,36 +65,15 @@ func (m MemoryCalculator) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 			return libcnb.Layer{}, fmt.Errorf("unable to calculate JVM class count for %s\n%w", m.JavaVersion, err)
 		}
 
-		layer.Profile.Add("memory-calculator", `HEAD_ROOM=${BPL_HEAD_ROOM:=0}
+		s, err := sherpa.TemplateFile("/memory-calculator.sh", map[string]interface{}{
+			"source":        m.ApplicationPath,
+			"jvmClassCount": jvmClassCount,
+		})
+		if err != nil {
+			return libcnb.Layer{}, fmt.Errorf("unable to load memory-calculator.sh\n%w", err)
+		}
 
-if [[ -z "${BPL_LOADED_CLASS_COUNT+x}" ]]; then
-    LOADED_CLASS_COUNT=$(class-counter --source "%s" --jvm-class-count "%d")
-else
-	LOADED_CLASS_COUNT=${BPL_LOADED_CLASS_COUNT}
-fi
-
-THREAD_COUNT=${BPL_THREAD_COUNT:=250}
-
-TOTAL_MEMORY=$(cat /sys/fs/cgroup/memory/memory.limit_in_bytes)
-
-if [ "${TOTAL_MEMORY}" -eq 9223372036854771712 ]; then
-  printf "Container memory limit unset. Configuring JVM for 1G container.\n"
-  TOTAL_MEMORY=1073741824
-elif [ ${TOTAL_MEMORY} -gt 70368744177664 ]; then
-  printf "Container memory limit too large. Configuring JVM for 64T container.\n"
-  TOTAL_MEMORY=70368744177664
-fi
-
-MEMORY_CONFIGURATION=$(java-buildpack-memory-calculator \
-    --head-room "${HEAD_ROOM}" \
-    --jvm-options "${JAVA_OPTS}" \
-    --loaded-class-count "${LOADED_CLASS_COUNT}" \
-    --thread-count "${THREAD_COUNT}" \
-    --total-memory "${TOTAL_MEMORY}")
-
-printf "Calculated JVM Memory Configuration: ${MEMORY_CONFIGURATION} (Head Room: ${HEAD_ROOM}%%%%, Loaded Class Count: ${LOADED_CLASS_COUNT}, Thread Count: ${THREAD_COUNT}, Total Memory: ${TOTAL_MEMORY})\n"
-export JAVA_OPTS="${JAVA_OPTS} ${MEMORY_CONFIGURATION}"`,
-			m.ApplicationPath, jvmClassCount)
+		layer.Profile.Add("memory-calculator.sh", s)
 
 		layer.Launch = true
 		return layer, nil

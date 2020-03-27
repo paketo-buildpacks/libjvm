@@ -61,7 +61,7 @@ func testSecurityProvidersConfigurer(t *testing.T, context spec.G, it spec.S) {
 
 			Expect(layer.Launch).To(BeTrue())
 			Expect(filepath.Join(layer.Path, "bin", "security-providers-configurer")).To(BeARegularFile())
-			Expect(layer.Profile["security-providers-classpath"]).To(Equal(`[[ -z "${SECURITY_PROVIDERS_CLASSPATH+x}" ]] && return
+			Expect(layer.Profile["security-providers-classpath.sh"]).To(Equal(`[[ -z "${SECURITY_PROVIDERS_CLASSPATH+x}" ]] && return
 
 EXT_DIRS="${JAVA_HOME}/lib/ext"
 
@@ -69,9 +69,12 @@ for I in ${SECURITY_PROVIDERS_CLASSPATH//:/$'\n'}; do
   EXT_DIRS="${EXT_DIRS}:$(dirname "${I}")"
 done
 
-export JAVA_OPTS="${JAVA_OPTS} -Djava.ext.dirs=${EXT_DIRS}"`))
-			Expect(layer.Profile["security-providers-configurer"]).To(Equal(
-				`security-providers-configurer --source "${JAVA_HOME}"/lib/security/java.security --additional-providers "$(echo "${SECURITY_PROVIDERS}" | tr ' ' ,)"`))
+export JAVA_OPTS="${JAVA_OPTS} -Djava.ext.dirs=${EXT_DIRS}"
+`))
+			Expect(layer.Profile["security-providers-configurer.sh"]).To(Equal(`security-providers-configurer \
+  --source "${JAVA_HOME}/lib/security/java.security" \
+  --additional-providers "$(echo "${SECURITY_PROVIDERS}" | tr ' ' ,)"
+`))
 		})
 	})
 
@@ -89,11 +92,14 @@ export JAVA_OPTS="${JAVA_OPTS} -Djava.ext.dirs=${EXT_DIRS}"`))
 
 			Expect(layer.Launch).To(BeTrue())
 			Expect(filepath.Join(layer.Path, "bin", "security-providers-configurer")).To(BeARegularFile())
-			Expect(layer.Profile["security-providers-classpath"]).To(Equal(`[[ -z "${SECURITY_PROVIDERS_CLASSPATH+x}" ]] && return
+			Expect(layer.Profile["security-providers-classpath.sh"]).To(Equal(`[[ -z "${SECURITY_PROVIDERS_CLASSPATH+x}" ]] && return
 
-export CLASSPATH="${CLASSPATH}:${SECURITY_PROVIDERS_CLASSPATH}"`))
-			Expect(layer.Profile["security-providers-configurer"]).To(Equal(
-				`security-providers-configurer --source "${JAVA_HOME}"/conf/security/java.security --additional-providers "$(echo "${SECURITY_PROVIDERS}" | tr ' ' ,)"`))
+export CLASSPATH="${CLASSPATH}:${SECURITY_PROVIDERS_CLASSPATH}"
+`))
+			Expect(layer.Profile["security-providers-configurer.sh"]).To(Equal(`security-providers-configurer \
+  --source "${JAVA_HOME}/conf/security/java.security" \
+  --additional-providers "$(echo "${SECURITY_PROVIDERS}" | tr ' ' ,)"
+`))
 		})
 	})
 

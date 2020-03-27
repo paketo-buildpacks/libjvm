@@ -23,6 +23,7 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/buildpacks/libcnb"
+	_ "github.com/paketo-buildpacks/libjvm/statik"
 	"github.com/paketo-buildpacks/libpak"
 	"github.com/paketo-buildpacks/libpak/bard"
 	"github.com/paketo-buildpacks/libpak/sherpa"
@@ -46,7 +47,7 @@ func (s SecurityProvidersConfigurer) Contribute(layer libcnb.Layer) (libcnb.Laye
 	s.LayerContributor.Logger = s.Logger
 
 	return s.LayerContributor.Contribute(layer, func(artifact *os.File) (libcnb.Layer, error) {
-		s.Logger.Body("Copying to %s", layer.Path)
+		s.Logger.Bodyf("Copying to %s", layer.Path)
 		if err := sherpa.CopyFile(artifact, filepath.Join(layer.Path, "bin", "security-providers-configurer")); err != nil {
 			return libcnb.Layer{}, fmt.Errorf("unable to copy\n%w", err)
 		}
@@ -61,26 +62,29 @@ func (s SecurityProvidersConfigurer) Contribute(layer libcnb.Layer) (libcnb.Laye
 		if v.LessThan(j9) {
 			source = filepath.Join("lib", "security", "java.security")
 
-			layer.Profile.Add("security-providers-classpath", `[[ -z "${SECURITY_PROVIDERS_CLASSPATH+x}" ]] && return
+			s, err := sherpa.StaticFile("/security-providers-classpath-8.sh")
+			if err != nil {
+				return libcnb.Layer{}, fmt.Errorf("unable to load security-providers-classpath-8.sh\n%w", err)
+			}
 
-EXT_DIRS="${JAVA_HOME}/lib/ext"
-
-for I in ${SECURITY_PROVIDERS_CLASSPATH//:/$'\n'}; do
-  EXT_DIRS="${EXT_DIRS}:$(dirname "${I}")"
-done
-
-export JAVA_OPTS="${JAVA_OPTS} -Djava.ext.dirs=${EXT_DIRS}"`)
+			layer.Profile.Add("security-providers-classpath.sh", s)
 		} else {
 			source = filepath.Join("conf", "security", "java.security")
 
-			layer.Profile.Add("security-providers-classpath", `[[ -z "${SECURITY_PROVIDERS_CLASSPATH+x}" ]] && return
+			s, err := sherpa.StaticFile("/security-providers-classpath-9.sh")
+			if err != nil {
+				return libcnb.Layer{}, fmt.Errorf("unable to load security-providers-classpath-9.sh\n%w", err)
+			}
 
-export CLASSPATH="${CLASSPATH}:${SECURITY_PROVIDERS_CLASSPATH}"`)
+			layer.Profile.Add("security-providers-classpath.sh", s)
 		}
 
-		layer.Profile.Add("security-providers-configurer",
-			`security-providers-configurer --source "${JAVA_HOME}"/%s --additional-providers "$(echo "${SECURITY_PROVIDERS}" | tr ' ' ,)"`,
-			source)
+		s, err := sherpa.TemplateFile("/security-providers-configurer.sh", map[string]interface{}{"source": source})
+		if err != nil {
+			return libcnb.Layer{}, fmt.Errorf("unable to load security-providers-configurer.sh\n%w", err)
+		}
+
+		layer.Profile.Add("security-providers-configurer.sh", s)
 
 		layer.Launch = true
 		return layer, nil

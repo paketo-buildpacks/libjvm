@@ -21,9 +21,11 @@ import (
 	"os"
 
 	"github.com/buildpacks/libcnb"
+	_ "github.com/paketo-buildpacks/libjvm/statik"
 	"github.com/paketo-buildpacks/libpak"
 	"github.com/paketo-buildpacks/libpak/bard"
 	"github.com/paketo-buildpacks/libpak/crush"
+	"github.com/paketo-buildpacks/libpak/sherpa"
 )
 
 type JRE struct {
@@ -47,15 +49,19 @@ func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 	j.Logger.Body(bard.FormatUserConfig("BP_JAVA_VERSION", "the JRE version", "11.*"))
 
 	return j.LayerContributor.Contribute(layer, func(artifact *os.File) (libcnb.Layer, error) {
-		j.Logger.Body("Expanding to %s", layer.Path)
+		j.Logger.Bodyf("Expanding to %s", layer.Path)
 		if err := crush.ExtractTarGz(artifact, layer.Path, 1); err != nil {
 			return libcnb.Layer{}, fmt.Errorf("unable to expand JRE\n%w", err)
 		}
 
 		layer.SharedEnvironment.Override("JAVA_HOME", layer.Path)
 		layer.SharedEnvironment.Override("MALLOC_ARENA_MAX", "2")
-		layer.Profile.Add("active-processor-count", `JAVA_OPTS="${JAVA_OPTS} -XX:ActiveProcessorCount=$(nproc)"
-export JAVA_OPTS`)
+
+		s, err := sherpa.StaticFile("/active-processor-count.sh")
+		if err != nil {
+			return libcnb.Layer{}, fmt.Errorf("unable to load active-processor-count.sh\n%w", err)
+		}
+		layer.Profile.Add("active-processor-count.sh", s)
 
 		if v, ok := j.Metadata["build"].(bool); ok && v {
 			layer.Build = true

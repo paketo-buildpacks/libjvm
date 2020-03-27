@@ -43,7 +43,7 @@ func (c ClassCounter) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 	c.LayerContributor.Logger = c.Logger
 
 	return c.LayerContributor.Contribute(layer, func(artifact *os.File) (libcnb.Layer, error) {
-		c.Logger.Body("Copying to %s", layer.Path)
+		c.Logger.Bodyf("Copying to %s", layer.Path)
 		if err := sherpa.CopyFile(artifact, filepath.Join(layer.Path, "bin", "class-counter")); err != nil {
 			return libcnb.Layer{}, fmt.Errorf("unable to copy\n%w", err)
 		}
