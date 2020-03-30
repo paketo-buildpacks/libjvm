@@ -17,6 +17,7 @@
 package libjvm_test
 
 import (
+	"os"
 	"testing"
 
 	"github.com/buildpacks/libcnb"
@@ -116,5 +117,63 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 		Expect(result.Layers[0].Name()).To(Equal("jre"))
 		Expect(result.Layers[0].(libjvm.JRE).LayerContributor.Dependency.ID).To(Equal("jdk"))
+	})
+
+	context("$BP_JAVA_VERSION", func() {
+		it.Before(func() {
+			Expect(os.Setenv("BP_JAVA_VERSION", "1.1.1")).To(Succeed())
+		})
+
+		it.After(func() {
+			Expect(os.Unsetenv("BP_JAVA_VERSION")).To(Succeed())
+		})
+
+		it("selects versions based on BP_JAVA_VERSION", func() {
+			ctx.Plan.Entries = append(ctx.Plan.Entries,
+				libcnb.BuildpackPlanEntry{Name: "jdk"},
+				libcnb.BuildpackPlanEntry{Name: "jre"},
+			)
+			ctx.Buildpack.Metadata = map[string]interface{}{
+				"dependencies": []map[string]interface{}{
+					{
+						"id":      "jdk",
+						"version": "1.1.1",
+						"stacks":  []interface{}{"test-stack-id"},
+					},
+					{
+						"id":      "jdk",
+						"version": "2.2.2",
+						"stacks":  []interface{}{"test-stack-id"},
+					},
+					{
+						"id":      "jre",
+						"version": "1.1.1",
+						"stacks":  []interface{}{"test-stack-id"},
+					},
+					{
+						"id":      "jre",
+						"version": "2.2.2",
+						"stacks":  []interface{}{"test-stack-id"},
+					},
+					{
+						"id":      "jvmkill",
+						"version": "1.1.1",
+						"stacks":  []interface{}{"test-stack-id"},
+					},
+					{
+						"id":      "memory-calculator",
+						"version": "1.1.1",
+						"stacks":  []interface{}{"test-stack-id"},
+					},
+				},
+			}
+			ctx.StackID = "test-stack-id"
+
+			result, err := libjvm.Build{}.Build(ctx)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(result.Layers[0].(libjvm.JDK).LayerContributor.Dependency.Version).To(Equal("1.1.1"))
+			Expect(result.Layers[1].(libjvm.JRE).LayerContributor.Dependency.Version).To(Equal("1.1.1"))
+		})
 	})
 }
