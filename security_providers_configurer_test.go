@@ -47,6 +47,11 @@ func testSecurityProvidersConfigurer(t *testing.T, context spec.G, it spec.S) {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
+	it.After(func() {
+		Expect(os.RemoveAll(ctx.Buildpack.Path)).To(Succeed())
+		Expect(os.RemoveAll(ctx.Layers.Path)).To(Succeed())
+	})
+
 	context("Java 8", func() {
 		it("contributes Security Providers Configurer", func() {
 			Expect(os.MkdirAll(filepath.Join(ctx.Buildpack.Path, "bin"), 0755)).To(Succeed())

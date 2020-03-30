@@ -40,6 +40,10 @@ func testManifest(t *testing.T, context spec.G, it spec.S) {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
+	it.After(func() {
+		Expect(os.RemoveAll(path)).To(Succeed())
+	})
+
 	it("returns empty manifest if file doesn't exist", func() {
 		m, err := libjvm.NewManifest(path)
 		Expect(err).NotTo(HaveOccurred())
