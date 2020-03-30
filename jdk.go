@@ -38,8 +38,6 @@ func NewJDK(dependency libpak.BuildpackDependency, cache libpak.DependencyCache,
 func (j JDK) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 	j.LayerContributor.Logger = j.Logger
 
-	j.Logger.Body(bard.FormatUserConfig("BP_JAVA_VERSION", "the JDK version", "11.*"))
-
 	return j.LayerContributor.Contribute(layer, func(artifact *os.File) (libcnb.Layer, error) {
 		j.Logger.Bodyf("Expanding to %s", layer.Path)
 		if err := crush.ExtractTarGz(artifact, layer.Path, 1); err != nil {

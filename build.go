@@ -32,6 +32,11 @@ type Build struct {
 
 func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 	b.Logger.Title(context.Buildpack)
+	b.Logger.Body(bard.FormatUserConfig("BP_JAVA_VERSION", "the Java version", "11.*"))
+	b.Logger.Body(bard.FormatUserConfig("BPL_HEAD_ROOM", "the headroom in memory calculation", "0"))
+	b.Logger.Body(bard.FormatUserConfig("BPL_LOADED_CLASS_COUNT", "the number of loaded classes in memory calculation", "35%% of classes"))
+	b.Logger.Body(bard.FormatUserConfig("BPL_THREAD_COUNT", "the number of threads in memory calculation", "250"))
+
 	result := libcnb.BuildResult{}
 
 	pr := libpak.PlanEntryResolver{Plan: context.Plan}

@@ -50,10 +50,6 @@ func NewMemoryCalculator(applicationPath string, dependency libpak.BuildpackDepe
 //go:generate statik -src . -include *.sh
 
 func (m MemoryCalculator) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
-	m.Logger.Body(bard.FormatUserConfig("BPL_HEAD_ROOM", "the headroom in memory calculation", "0"))
-	m.Logger.Body(bard.FormatUserConfig("BPL_LOADED_CLASS_COUNT", "the number of loaded classes in memory calculation", "35%% of classes"))
-	m.Logger.Body(bard.FormatUserConfig("BPL_THREAD_COUNT", "the number of threads in memory calculation", "250"))
-
 	m.LayerContributor.Logger = m.Logger
 
 	return m.LayerContributor.Contribute(layer, func(artifact *os.File) (libcnb.Layer, error) {
