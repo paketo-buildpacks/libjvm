@@ -1,9 +1,9 @@
 HEAD_ROOM=${BPL_HEAD_ROOM:=0}
 
 if [[ -z "${BPL_LOADED_CLASS_COUNT+x}" ]]; then
-    LOADED_CLASS_COUNT=$(class-counter --source "{{.source}}" --jvm-class-count "{{.jvmClassCount}}")
+  LOADED_CLASS_COUNT=$(class-counter --source "{{.source}}" --jvm-class-count "{{.jvmClassCount}}")
 else
-	LOADED_CLASS_COUNT=${BPL_LOADED_CLASS_COUNT}
+  LOADED_CLASS_COUNT=${BPL_LOADED_CLASS_COUNT}
 fi
 
 THREAD_COUNT=${BPL_THREAD_COUNT:=250}
