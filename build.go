@@ -37,7 +37,7 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 	b.Logger.Body(bard.FormatUserConfig("BPL_LOADED_CLASS_COUNT", "the number of loaded classes in memory calculation", "35% of classes"))
 	b.Logger.Body(bard.FormatUserConfig("BPL_THREAD_COUNT", "the number of threads in memory calculation", "250"))
 
-	result := libcnb.BuildResult{}
+	result := libcnb.NewBuildResult()
 
 	pr := libpak.PlanEntryResolver{Plan: context.Plan}
 
@@ -67,7 +67,7 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 			return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)
 		}
 
-		jdk := NewJDK(dep, dc, &result.Plan)
+		jdk := NewJDK(dep, dc, result.Plan)
 		jdk.Logger = b.Logger
 		result.Layers = append(result.Layers, jdk)
 	}
@@ -88,7 +88,7 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 			return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)
 		}
 
-		jre := NewJRE(depJRE, dc, e.Metadata, &result.Plan)
+		jre := NewJRE(depJRE, dc, e.Metadata, result.Plan)
 		jre.Logger = b.Logger
 		result.Layers = append(result.Layers, jre)
 
@@ -97,11 +97,11 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 			return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)
 		}
 
-		jk := NewJVMKill(depJVMKill, dc, &result.Plan)
+		jk := NewJVMKill(depJVMKill, dc, result.Plan)
 		jk.Logger = b.Logger
 		result.Layers = append(result.Layers, jk)
 
-		lld := NewLinkLocalDNS(context.Buildpack, &result.Plan)
+		lld := NewLinkLocalDNS(context.Buildpack, result.Plan)
 		lld.Logger = b.Logger
 		result.Layers = append(result.Layers, lld)
 
@@ -110,11 +110,11 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 			return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)
 		}
 
-		mc := NewMemoryCalculator(context.Application.Path, depMemCalc, dc, depJRE.Version, &result.Plan)
+		mc := NewMemoryCalculator(context.Application.Path, depMemCalc, dc, depJRE.Version, result.Plan)
 		mc.Logger = b.Logger
 		result.Layers = append(result.Layers, mc)
 
-		cc := NewClassCounter(context.Buildpack, &result.Plan)
+		cc := NewClassCounter(context.Buildpack, result.Plan)
 		cc.Logger = b.Logger
 		result.Layers = append(result.Layers, cc)
 
@@ -122,7 +122,7 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 		jsp.Logger = b.Logger
 		result.Layers = append(result.Layers, jsp)
 
-		spc := NewSecurityProvidersConfigurer(context.Buildpack, depJRE.Version, &result.Plan)
+		spc := NewSecurityProvidersConfigurer(context.Buildpack, depJRE.Version, result.Plan)
 		spc.Logger = b.Logger
 		result.Layers = append(result.Layers, spc)
 	}
