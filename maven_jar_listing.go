@@ -41,68 +41,48 @@ type result struct {
 
 // NewMavenJARListing generates a listing of all JAR that follow Maven naming convention under the roots.
 func NewMavenJARListing(roots ...string) ([]MavenJAR, error) {
-	ch := make(chan result)
-	var wg sync.WaitGroup
-
-	for _, root := range roots {
-		if err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-
-			if info.IsDir() {
-				return nil
-			}
-
-			if filepath.Ext(path) != ".jar" {
-				return nil
-			}
-
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-
-				m := MavenJAR{
-					Name:    filepath.Base(path),
-					Version: "unknown",
-				}
-
-				if p := maven.FindStringSubmatch(path); p != nil {
-					m.Name = p[1]
-					m.Version = p[2]
-				}
-
-				s := sha256.New()
-
-				in, err := os.Open(path)
-				if err != nil {
-					ch <- result{err: fmt.Errorf("unable to open file %s\n%w", path, err)}
-					return
-				}
-				defer in.Close()
-
-				if _, err := io.Copy(s, in); err != nil {
-					ch <- result{err: fmt.Errorf("unable to hash file %s\n%w", path, err)}
-					return
-				}
-
-				m.SHA256 = hex.EncodeToString(s.Sum(nil))
-				ch <- result{value: m}
-			}()
-
-			return nil
-		}); err != nil && !os.IsNotExist(err) {
-			return nil, fmt.Errorf("error walking path %s\n%w", root, err)
-		}
-	}
+	paths := make(chan string)
+	results := make(chan result)
 
 	go func() {
-		wg.Wait()
-		close(ch)
+		for _, root := range roots {
+			if err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+				if err != nil {
+					return err
+				}
+
+				if info.IsDir() {
+					return nil
+				}
+
+				if filepath.Ext(path) != ".jar" {
+					return nil
+				}
+
+				paths <- path
+				return nil
+			}); err != nil && !os.IsNotExist(err) {
+				results <- result{err: fmt.Errorf("error walking path %s\n%w", root, err)}
+				return
+			}
+		}
+
+		close(paths)
+	}()
+
+	go func() {
+		var workers sync.WaitGroup
+		for i := 0; i < 128; i++ {
+			workers.Add(1)
+			go worker(paths, results, &workers)
+		}
+
+		workers.Wait()
+		close(results)
 	}()
 
 	var m []MavenJAR
-	for r := range ch {
+	for r := range results {
 		if r.err != nil {
 			return nil, fmt.Errorf("unable to create file listing: %s", r.err)
 		}
@@ -112,5 +92,41 @@ func NewMavenJARListing(roots ...string) ([]MavenJAR, error) {
 		return m[i].Name < m[j].Name
 	})
 
+	return m, nil
+}
+
+func worker(paths chan string, results chan result, wg *sync.WaitGroup) {
+	for path := range paths {
+		m, err := process(path)
+		results <- result{value: m, err: err}
+	}
+
+	wg.Done()
+}
+
+func process(path string) (MavenJAR, error) {
+	m := MavenJAR{
+		Name:    filepath.Base(path),
+		Version: "unknown",
+	}
+
+	if p := maven.FindStringSubmatch(path); p != nil {
+		m.Name = p[1]
+		m.Version = p[2]
+	}
+
+	s := sha256.New()
+
+	in, err := os.Open(path)
+	if err != nil {
+		return MavenJAR{}, fmt.Errorf("unable to open file %s\n%w", path, err)
+	}
+	defer in.Close()
+
+	if _, err := io.Copy(s, in); err != nil {
+		return MavenJAR{}, fmt.Errorf("unable to hash file %s\n%w", path, err)
+	}
+
+	m.SHA256 = hex.EncodeToString(s.Sum(nil))
 	return m, nil
 }
