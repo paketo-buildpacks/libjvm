@@ -91,7 +91,7 @@ func NewMavenJARListing(roots ...string) ([]MavenJAR, error) {
 			}()
 
 			return nil
-		}); err != nil {
+		}); err != nil && !os.IsNotExist(err) {
 			return nil, fmt.Errorf("error walking path %s\n%w", root, err)
 		}
 	}
