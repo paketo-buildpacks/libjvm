@@ -47,7 +47,9 @@ func NewMavenJARListing(roots ...string) ([]MavenJAR, error) {
 	go func() {
 		for _, root := range roots {
 			p, err := filepath.EvalSymlinks(root)
-			if err != nil {
+			if os.IsNotExist(err) {
+				continue
+			} else if err != nil {
 				results <- result{err: fmt.Errorf("unable to resolve %s\n%w", root, err)}
 				return
 			}
@@ -67,7 +69,7 @@ func NewMavenJARListing(roots ...string) ([]MavenJAR, error) {
 
 				paths <- path
 				return nil
-			}); err != nil && !os.IsNotExist(err) {
+			}); err != nil {
 				results <- result{err: fmt.Errorf("error walking path %s\n%w", root, err)}
 				return
 			}
