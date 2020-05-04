@@ -33,13 +33,17 @@ type SecurityProvidersConfigurer struct {
 	JavaVersion      string
 	LayerContributor libpak.HelperLayerContributor
 	Logger           bard.Logger
+	Metadata         map[string]interface{}
 }
 
-func NewSecurityProvidersConfigurer(buildpack libcnb.Buildpack, javaVersion string, plan *libcnb.BuildpackPlan) SecurityProvidersConfigurer {
+func NewSecurityProvidersConfigurer(buildpack libcnb.Buildpack, javaVersion string, metadata map[string]interface{},
+	plan *libcnb.BuildpackPlan) SecurityProvidersConfigurer {
+
 	return SecurityProvidersConfigurer{
 		JavaVersion: javaVersion,
 		LayerContributor: libpak.NewHelperLayerContributor(filepath.Join(buildpack.Path, "bin", "security-providers-configurer"),
 			"Security Providers Configurer", buildpack.Info, plan),
+		Metadata: metadata,
 	}
 }
 
@@ -81,14 +85,22 @@ func (s SecurityProvidersConfigurer) Contribute(layer libcnb.Layer) (libcnb.Laye
 			layer.Profile.Add("security-providers-classpath.sh", s)
 		}
 
-		s, err := sherpa.TemplateFile("/security-providers-configurer.sh", map[string]interface{}{"source": source})
+		t, err := sherpa.TemplateFile("/security-providers-configurer.sh", map[string]interface{}{"source": source})
 		if err != nil {
 			return libcnb.Layer{}, fmt.Errorf("unable to load security-providers-configurer.sh\n%w", err)
 		}
 
-		layer.Profile.Add("security-providers-configurer.sh", s)
+		layer.Profile.Add("security-providers-configurer.sh", t)
 
-		layer.Launch = true
+		if isBuildContribution(s.Metadata) {
+			layer.Build = true
+			layer.Cache = true
+		}
+
+		if isLaunchContribution(s.Metadata) {
+			layer.Launch = true
+		}
+
 		return layer, nil
 	})
 }

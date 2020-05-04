@@ -28,6 +28,11 @@ func testMavenJARListing(t *testing.T, context spec.G, it spec.S) {
 				SHA256:  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
 			},
 			{
+				Name: "stub-openssl-security-provider.jar",
+				Version: "unknown",
+				SHA256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			},
+			{
 				Name:    "test-artifact-1",
 				Version: "1.2.3",
 				SHA256:  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",

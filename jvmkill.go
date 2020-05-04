@@ -30,10 +30,16 @@ import (
 type JVMKill struct {
 	LayerContributor libpak.DependencyLayerContributor
 	Logger           bard.Logger
+	Metadata         map[string]interface{}
 }
 
-func NewJVMKill(dependency libpak.BuildpackDependency, cache libpak.DependencyCache, plan *libcnb.BuildpackPlan) JVMKill {
-	return JVMKill{LayerContributor: libpak.NewDependencyLayerContributor(dependency, cache, plan)}
+func NewJVMKill(dependency libpak.BuildpackDependency, cache libpak.DependencyCache, metadata map[string]interface{},
+	plan *libcnb.BuildpackPlan) JVMKill {
+
+	return JVMKill{
+		LayerContributor: libpak.NewDependencyLayerContributor(dependency, cache, plan),
+		Metadata:         metadata,
+	}
 }
 
 func (j JVMKill) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
@@ -48,7 +54,15 @@ func (j JVMKill) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 
 		layer.SharedEnvironment.Appendf("JAVA_OPTS", " -agentpath:%s=printHeapHistogram=1", file)
 
-		layer.Launch = true
+		if isBuildContribution(j.Metadata) {
+			layer.Build = true
+			layer.Cache = true
+		}
+
+		if isLaunchContribution(j.Metadata) {
+			layer.Launch = true
+		}
+
 		return layer, nil
 	})
 }

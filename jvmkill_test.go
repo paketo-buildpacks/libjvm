@@ -55,7 +55,43 @@ func testJVMKill(t *testing.T, context spec.G, it spec.S) {
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j := libjvm.NewJVMKill(dep, dc, &libcnb.BuildpackPlan{})
+		j := libjvm.NewJVMKill(dep, dc, NoContribution, &libcnb.BuildpackPlan{})
+		layer, err := ctx.Layers.Layer("test-layer")
+		Expect(err).NotTo(HaveOccurred())
+
+		layer, err = j.Contribute(layer)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(filepath.Join(layer.Path, "stub-jvmkill.so")).To(BeARegularFile())
+		Expect(layer.SharedEnvironment["JAVA_OPTS.append"]).To(Equal(fmt.Sprintf(" -agentpath:%s/stub-jvmkill.so=printHeapHistogram=1", layer.Path)))
+	})
+
+	it("marks layer for build", func() {
+		dep := libpak.BuildpackDependency{
+			URI:    "https://localhost/stub-jvmkill.so",
+			SHA256: "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+		}
+		dc := libpak.DependencyCache{CachePath: "testdata"}
+
+		j := libjvm.NewJVMKill(dep, dc, BuildContribution, &libcnb.BuildpackPlan{})
+		layer, err := ctx.Layers.Layer("test-layer")
+		Expect(err).NotTo(HaveOccurred())
+
+		layer, err = j.Contribute(layer)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(layer.Build).To(BeTrue())
+		Expect(layer.Cache).To(BeTrue())
+	})
+
+	it("marks layer for cache", func() {
+		dep := libpak.BuildpackDependency{
+			URI:    "https://localhost/stub-jvmkill.so",
+			SHA256: "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+		}
+		dc := libpak.DependencyCache{CachePath: "testdata"}
+
+		j := libjvm.NewJVMKill(dep, dc, LaunchContribution, &libcnb.BuildpackPlan{})
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
 
@@ -63,7 +99,5 @@ func testJVMKill(t *testing.T, context spec.G, it spec.S) {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(layer.Launch).To(BeTrue())
-		Expect(filepath.Join(layer.Path, "stub-jvmkill.so")).To(BeARegularFile())
-		Expect(layer.SharedEnvironment["JAVA_OPTS.append"]).To(Equal(fmt.Sprintf(" -agentpath:%s/stub-jvmkill.so=printHeapHistogram=1", layer.Path)))
 	})
 }

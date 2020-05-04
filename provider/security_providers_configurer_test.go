@@ -68,7 +68,7 @@ security.provider.3=CHARLIE
 	})
 
 	it("modifies files if additions", func() {
-		s.AdditionalProviders = []string{"2|DELTA", "ECHO"}
+		s.AdditionalProviders = []string{"", "2|DELTA", "ECHO"}
 
 		Expect(s.Execute()).To(Succeed())
 
