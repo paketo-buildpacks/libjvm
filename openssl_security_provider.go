@@ -56,12 +56,12 @@ func (o OpenSSLSecurityProvider) Contribute(layer libcnb.Layer) (libcnb.Layer, e
 
 		layer.Profile.Add("openssl-security-provider.sh", s)
 
-		if isBuildContribution(o.Metadata) {
+		if IsBuildContribution(o.Metadata) {
 			layer.Build = true
 			layer.Cache = true
 		}
 
-		if isLaunchContribution(o.Metadata) {
+		if IsLaunchContribution(o.Metadata) {
 			layer.Launch = true
 		}
 

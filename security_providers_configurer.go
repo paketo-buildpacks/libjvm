@@ -98,12 +98,12 @@ func (s SecurityProvidersConfigurer) Contribute(layer libcnb.Layer) (libcnb.Laye
 
 		layer.Profile.Add("security-providers-configurer.sh", t)
 
-		if isBuildContribution(s.Metadata) {
+		if IsBuildContribution(s.Metadata) {
 			layer.Build = true
 			layer.Cache = true
 		}
 
-		if isLaunchContribution(s.Metadata) {
+		if IsLaunchContribution(s.Metadata) {
 			layer.Launch = true
 		}
 

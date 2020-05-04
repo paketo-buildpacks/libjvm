@@ -54,12 +54,12 @@ func (j JVMKill) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 
 		layer.SharedEnvironment.Appendf("JAVA_OPTS", " -agentpath:%s=printHeapHistogram=1", file)
 
-		if isBuildContribution(j.Metadata) {
+		if IsBuildContribution(j.Metadata) {
 			layer.Build = true
 			layer.Cache = true
 		}
 
-		if isLaunchContribution(j.Metadata) {
+		if IsLaunchContribution(j.Metadata) {
 			layer.Launch = true
 		}
 

@@ -111,16 +111,16 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 		cc.Logger = b.Logger
 		result.Layers = append(result.Layers, cc)
 
-		if isBuildContribution(e.Metadata) {
+		if IsBuildContribution(e.Metadata) {
 			metadata["build"] = true
 		}
-		if isLaunchContribution(e.Metadata) {
+		if IsLaunchContribution(e.Metadata) {
 			metadata["launch"] = true
 		}
 		version = depJRE.Version
 	}
 
-	if isBuildContribution(metadata) || isLaunchContribution(metadata) {
+	if IsBuildContribution(metadata) || IsLaunchContribution(metadata) {
 		depJVMKill, err := dr.Resolve("jvmkill", "")
 		if err != nil {
 			return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)

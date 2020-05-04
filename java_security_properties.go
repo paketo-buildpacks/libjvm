@@ -51,12 +51,12 @@ func (j JavaSecurityProperties) Contribute(layer libcnb.Layer) (libcnb.Layer, er
 		layer.SharedEnvironment.Appendf("JAVA_OPTS", ` -Djava.security.properties=%s`, file)
 		layer.SharedEnvironment.Override("JAVA_SECURITY_PROPERTIES", file)
 
-		if isBuildContribution(j.Metadata) {
+		if IsBuildContribution(j.Metadata) {
 			layer.Build = true
 			layer.Cache = true
 		}
 
-		if isLaunchContribution(j.Metadata) {
+		if IsLaunchContribution(j.Metadata) {
 			layer.Launch = true
 		}
 

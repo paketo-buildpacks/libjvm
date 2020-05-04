@@ -7,12 +7,12 @@
 
 package libjvm
 
-func isBuildContribution(metadata map[string]interface{}) bool {
+func IsBuildContribution(metadata map[string]interface{}) bool {
 	v, ok := metadata["build"].(bool)
 	return ok && v
 }
 
-func isLaunchContribution(metadata map[string]interface{}) bool {
+func IsLaunchContribution(metadata map[string]interface{}) bool {
 	v, ok := metadata["launch"].(bool)
 	return ok && v
 }

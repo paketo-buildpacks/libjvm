@@ -63,13 +63,13 @@ func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 
 		layer.Profile.Add("active-processor-count.sh", s)
 
-		if isBuildContribution(j.Metadata) {
+		if IsBuildContribution(j.Metadata) {
 			layer.BuildEnvironment.Default("JAVA_HOME", layer.Path)
 			layer.Build = true
 			layer.Cache = true
 		}
 
-		if isLaunchContribution(j.Metadata) {
+		if IsLaunchContribution(j.Metadata) {
 			layer.LaunchEnvironment.Override("JAVA_HOME", layer.Path)
 			layer.Launch = true
 		}

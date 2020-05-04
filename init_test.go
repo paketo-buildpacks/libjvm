@@ -33,6 +33,7 @@ func TestUnit(t *testing.T) {
 	suite := spec.New("libjvm", spec.Report(report.Terminal{}))
 	suite("Build", testBuild)
 	suite("ClassCounter", testClassCounter)
+	suite("Contributions", testContributions)
 	suite("Detect", testDetect)
 	suite("JavaSecurityProperties", testJavaSecurityProperties)
 	suite("JDK", testJDK)

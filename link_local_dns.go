@@ -60,12 +60,12 @@ func (l LinkLocalDNS) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 
 		layer.Profile.Add("link-local-dns.sh", s)
 
-		if isBuildContribution(l.Metadata) {
+		if IsBuildContribution(l.Metadata) {
 			layer.Build = true
 			layer.Cache = true
 		}
 
-		if isLaunchContribution(l.Metadata) {
+		if IsLaunchContribution(l.Metadata) {
 			layer.Launch = true
 		}
 
