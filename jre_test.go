@@ -54,7 +54,7 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j := libjvm.NewJRE(dep, dc, map[string]interface{}{}, &libcnb.BuildpackPlan{})
+		j := libjvm.NewJRE(dep, dc, NoContribution, &libcnb.BuildpackPlan{})
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
 
@@ -62,7 +62,6 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(filepath.Join(layer.Path, "fixture-marker")).To(BeARegularFile())
-		Expect(layer.SharedEnvironment["JAVA_HOME.override"]).To(Equal(layer.Path))
 		Expect(layer.SharedEnvironment["MALLOC_ARENA_MAX.override"]).To(Equal("2"))
 		Expect(layer.Profile["active-processor-count.sh"]).To(Equal(`JAVA_OPTS="${JAVA_OPTS} -XX:ActiveProcessorCount=$(nproc)"
 export JAVA_OPTS
@@ -76,7 +75,7 @@ export JAVA_OPTS
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j := libjvm.NewJRE(dep, dc, map[string]interface{}{"build": true}, &libcnb.BuildpackPlan{})
+		j := libjvm.NewJRE(dep, dc, BuildContribution, &libcnb.BuildpackPlan{})
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
 
@@ -85,6 +84,7 @@ export JAVA_OPTS
 
 		Expect(layer.Build).To(BeTrue())
 		Expect(layer.Cache).To(BeTrue())
+		Expect(layer.BuildEnvironment["JAVA_HOME.default"]).To(Equal(layer.Path))
 	})
 
 	it("marks layer for launch", func() {
@@ -94,7 +94,7 @@ export JAVA_OPTS
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j := libjvm.NewJRE(dep, dc, map[string]interface{}{"launch": true}, &libcnb.BuildpackPlan{})
+		j := libjvm.NewJRE(dep, dc, LaunchContribution, &libcnb.BuildpackPlan{})
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
 
@@ -102,5 +102,6 @@ export JAVA_OPTS
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(layer.Launch).To(BeTrue())
+		Expect(layer.LaunchEnvironment["JAVA_HOME.override"]).To(Equal(layer.Path))
 	})
 }

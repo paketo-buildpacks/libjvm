@@ -54,7 +54,6 @@ func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 			return libcnb.Layer{}, fmt.Errorf("unable to expand JRE\n%w", err)
 		}
 
-		layer.SharedEnvironment.Override("JAVA_HOME", layer.Path)
 		layer.SharedEnvironment.Override("MALLOC_ARENA_MAX", "2")
 
 		s, err := sherpa.StaticFile("/active-processor-count.sh")
@@ -64,12 +63,14 @@ func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 
 		layer.Profile.Add("active-processor-count.sh", s)
 
-		if v, ok := j.Metadata["build"].(bool); ok && v {
+		if isBuildContribution(j.Metadata) {
+			layer.BuildEnvironment.Default("JAVA_HOME", layer.Path)
 			layer.Build = true
 			layer.Cache = true
 		}
 
-		if v, ok := j.Metadata["launch"].(bool); ok && v {
+		if isLaunchContribution(j.Metadata) {
+			layer.LaunchEnvironment.Override("JAVA_HOME", layer.Path)
 			layer.Launch = true
 		}
 

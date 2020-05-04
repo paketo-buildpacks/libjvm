@@ -23,6 +23,12 @@ import (
 	"github.com/sclevine/spec/report"
 )
 
+var (
+	BuildContribution  = map[string]interface{}{"build": true}
+	LaunchContribution = map[string]interface{}{"launch": true}
+	NoContribution     = map[string]interface{}{}
+)
+
 func TestUnit(t *testing.T) {
 	suite := spec.New("libjvm", spec.Report(report.Terminal{}))
 	suite("Build", testBuild)
@@ -36,6 +42,7 @@ func TestUnit(t *testing.T) {
 	suite("Manifest", testManifest)
 	suite("MavenJARListing", testMavenJARListing)
 	suite("MemoryCalculator", testMemoryCalculator)
+	suite("OpenSSLSecurityProvider", testOpenSSLSecurityProvider)
 	suite("SecurityProvidersConfigurer", testSecurityProvidersConfigurer)
 	suite.Run(t)
 }

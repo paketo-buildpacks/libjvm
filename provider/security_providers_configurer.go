@@ -68,21 +68,21 @@ func (s *SecurityProvidersConfigurer) Execute() error {
 
 	r := regexp.MustCompile(`(?:([\d]+)\|)?([\w.]+)`)
 	for _, a := range s.AdditionalProviders {
-		matches := r.FindStringSubmatch(a)
+		if matches := r.FindStringSubmatch(a); matches != nil {
+			if matches[1] == "" {
+				providers = append(providers, matches[2])
+				continue
+			}
 
-		if matches[1] == "" {
-			providers = append(providers, matches[2])
-			continue
+			i, err := strconv.Atoi(matches[1])
+			if err != nil {
+				return fmt.Errorf("index %s is not a number\n%w", matches[1], err)
+			}
+
+			providers = append(providers, "")
+			copy(providers[i:], providers[i-1:])
+			providers[i-1] = matches[2]
 		}
-
-		i, err := strconv.Atoi(matches[1])
-		if err != nil {
-			return fmt.Errorf("index %s is not a number\n%w", matches[1], err)
-		}
-
-		providers = append(providers, "")
-		copy(providers[i:], providers[i-1:])
-		providers[i-1] = matches[2]
 	}
 
 	file := filepath.Dir(s.DestinationPath)

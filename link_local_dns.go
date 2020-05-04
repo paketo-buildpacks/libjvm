@@ -31,12 +31,14 @@ import (
 type LinkLocalDNS struct {
 	LayerContributor libpak.HelperLayerContributor
 	Logger           bard.Logger
+	Metadata         map[string]interface{}
 }
 
-func NewLinkLocalDNS(buildpack libcnb.Buildpack, plan *libcnb.BuildpackPlan) LinkLocalDNS {
+func NewLinkLocalDNS(buildpack libcnb.Buildpack, metadata map[string]interface{}, plan *libcnb.BuildpackPlan) LinkLocalDNS {
 	return LinkLocalDNS{
 		LayerContributor: libpak.NewHelperLayerContributor(filepath.Join(buildpack.Path, "bin", "link-local-dns"),
 			"Link-Local DNS", buildpack.Info, plan),
+		Metadata: metadata,
 	}
 }
 
@@ -58,7 +60,15 @@ func (l LinkLocalDNS) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 
 		layer.Profile.Add("link-local-dns.sh", s)
 
-		layer.Launch = true
+		if isBuildContribution(l.Metadata) {
+			layer.Build = true
+			layer.Cache = true
+		}
+
+		if isLaunchContribution(l.Metadata) {
+			layer.Launch = true
+		}
+
 		return layer, nil
 	})
 }
