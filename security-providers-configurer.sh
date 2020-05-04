@@ -1,3 +1,4 @@
 security-providers-configurer \
-  --source "${JAVA_HOME}/{{.source}}" \
+  --jdk-source "${JDK_HOME}/{{.jdkSource}}" \
+  --jre-source "${JAVA_HOME}/{{.jreSource}}" \
   --additional-providers "$(echo "${SECURITY_PROVIDERS}" | tr ' ' ,)"

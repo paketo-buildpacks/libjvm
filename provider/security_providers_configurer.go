@@ -28,7 +28,8 @@ import (
 )
 
 type SecurityProvidersConfigurer struct {
-	SourcePath          string
+	JDKSourcePath       string
+	JRESourcePath       string
 	DestinationPath     string
 	AdditionalProviders []string
 }
@@ -40,9 +41,12 @@ func (s *SecurityProvidersConfigurer) Execute() error {
 
 	fmt.Println("Adding Security Providers to JVM")
 
-	p, err := properties.LoadFile(s.SourcePath, properties.UTF8)
+	p, err := properties.LoadFile(s.JDKSourcePath, properties.UTF8)
+	if os.IsNotExist(err) {
+		p, err = properties.LoadFile(s.JRESourcePath, properties.UTF8)
+	}
 	if err != nil {
-		return fmt.Errorf("unable to read properties file %s\n%w", s.SourcePath, err)
+		return fmt.Errorf("unable to read properties files %s or %s\n%w", s.JDKSourcePath, s.JRESourcePath, err)
 	}
 	p = p.FilterStripPrefix("security.provider.")
 

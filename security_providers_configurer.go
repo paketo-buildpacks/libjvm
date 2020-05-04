@@ -64,9 +64,11 @@ func (s SecurityProvidersConfigurer) Contribute(layer libcnb.Layer) (libcnb.Laye
 			return libcnb.Layer{}, fmt.Errorf("unable to parse Java version %s\n%w", s.JavaVersion, err)
 		}
 
-		var source string
+		var jdkSource string
+		var jreSource string
 		if v.LessThan(j9) {
-			source = filepath.Join("lib", "security", "java.security")
+			jdkSource = filepath.Join("jre", "lib", "security", "java.security")
+			jreSource = filepath.Join("lib", "security", "java.security")
 
 			s, err := sherpa.StaticFile("/security-providers-classpath-8.sh")
 			if err != nil {
@@ -75,7 +77,8 @@ func (s SecurityProvidersConfigurer) Contribute(layer libcnb.Layer) (libcnb.Laye
 
 			layer.Profile.Add("security-providers-classpath.sh", s)
 		} else {
-			source = filepath.Join("conf", "security", "java.security")
+			jdkSource = filepath.Join("conf", "security", "java.security")
+			jreSource = filepath.Join("conf", "security", "java.security")
 
 			s, err := sherpa.StaticFile("/security-providers-classpath-9.sh")
 			if err != nil {
@@ -85,7 +88,10 @@ func (s SecurityProvidersConfigurer) Contribute(layer libcnb.Layer) (libcnb.Laye
 			layer.Profile.Add("security-providers-classpath.sh", s)
 		}
 
-		t, err := sherpa.TemplateFile("/security-providers-configurer.sh", map[string]interface{}{"source": source})
+		t, err := sherpa.TemplateFile("/security-providers-configurer.sh", map[string]interface{}{
+			"jdkSource": jdkSource,
+			"jreSource": jreSource,
+		})
 		if err != nil {
 			return libcnb.Layer{}, fmt.Errorf("unable to load security-providers-configurer.sh\n%w", err)
 		}
