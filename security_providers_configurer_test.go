@@ -57,14 +57,55 @@ func testSecurityProvidersConfigurer(t *testing.T, context spec.G, it spec.S) {
 			Expect(os.MkdirAll(filepath.Join(ctx.Buildpack.Path, "bin"), 0755)).To(Succeed())
 			Expect(ioutil.WriteFile(filepath.Join(ctx.Buildpack.Path, "bin", "security-providers-configurer"), []byte{}, 0755)).To(Succeed())
 
-			l := libjvm.NewSecurityProvidersConfigurer(ctx.Buildpack, "8.0.212", NoContribution, &libcnb.BuildpackPlan{})
+			l := libjvm.NewSecurityProvidersConfigurer(ctx.Buildpack, libjvm.JREType, "8.0.212", &libcnb.BuildpackPlan{})
 			layer, err := ctx.Layers.Layer("test-layer")
 			Expect(err).NotTo(HaveOccurred())
 
 			layer, err = l.Contribute(layer)
 			Expect(err).NotTo(HaveOccurred())
 
+			Expect(layer.Launch).To(BeTrue())
 			Expect(filepath.Join(layer.Path, "bin", "security-providers-configurer")).To(BeARegularFile())
+		})
+
+		it("contributes JDK profiles", func() {
+			Expect(os.MkdirAll(filepath.Join(ctx.Buildpack.Path, "bin"), 0755)).To(Succeed())
+			Expect(ioutil.WriteFile(filepath.Join(ctx.Buildpack.Path, "bin", "security-providers-configurer"), []byte{}, 0755)).To(Succeed())
+
+			l := libjvm.NewSecurityProvidersConfigurer(ctx.Buildpack, libjvm.JDKType, "8.0.212", &libcnb.BuildpackPlan{})
+			layer, err := ctx.Layers.Layer("test-layer")
+			Expect(err).NotTo(HaveOccurred())
+
+			layer, err = l.Contribute(layer)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(layer.Profile["security-providers-classpath.sh"]).To(Equal(`[[ -z "${SECURITY_PROVIDERS_CLASSPATH+x}" ]] && return
+
+EXT_DIRS="${JAVA_HOME}/jre/lib/ext"
+
+for I in ${SECURITY_PROVIDERS_CLASSPATH//:/$'\n'}; do
+  EXT_DIRS="${EXT_DIRS}:$(dirname "${I}")"
+done
+
+export JAVA_OPTS="${JAVA_OPTS} -Djava.ext.dirs=${EXT_DIRS}"
+`))
+			Expect(layer.Profile["security-providers-configurer.sh"]).To(Equal(`security-providers-configurer \
+  --source "${JAVA_HOME}/jre/lib/security/java.security" \
+  --additional-providers "$(echo "${SECURITY_PROVIDERS}" | tr ' ' ,)"
+`))
+		})
+
+		it("contributes JRE profiles", func() {
+			Expect(os.MkdirAll(filepath.Join(ctx.Buildpack.Path, "bin"), 0755)).To(Succeed())
+			Expect(ioutil.WriteFile(filepath.Join(ctx.Buildpack.Path, "bin", "security-providers-configurer"), []byte{}, 0755)).To(Succeed())
+
+			l := libjvm.NewSecurityProvidersConfigurer(ctx.Buildpack, libjvm.JREType, "8.0.212", &libcnb.BuildpackPlan{})
+			layer, err := ctx.Layers.Layer("test-layer")
+			Expect(err).NotTo(HaveOccurred())
+
+			layer, err = l.Contribute(layer)
+			Expect(err).NotTo(HaveOccurred())
+
 			Expect(layer.Profile["security-providers-classpath.sh"]).To(Equal(`[[ -z "${SECURITY_PROVIDERS_CLASSPATH+x}" ]] && return
 
 EXT_DIRS="${JAVA_HOME}/lib/ext"
@@ -76,39 +117,9 @@ done
 export JAVA_OPTS="${JAVA_OPTS} -Djava.ext.dirs=${EXT_DIRS}"
 `))
 			Expect(layer.Profile["security-providers-configurer.sh"]).To(Equal(`security-providers-configurer \
-  --jdk-source "${JDK_HOME}/jre/lib/security/java.security" \
-  --jre-source "${JAVA_HOME}/lib/security/java.security" \
+  --source "${JAVA_HOME}/lib/security/java.security" \
   --additional-providers "$(echo "${SECURITY_PROVIDERS}" | tr ' ' ,)"
 `))
-		})
-
-		it("marks layer for build", func() {
-			Expect(os.MkdirAll(filepath.Join(ctx.Buildpack.Path, "bin"), 0755)).To(Succeed())
-			Expect(ioutil.WriteFile(filepath.Join(ctx.Buildpack.Path, "bin", "security-providers-configurer"), []byte{}, 0755)).To(Succeed())
-
-			l := libjvm.NewSecurityProvidersConfigurer(ctx.Buildpack, "8.0.212", BuildContribution, &libcnb.BuildpackPlan{})
-			layer, err := ctx.Layers.Layer("test-layer")
-			Expect(err).NotTo(HaveOccurred())
-
-			layer, err = l.Contribute(layer)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(layer.Build).To(BeTrue())
-			Expect(layer.Cache).To(BeTrue())
-		})
-
-		it("marks layer for launch", func() {
-			Expect(os.MkdirAll(filepath.Join(ctx.Buildpack.Path, "bin"), 0755)).To(Succeed())
-			Expect(ioutil.WriteFile(filepath.Join(ctx.Buildpack.Path, "bin", "security-providers-configurer"), []byte{}, 0755)).To(Succeed())
-
-			l := libjvm.NewSecurityProvidersConfigurer(ctx.Buildpack, "8.0.212", LaunchContribution, &libcnb.BuildpackPlan{})
-			layer, err := ctx.Layers.Layer("test-layer")
-			Expect(err).NotTo(HaveOccurred())
-
-			layer, err = l.Contribute(layer)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(layer.Launch).To(BeTrue())
 		})
 	})
 
@@ -117,45 +128,7 @@ export JAVA_OPTS="${JAVA_OPTS} -Djava.ext.dirs=${EXT_DIRS}"
 			Expect(os.MkdirAll(filepath.Join(ctx.Buildpack.Path, "bin"), 0755)).To(Succeed())
 			Expect(ioutil.WriteFile(filepath.Join(ctx.Buildpack.Path, "bin", "security-providers-configurer"), []byte{}, 0755)).To(Succeed())
 
-			l := libjvm.NewSecurityProvidersConfigurer(ctx.Buildpack, "11.0.3", NoContribution, &libcnb.BuildpackPlan{})
-			layer, err := ctx.Layers.Layer("test-layer")
-			Expect(err).NotTo(HaveOccurred())
-
-			layer, err = l.Contribute(layer)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(filepath.Join(layer.Path, "bin", "security-providers-configurer")).To(BeARegularFile())
-			Expect(layer.Profile["security-providers-classpath.sh"]).To(Equal(`[[ -z "${SECURITY_PROVIDERS_CLASSPATH+x}" ]] && return
-
-export CLASSPATH="${CLASSPATH}:${SECURITY_PROVIDERS_CLASSPATH}"
-`))
-			Expect(layer.Profile["security-providers-configurer.sh"]).To(Equal(`security-providers-configurer \
-  --jdk-source "${JDK_HOME}/conf/security/java.security" \
-  --jre-source "${JAVA_HOME}/conf/security/java.security" \
-  --additional-providers "$(echo "${SECURITY_PROVIDERS}" | tr ' ' ,)"
-`))
-		})
-
-		it("marks layer for build", func() {
-			Expect(os.MkdirAll(filepath.Join(ctx.Buildpack.Path, "bin"), 0755)).To(Succeed())
-			Expect(ioutil.WriteFile(filepath.Join(ctx.Buildpack.Path, "bin", "security-providers-configurer"), []byte{}, 0755)).To(Succeed())
-
-			l := libjvm.NewSecurityProvidersConfigurer(ctx.Buildpack, "11.0.3", BuildContribution, &libcnb.BuildpackPlan{})
-			layer, err := ctx.Layers.Layer("test-layer")
-			Expect(err).NotTo(HaveOccurred())
-
-			layer, err = l.Contribute(layer)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(layer.Build).To(BeTrue())
-			Expect(layer.Cache).To(BeTrue())
-		})
-
-		it("marks layer for launch", func() {
-			Expect(os.MkdirAll(filepath.Join(ctx.Buildpack.Path, "bin"), 0755)).To(Succeed())
-			Expect(ioutil.WriteFile(filepath.Join(ctx.Buildpack.Path, "bin", "security-providers-configurer"), []byte{}, 0755)).To(Succeed())
-
-			l := libjvm.NewSecurityProvidersConfigurer(ctx.Buildpack, "11.0.3", LaunchContribution, &libcnb.BuildpackPlan{})
+			l := libjvm.NewSecurityProvidersConfigurer(ctx.Buildpack, libjvm.JDKType, "11.0.3", &libcnb.BuildpackPlan{})
 			layer, err := ctx.Layers.Layer("test-layer")
 			Expect(err).NotTo(HaveOccurred())
 
@@ -163,6 +136,15 @@ export CLASSPATH="${CLASSPATH}:${SECURITY_PROVIDERS_CLASSPATH}"
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(layer.Launch).To(BeTrue())
+			Expect(filepath.Join(layer.Path, "bin", "security-providers-configurer")).To(BeARegularFile())
+			Expect(layer.Profile["security-providers-classpath.sh"]).To(Equal(`[[ -z "${SECURITY_PROVIDERS_CLASSPATH+x}" ]] && return
+
+export CLASSPATH="${CLASSPATH}:${SECURITY_PROVIDERS_CLASSPATH}"
+`))
+			Expect(layer.Profile["security-providers-configurer.sh"]).To(Equal(`security-providers-configurer \
+  --source "${JAVA_HOME}/conf/security/java.security" \
+  --additional-providers "$(echo "${SECURITY_PROVIDERS}" | tr ' ' ,)"
+`))
 		})
 	})
 

@@ -62,10 +62,6 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(filepath.Join(layer.Path, "fixture-marker")).To(BeARegularFile())
-		Expect(layer.SharedEnvironment["MALLOC_ARENA_MAX.override"]).To(Equal("2"))
-		Expect(layer.Profile["active-processor-count.sh"]).To(Equal(`JAVA_OPTS="${JAVA_OPTS} -XX:ActiveProcessorCount=$(nproc)"
-export JAVA_OPTS
-`))
 	})
 
 	it("marks layer for build", func() {
@@ -103,5 +99,9 @@ export JAVA_OPTS
 
 		Expect(layer.Launch).To(BeTrue())
 		Expect(layer.LaunchEnvironment["JAVA_HOME.override"]).To(Equal(layer.Path))
+		Expect(layer.LaunchEnvironment["MALLOC_ARENA_MAX.override"]).To(Equal("2"))
+		Expect(layer.Profile["active-processor-count.sh"]).To(Equal(`JAVA_OPTS="${JAVA_OPTS} -XX:ActiveProcessorCount=$(nproc)"
+export JAVA_OPTS
+`))
 	})
 }

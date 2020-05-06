@@ -45,48 +45,7 @@ func testOpenSSLSecurityProvider(t *testing.T, context spec.G, it spec.S) {
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j := libjvm.NewOpenSSLSecurityProvider(dep, dc, NoContribution, &libcnb.BuildpackPlan{})
-		layer, err := ctx.Layers.Layer("test-layer")
-		Expect(err).NotTo(HaveOccurred())
-
-		layer, err = j.Contribute(layer)
-		Expect(err).NotTo(HaveOccurred())
-
-		Expect(filepath.Join(layer.Path, "stub-openssl-security-provider.jar")).To(BeARegularFile())
-		Expect(layer.SharedEnvironment["SECURITY_PROVIDERS.append"]).To(Equal(" 2|io.paketo.openssl.OpenSslProvider"))
-		Expect(layer.SharedEnvironment["SECURITY_PROVIDERS_CLASSPATH"]).To(Equal(filepath.Join(layer.Path, "stub-openssl-security-provider.jar")))
-		Expect(layer.Profile["openssl-security-provider.sh"]).To(Equal(`if [[ -f /etc/ssl/certs/ca-certificates.crt ]]; then
-  export JAVA_OPTS="${JAVA_OPTS} -Dio.paketo.openssl.ca-certificates=/etc/ssl/certs/ca-certificates.crt"
-fi
-`))
-	})
-
-	it("marks layer for build", func() {
-		dep := libpak.BuildpackDependency{
-			URI:    "https://localhost/stub-openssl-security-provider.jar",
-			SHA256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-		}
-		dc := libpak.DependencyCache{CachePath: "testdata"}
-
-		j := libjvm.NewOpenSSLSecurityProvider(dep, dc, BuildContribution, &libcnb.BuildpackPlan{})
-		layer, err := ctx.Layers.Layer("test-layer")
-		Expect(err).NotTo(HaveOccurred())
-
-		layer, err = j.Contribute(layer)
-		Expect(err).NotTo(HaveOccurred())
-
-		Expect(layer.Build).To(BeTrue())
-		Expect(layer.Cache).To(BeTrue())
-	})
-
-	it("marks layer for launch", func() {
-		dep := libpak.BuildpackDependency{
-			URI:    "https://localhost/stub-openssl-security-provider.jar",
-			SHA256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-		}
-		dc := libpak.DependencyCache{CachePath: "testdata"}
-
-		j := libjvm.NewOpenSSLSecurityProvider(dep, dc, LaunchContribution, &libcnb.BuildpackPlan{})
+		j := libjvm.NewOpenSSLSecurityProvider(dep, dc, &libcnb.BuildpackPlan{})
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
 
@@ -94,6 +53,13 @@ fi
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(layer.Launch).To(BeTrue())
+		Expect(filepath.Join(layer.Path, "stub-openssl-security-provider.jar")).To(BeARegularFile())
+		Expect(layer.LaunchEnvironment["SECURITY_PROVIDERS.append"]).To(Equal(" 2|io.paketo.openssl.OpenSslProvider"))
+		Expect(layer.LaunchEnvironment["SECURITY_PROVIDERS_CLASSPATH"]).To(Equal(filepath.Join(layer.Path, "stub-openssl-security-provider.jar")))
+		Expect(layer.Profile["openssl-security-provider.sh"]).To(Equal(`if [[ -f /etc/ssl/certs/ca-certificates.crt ]]; then
+  export JAVA_OPTS="${JAVA_OPTS} -Dio.paketo.openssl.ca-certificates=/etc/ssl/certs/ca-certificates.crt"
+fi
+`))
 	})
 
 }

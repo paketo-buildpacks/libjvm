@@ -53,7 +53,7 @@ security.provider.3=CHARLIE
 		Expect(f.Close()).To(Succeed())
 		destination = f.Name()
 
-		s = provider.SecurityProvidersConfigurer{JRESourcePath: source, DestinationPath: destination}
+		s = provider.SecurityProvidersConfigurer{SourcePath: source, DestinationPath: destination}
 	})
 
 	it.After(func() {

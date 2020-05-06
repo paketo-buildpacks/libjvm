@@ -34,8 +34,7 @@ func main() {
 
 		flagSet := pflag.NewFlagSet("Security Providers Configurer", pflag.ExitOnError)
 		flagSet.StringSliceVar(&s.AdditionalProviders, "additional-providers", []string{}, "additional security providers")
-		flagSet.StringVar(&s.JDKSourcePath, "jdk-source", "", "path to JDK security.properties file containing existing providers")
-		flagSet.StringVar(&s.JRESourcePath, "jre-source", "", "path to JRE security.properties file containing existing providers")
+		flagSet.StringVar(&s.SourcePath, "source", "", "path to security.properties file containing existing providers")
 
 		if err := flagSet.Parse(os.Args[1:]); err != nil {
 			return fmt.Errorf("unable to parse flags\n%w", err)

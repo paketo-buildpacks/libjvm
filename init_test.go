@@ -32,6 +32,7 @@ var (
 func TestUnit(t *testing.T) {
 	suite := spec.New("libjvm", spec.Report(report.Terminal{}))
 	suite("Build", testBuild)
+	suite("CertificateLoader", testCertificateLoader)
 	suite("ClassCounter", testClassCounter)
 	suite("Contributions", testContributions)
 	suite("Detect", testDetect)
@@ -45,5 +46,6 @@ func TestUnit(t *testing.T) {
 	suite("MemoryCalculator", testMemoryCalculator)
 	suite("OpenSSLSecurityProvider", testOpenSSLSecurityProvider)
 	suite("SecurityProvidersConfigurer", testSecurityProvidersConfigurer)
+	suite("Versions", testVersions)
 	suite.Run(t)
 }

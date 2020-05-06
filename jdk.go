@@ -17,22 +17,51 @@
 package libjvm
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/buildpacks/libcnb"
 	"github.com/paketo-buildpacks/libpak"
 	"github.com/paketo-buildpacks/libpak/bard"
 	"github.com/paketo-buildpacks/libpak/crush"
+	"github.com/paketo-buildpacks/libpak/effect"
 )
 
 type JDK struct {
+	Certificates     string
+	Executor         effect.Executor
 	LayerContributor libpak.DependencyLayerContributor
 	Logger           bard.Logger
 }
 
-func NewJDK(dependency libpak.BuildpackDependency, cache libpak.DependencyCache, plan *libcnb.BuildpackPlan) JDK {
-	return JDK{LayerContributor: libpak.NewDependencyLayerContributor(dependency, cache, plan)}
+func NewJDK(dependency libpak.BuildpackDependency, cache libpak.DependencyCache, certificates string, plan *libcnb.BuildpackPlan) (JDK, error) {
+	layerContributor := libpak.NewDependencyLayerContributor(dependency, cache, plan)
+	expected := map[string]interface{}{"dependency": layerContributor.Dependency}
+
+	in, err := os.Open(certificates)
+	if err != nil && !os.IsNotExist(err) {
+		return JDK{}, fmt.Errorf("unable to open file %s\n%w", certificates, err)
+	} else if err == nil {
+		defer in.Close()
+
+		s := sha256.New()
+		if _, err := io.Copy(s, in); err != nil {
+			return JDK{}, fmt.Errorf("unable to hash file %s\n%w", certificates, err)
+		}
+		expected["cacerts-sha256"] = hex.EncodeToString(s.Sum(nil))
+	}
+
+	layerContributor.LayerContributor.ExpectedMetadata = expected
+
+	return JDK{
+		Certificates:     certificates,
+		Executor:         effect.NewExecutor(),
+		LayerContributor: layerContributor,
+	}, nil
 }
 
 func (j JDK) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
@@ -46,6 +75,25 @@ func (j JDK) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 
 		layer.BuildEnvironment.Override("JAVA_HOME", layer.Path)
 		layer.BuildEnvironment.Override("JDK_HOME", layer.Path)
+
+		var destination string
+		if IsBeforeJava9(j.LayerContributor.Dependency.Version) {
+			destination = filepath.Join(layer.Path, "jre", "lib", "security", "cacerts")
+		} else {
+			destination = filepath.Join(layer.Path, "lib", "security", "cacerts")
+		}
+
+		c := CertificateLoader{
+			KeyTool:         filepath.Join(layer.Path, "bin", "keytool"),
+			SourcePath:      j.Certificates,
+			DestinationPath: destination,
+			Executor:        j.Executor,
+			Logger:          j.Logger,
+		}
+
+		if err := c.Load(); err != nil {
+			return libcnb.Layer{}, fmt.Errorf("unable to load certificates\n%w", err)
+		}
 
 		layer.Build = true
 		layer.Cache = true

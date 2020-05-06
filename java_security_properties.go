@@ -29,14 +29,10 @@ import (
 type JavaSecurityProperties struct {
 	LayerContributor libpak.LayerContributor
 	Logger           bard.Logger
-	Metadata         map[string]interface{}
 }
 
-func NewJavaSecurityProperties(info libcnb.BuildpackInfo, metadata map[string]interface{}) JavaSecurityProperties {
-	return JavaSecurityProperties{
-		LayerContributor: libpak.NewLayerContributor("Java Security Properties", info),
-		Metadata:         metadata,
-	}
+func NewJavaSecurityProperties(info libcnb.BuildpackInfo) JavaSecurityProperties {
+	return JavaSecurityProperties{LayerContributor: libpak.NewLayerContributor("Java Security Properties", info)}
 }
 
 func (j JavaSecurityProperties) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
@@ -48,18 +44,10 @@ func (j JavaSecurityProperties) Contribute(layer libcnb.Layer) (libcnb.Layer, er
 			return libcnb.Layer{}, fmt.Errorf("unable to touch file %s\n%w", file, err)
 		}
 
-		layer.SharedEnvironment.Appendf("JAVA_OPTS", ` -Djava.security.properties=%s`, file)
-		layer.SharedEnvironment.Override("JAVA_SECURITY_PROPERTIES", file)
+		layer.LaunchEnvironment.Appendf("JAVA_OPTS", ` -Djava.security.properties=%s`, file)
+		layer.LaunchEnvironment.Override("JAVA_SECURITY_PROPERTIES", file)
 
-		if IsBuildContribution(j.Metadata) {
-			layer.Build = true
-			layer.Cache = true
-		}
-
-		if IsLaunchContribution(j.Metadata) {
-			layer.Launch = true
-		}
-
+		layer.Launch = true
 		return layer, nil
 	})
 }

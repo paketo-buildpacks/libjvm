@@ -26,6 +26,8 @@ import (
 	"github.com/paketo-buildpacks/libpak/bard"
 )
 
+const CACertificates = "/etc/ssl/certs/ca-certificates.crt"
+
 type Build struct {
 	Logger bard.Logger
 }
@@ -59,9 +61,6 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 		v = s
 	}
 
-	metadata := map[string]interface{}{}
-	var version string
-
 	if _, ok, err := pr.Resolve("jdk"); err != nil {
 		return libcnb.BuildResult{}, fmt.Errorf("unable to resolve jdk plan entry\n%w", err)
 	} else if ok {
@@ -70,23 +69,26 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 			return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)
 		}
 
-		jdk := NewJDK(dep, dc, result.Plan)
+		jdk, err := NewJDK(dep, dc, CACertificates, result.Plan)
+		if err != nil {
+			return libcnb.BuildResult{}, fmt.Errorf("unable to create jdk\n%w", err)
+		}
+
 		jdk.Logger = b.Logger
 		result.Layers = append(result.Layers, jdk)
-
-		metadata["build"] = true
-		version = dep.Version
 	}
 
 	if e, ok, err := pr.Resolve("jre"); err != nil {
 		return libcnb.BuildResult{}, fmt.Errorf("unable to resolve jre plan entry\n%w", err)
 	} else if ok {
+		dt := JREType
 		depJRE, err := dr.Resolve("jre", v)
 
 		if libpak.IsNoValidDependencies(err) {
 			warn := color.New(color.FgYellow, color.Bold)
 			b.Logger.Header(warn.Sprint("No valid JRE available, providing matching JDK instead. Using a JDK at runtime has security implications."))
 
+			dt = JDKType
 			depJRE, err = dr.Resolve("jdk", v)
 		}
 
@@ -98,58 +100,50 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 		jre.Logger = b.Logger
 		result.Layers = append(result.Layers, jre)
 
-		depMemCalc, err := dr.Resolve("memory-calculator", "")
-		if err != nil {
-			return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)
-		}
-
-		mc := NewMemoryCalculator(context.Application.Path, depMemCalc, dc, depJRE.Version, result.Plan)
-		mc.Logger = b.Logger
-		result.Layers = append(result.Layers, mc)
-
-		cc := NewClassCounter(context.Buildpack, result.Plan)
-		cc.Logger = b.Logger
-		result.Layers = append(result.Layers, cc)
-
-		if IsBuildContribution(e.Metadata) {
-			metadata["build"] = true
-		}
 		if IsLaunchContribution(e.Metadata) {
-			metadata["launch"] = true
+			depMemCalc, err := dr.Resolve("memory-calculator", "")
+			if err != nil {
+				return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)
+			}
+
+			mc := NewMemoryCalculator(context.Application.Path, depMemCalc, dc, depJRE.Version, result.Plan)
+			mc.Logger = b.Logger
+			result.Layers = append(result.Layers, mc)
+
+			cc := NewClassCounter(context.Buildpack, result.Plan)
+			cc.Logger = b.Logger
+			result.Layers = append(result.Layers, cc)
+
+			depJVMKill, err := dr.Resolve("jvmkill", "")
+			if err != nil {
+				return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)
+			}
+
+			jk := NewJVMKill(depJVMKill, dc, result.Plan)
+			jk.Logger = b.Logger
+			result.Layers = append(result.Layers, jk)
+
+			lld := NewLinkLocalDNS(context.Buildpack, result.Plan)
+			lld.Logger = b.Logger
+			result.Layers = append(result.Layers, lld)
+
+			jsp := NewJavaSecurityProperties(context.Buildpack.Info)
+			jsp.Logger = b.Logger
+			result.Layers = append(result.Layers, jsp)
+
+			spc := NewSecurityProvidersConfigurer(context.Buildpack, dt, depJRE.Version, result.Plan)
+			spc.Logger = b.Logger
+			result.Layers = append(result.Layers, spc)
+
+			depOpenSSLSecProv, err := dr.Resolve("openssl-security-provider", "")
+			if err != nil {
+				return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)
+			}
+
+			osp := NewOpenSSLSecurityProvider(depOpenSSLSecProv, dc, result.Plan)
+			osp.Logger = b.Logger
+			result.Layers = append(result.Layers, osp)
 		}
-		version = depJRE.Version
-	}
-
-	if IsBuildContribution(metadata) || IsLaunchContribution(metadata) {
-		depJVMKill, err := dr.Resolve("jvmkill", "")
-		if err != nil {
-			return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)
-		}
-
-		jk := NewJVMKill(depJVMKill, dc, metadata, result.Plan)
-		jk.Logger = b.Logger
-		result.Layers = append(result.Layers, jk)
-
-		lld := NewLinkLocalDNS(context.Buildpack, metadata, result.Plan)
-		lld.Logger = b.Logger
-		result.Layers = append(result.Layers, lld)
-
-		jsp := NewJavaSecurityProperties(context.Buildpack.Info, metadata)
-		jsp.Logger = b.Logger
-		result.Layers = append(result.Layers, jsp)
-
-		spc := NewSecurityProvidersConfigurer(context.Buildpack, version, metadata, result.Plan)
-		spc.Logger = b.Logger
-		result.Layers = append(result.Layers, spc)
-
-		depOpenSSLSecProv, err := dr.Resolve("openssl-security-provider", "")
-		if err != nil {
-			return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)
-		}
-
-		osp := NewOpenSSLSecurityProvider(depOpenSSLSecProv, dc, metadata, result.Plan)
-		osp.Logger = b.Logger
-		result.Layers = append(result.Layers, osp)
 	}
 
 	return result, nil

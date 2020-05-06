@@ -21,16 +21,12 @@ import (
 type OpenSSLSecurityProvider struct {
 	LayerContributor libpak.DependencyLayerContributor
 	Logger           bard.Logger
-	Metadata         map[string]interface{}
 }
 
 func NewOpenSSLSecurityProvider(dependency libpak.BuildpackDependency, cache libpak.DependencyCache,
-	metadata map[string]interface{}, plan *libcnb.BuildpackPlan) OpenSSLSecurityProvider {
+	plan *libcnb.BuildpackPlan) OpenSSLSecurityProvider {
 
-	return OpenSSLSecurityProvider{
-		LayerContributor: libpak.NewDependencyLayerContributor(dependency, cache, plan),
-		Metadata:         metadata,
-	}
+	return OpenSSLSecurityProvider{LayerContributor: libpak.NewDependencyLayerContributor(dependency, cache, plan)}
 }
 
 //go:generate statik -src . -include *.sh
@@ -46,8 +42,8 @@ func (o OpenSSLSecurityProvider) Contribute(layer libcnb.Layer) (libcnb.Layer, e
 			return libcnb.Layer{}, fmt.Errorf("unable to copy %s to %s\n%w", artifact.Name(), file, err)
 		}
 
-		layer.SharedEnvironment.Append("SECURITY_PROVIDERS", " 2|io.paketo.openssl.OpenSslProvider")
-		layer.SharedEnvironment.PrependPath("SECURITY_PROVIDERS_CLASSPATH", file)
+		layer.LaunchEnvironment.Append("SECURITY_PROVIDERS", " 2|io.paketo.openssl.OpenSslProvider")
+		layer.LaunchEnvironment.PrependPath("SECURITY_PROVIDERS_CLASSPATH", file)
 
 		s, err := sherpa.StaticFile("/openssl-security-provider.sh")
 		if err != nil {
@@ -56,15 +52,7 @@ func (o OpenSSLSecurityProvider) Contribute(layer libcnb.Layer) (libcnb.Layer, e
 
 		layer.Profile.Add("openssl-security-provider.sh", s)
 
-		if IsBuildContribution(o.Metadata) {
-			layer.Build = true
-			layer.Cache = true
-		}
-
-		if IsLaunchContribution(o.Metadata) {
-			layer.Launch = true
-		}
-
+		layer.Launch = true
 		return layer, nil
 	})
 }

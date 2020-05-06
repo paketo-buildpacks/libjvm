@@ -21,7 +21,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Masterminds/semver/v3"
 	"github.com/buildpacks/libcnb"
 	_ "github.com/paketo-buildpacks/libjvm/statik"
 	"github.com/paketo-buildpacks/libpak"
@@ -29,21 +28,39 @@ import (
 	"github.com/paketo-buildpacks/libpak/sherpa"
 )
 
+type DistributionType uint8
+
+const (
+	JDKType DistributionType = iota
+	JREType
+)
+
+func (d DistributionType) String() string {
+	return []string{"jdk", "jre"}[d]
+}
+
 type SecurityProvidersConfigurer struct {
+	DistributionType DistributionType
 	JavaVersion      string
 	LayerContributor libpak.HelperLayerContributor
 	Logger           bard.Logger
-	Metadata         map[string]interface{}
 }
 
-func NewSecurityProvidersConfigurer(buildpack libcnb.Buildpack, javaVersion string, metadata map[string]interface{},
+func NewSecurityProvidersConfigurer(buildpack libcnb.Buildpack, distributionType DistributionType, javaVersion string,
 	plan *libcnb.BuildpackPlan) SecurityProvidersConfigurer {
 
+	layerContributor := libpak.NewHelperLayerContributor(filepath.Join(buildpack.Path, "bin", "security-providers-configurer"),
+		"Security Providers Configurer", buildpack.Info, plan)
+	layerContributor.LayerContributor.ExpectedMetadata = map[string]interface{}{
+		"distribution-type": distributionType.String(),
+		"info":              buildpack.Info,
+		"java-version":      javaVersion,
+	}
+
 	return SecurityProvidersConfigurer{
-		JavaVersion: javaVersion,
-		LayerContributor: libpak.NewHelperLayerContributor(filepath.Join(buildpack.Path, "bin", "security-providers-configurer"),
-			"Security Providers Configurer", buildpack.Info, plan),
-		Metadata: metadata,
+		DistributionType: distributionType,
+		JavaVersion:      javaVersion,
+		LayerContributor: layerContributor,
 	}
 }
 
@@ -58,27 +75,26 @@ func (s SecurityProvidersConfigurer) Contribute(layer libcnb.Layer) (libcnb.Laye
 			return libcnb.Layer{}, fmt.Errorf("unable to copy\n%w", err)
 		}
 
-		j9, _ := semver.NewVersion("9")
-		v, err := semver.NewVersion(s.JavaVersion)
-		if err != nil {
-			return libcnb.Layer{}, fmt.Errorf("unable to parse Java version %s\n%w", s.JavaVersion, err)
-		}
+		var source string
+		if IsBeforeJava9(s.JavaVersion) {
+			var extDir string
+			switch s.DistributionType {
+			case JDKType:
+				extDir = filepath.Join("jre", "lib", "ext")
+				source = filepath.Join("jre", "lib", "security", "java.security")
+			case JREType:
+				extDir = filepath.Join("lib", "ext")
+				source = filepath.Join("lib", "security", "java.security")
+			}
 
-		var jdkSource string
-		var jreSource string
-		if v.LessThan(j9) {
-			jdkSource = filepath.Join("jre", "lib", "security", "java.security")
-			jreSource = filepath.Join("lib", "security", "java.security")
-
-			s, err := sherpa.StaticFile("/security-providers-classpath-8.sh")
+			s, err := sherpa.TemplateFile("/security-providers-classpath-8.sh", map[string]interface{}{"extDir": extDir})
 			if err != nil {
 				return libcnb.Layer{}, fmt.Errorf("unable to load security-providers-classpath-8.sh\n%w", err)
 			}
 
 			layer.Profile.Add("security-providers-classpath.sh", s)
 		} else {
-			jdkSource = filepath.Join("conf", "security", "java.security")
-			jreSource = filepath.Join("conf", "security", "java.security")
+			source = filepath.Join("conf", "security", "java.security")
 
 			s, err := sherpa.StaticFile("/security-providers-classpath-9.sh")
 			if err != nil {
@@ -88,25 +104,14 @@ func (s SecurityProvidersConfigurer) Contribute(layer libcnb.Layer) (libcnb.Laye
 			layer.Profile.Add("security-providers-classpath.sh", s)
 		}
 
-		t, err := sherpa.TemplateFile("/security-providers-configurer.sh", map[string]interface{}{
-			"jdkSource": jdkSource,
-			"jreSource": jreSource,
-		})
+		t, err := sherpa.TemplateFile("/security-providers-configurer.sh", map[string]interface{}{"source": source})
 		if err != nil {
 			return libcnb.Layer{}, fmt.Errorf("unable to load security-providers-configurer.sh\n%w", err)
 		}
 
 		layer.Profile.Add("security-providers-configurer.sh", t)
 
-		if IsBuildContribution(s.Metadata) {
-			layer.Build = true
-			layer.Cache = true
-		}
-
-		if IsLaunchContribution(s.Metadata) {
-			layer.Launch = true
-		}
-
+		layer.Launch = true
 		return layer, nil
 	})
 }

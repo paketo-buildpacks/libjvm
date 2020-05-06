@@ -30,16 +30,10 @@ import (
 type JVMKill struct {
 	LayerContributor libpak.DependencyLayerContributor
 	Logger           bard.Logger
-	Metadata         map[string]interface{}
 }
 
-func NewJVMKill(dependency libpak.BuildpackDependency, cache libpak.DependencyCache, metadata map[string]interface{},
-	plan *libcnb.BuildpackPlan) JVMKill {
-
-	return JVMKill{
-		LayerContributor: libpak.NewDependencyLayerContributor(dependency, cache, plan),
-		Metadata:         metadata,
-	}
+func NewJVMKill(dependency libpak.BuildpackDependency, cache libpak.DependencyCache, plan *libcnb.BuildpackPlan) JVMKill {
+	return JVMKill{LayerContributor: libpak.NewDependencyLayerContributor(dependency, cache, plan)}
 }
 
 func (j JVMKill) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
@@ -52,17 +46,9 @@ func (j JVMKill) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 			return libcnb.Layer{}, fmt.Errorf("unable to copy %s to %s\n%w", artifact.Name(), file, err)
 		}
 
-		layer.SharedEnvironment.Appendf("JAVA_OPTS", " -agentpath:%s=printHeapHistogram=1", file)
+		layer.LaunchEnvironment.Appendf("JAVA_OPTS", " -agentpath:%s=printHeapHistogram=1", file)
 
-		if IsBuildContribution(j.Metadata) {
-			layer.Build = true
-			layer.Cache = true
-		}
-
-		if IsLaunchContribution(j.Metadata) {
-			layer.Launch = true
-		}
-
+		layer.Launch = true
 		return layer, nil
 	})
 }

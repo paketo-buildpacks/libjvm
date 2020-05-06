@@ -56,38 +56,7 @@ func testLinkLocalDNS(t *testing.T, context spec.G, it spec.S) {
 		Expect(os.MkdirAll(filepath.Join(ctx.Buildpack.Path, "bin"), 0755)).To(Succeed())
 		Expect(ioutil.WriteFile(filepath.Join(ctx.Buildpack.Path, "bin", "link-local-dns"), []byte{}, 0755)).To(Succeed())
 
-		l := libjvm.NewLinkLocalDNS(ctx.Buildpack, NoContribution, &libcnb.BuildpackPlan{})
-		layer, err := ctx.Layers.Layer("test-layer")
-		Expect(err).NotTo(HaveOccurred())
-
-		layer, err = l.Contribute(layer)
-		Expect(err).NotTo(HaveOccurred())
-
-		Expect(filepath.Join(layer.Path, "bin", "link-local-dns")).To(BeARegularFile())
-		Expect(layer.Profile["link-local-dns.sh"]).To(Equal(`link-local-dns
-`))
-	})
-
-	it("marks layer for build", func() {
-		Expect(os.MkdirAll(filepath.Join(ctx.Buildpack.Path, "bin"), 0755)).To(Succeed())
-		Expect(ioutil.WriteFile(filepath.Join(ctx.Buildpack.Path, "bin", "link-local-dns"), []byte{}, 0755)).To(Succeed())
-
-		l := libjvm.NewLinkLocalDNS(ctx.Buildpack, BuildContribution, &libcnb.BuildpackPlan{})
-		layer, err := ctx.Layers.Layer("test-layer")
-		Expect(err).NotTo(HaveOccurred())
-
-		layer, err = l.Contribute(layer)
-		Expect(err).NotTo(HaveOccurred())
-
-		Expect(layer.Build).To(BeTrue())
-		Expect(layer.Cache).To(BeTrue())
-	})
-
-	it("marks layer for launch", func() {
-		Expect(os.MkdirAll(filepath.Join(ctx.Buildpack.Path, "bin"), 0755)).To(Succeed())
-		Expect(ioutil.WriteFile(filepath.Join(ctx.Buildpack.Path, "bin", "link-local-dns"), []byte{}, 0755)).To(Succeed())
-
-		l := libjvm.NewLinkLocalDNS(ctx.Buildpack, LaunchContribution, &libcnb.BuildpackPlan{})
+		l := libjvm.NewLinkLocalDNS(ctx.Buildpack, &libcnb.BuildpackPlan{})
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
 
@@ -95,5 +64,9 @@ func testLinkLocalDNS(t *testing.T, context spec.G, it spec.S) {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(layer.Launch).To(BeTrue())
+		Expect(filepath.Join(layer.Path, "bin", "link-local-dns")).To(BeARegularFile())
+		Expect(layer.Profile["link-local-dns.sh"]).To(Equal(`link-local-dns
+`))
 	})
+
 }

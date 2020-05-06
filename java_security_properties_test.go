@@ -50,33 +50,7 @@ func testJavaSecurityProperties(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	it("contributes Java Security Properties", func() {
-		l := libjvm.NewJavaSecurityProperties(ctx.Buildpack.Info, NoContribution)
-		layer, err := ctx.Layers.Layer("test-layer")
-		Expect(err).NotTo(HaveOccurred())
-
-		layer, err = l.Contribute(layer)
-		Expect(err).NotTo(HaveOccurred())
-
-		file := filepath.Join(layer.Path, "java-security.properties")
-		Expect(file).To(BeARegularFile())
-		Expect(layer.SharedEnvironment["JAVA_OPTS.append"]).To(Equal(fmt.Sprintf(` -Djava.security.properties=%s`, file)))
-		Expect(layer.SharedEnvironment["JAVA_SECURITY_PROPERTIES.override"]).To(Equal(file))
-	})
-
-	it("marks layer for build", func() {
-		l := libjvm.NewJavaSecurityProperties(ctx.Buildpack.Info, BuildContribution)
-		layer, err := ctx.Layers.Layer("test-layer")
-		Expect(err).NotTo(HaveOccurred())
-
-		layer, err = l.Contribute(layer)
-		Expect(err).NotTo(HaveOccurred())
-
-		Expect(layer.Build).To(BeTrue())
-		Expect(layer.Cache).To(BeTrue())
-	})
-
-	it("marks layer for launch", func() {
-		l := libjvm.NewJavaSecurityProperties(ctx.Buildpack.Info, LaunchContribution)
+		l := libjvm.NewJavaSecurityProperties(ctx.Buildpack.Info)
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
 
@@ -84,5 +58,10 @@ func testJavaSecurityProperties(t *testing.T, context spec.G, it spec.S) {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(layer.Launch).To(BeTrue())
+		file := filepath.Join(layer.Path, "java-security.properties")
+		Expect(file).To(BeARegularFile())
+		Expect(layer.LaunchEnvironment["JAVA_OPTS.append"]).To(Equal(fmt.Sprintf(` -Djava.security.properties=%s`, file)))
+		Expect(layer.LaunchEnvironment["JAVA_SECURITY_PROPERTIES.override"]).To(Equal(file))
 	})
+
 }

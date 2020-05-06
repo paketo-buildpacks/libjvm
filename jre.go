@@ -54,15 +54,6 @@ func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 			return libcnb.Layer{}, fmt.Errorf("unable to expand JRE\n%w", err)
 		}
 
-		layer.SharedEnvironment.Override("MALLOC_ARENA_MAX", "2")
-
-		s, err := sherpa.StaticFile("/active-processor-count.sh")
-		if err != nil {
-			return libcnb.Layer{}, fmt.Errorf("unable to load active-processor-count.sh\n%w", err)
-		}
-
-		layer.Profile.Add("active-processor-count.sh", s)
-
 		if IsBuildContribution(j.Metadata) {
 			layer.BuildEnvironment.Default("JAVA_HOME", layer.Path)
 			layer.Build = true
@@ -71,6 +62,14 @@ func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 
 		if IsLaunchContribution(j.Metadata) {
 			layer.LaunchEnvironment.Override("JAVA_HOME", layer.Path)
+			layer.LaunchEnvironment.Override("MALLOC_ARENA_MAX", "2")
+
+			s, err := sherpa.StaticFile("/active-processor-count.sh")
+			if err != nil {
+				return libcnb.Layer{}, fmt.Errorf("unable to load active-processor-count.sh\n%w", err)
+			}
+			layer.Profile.Add("active-processor-count.sh", s)
+
 			layer.Launch = true
 		}
 
