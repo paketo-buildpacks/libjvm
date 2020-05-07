@@ -68,15 +68,15 @@ func testMemoryCalculator(t *testing.T, context spec.G, it spec.S) {
 
 		Expect(layer.Launch).To(BeTrue())
 		Expect(filepath.Join(layer.Path, "bin", "java-buildpack-memory-calculator")).To(BeARegularFile())
-		Expect(layer.Profile["memory-calculator.sh"]).To(Equal(fmt.Sprintf(`HEAD_ROOM=${BPL_HEAD_ROOM:=0}
+		Expect(layer.Profile["memory-calculator.sh"]).To(Equal(fmt.Sprintf(`HEAD_ROOM=${BPL_JVM_HEAD_ROOM:=0}
 
-if [[ -z "${BPL_LOADED_CLASS_COUNT+x}" ]]; then
+if [[ -z "${BPL_JVM_LOADED_CLASS_COUNT+x}" ]]; then
   LOADED_CLASS_COUNT=$(class-counter --source "%s" --jvm-class-count "27867")
 else
-  LOADED_CLASS_COUNT=${BPL_LOADED_CLASS_COUNT}
+  LOADED_CLASS_COUNT=${BPL_JVM_LOADED_CLASS_COUNT}
 fi
 
-THREAD_COUNT=${BPL_THREAD_COUNT:=250}
+THREAD_COUNT=${BPL_JVM_THREAD_COUNT:=250}
 
 TOTAL_MEMORY=$(cat /sys/fs/cgroup/memory/memory.limit_in_bytes)
 

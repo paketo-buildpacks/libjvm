@@ -1,12 +1,12 @@
-HEAD_ROOM=${BPL_HEAD_ROOM:=0}
+HEAD_ROOM=${BPL_JVM_HEAD_ROOM:=0}
 
-if [[ -z "${BPL_LOADED_CLASS_COUNT+x}" ]]; then
+if [[ -z "${BPL_JVM_LOADED_CLASS_COUNT+x}" ]]; then
   LOADED_CLASS_COUNT=$(class-counter --source "{{.source}}" --jvm-class-count "{{.jvmClassCount}}")
 else
-  LOADED_CLASS_COUNT=${BPL_LOADED_CLASS_COUNT}
+  LOADED_CLASS_COUNT=${BPL_JVM_LOADED_CLASS_COUNT}
 fi
 
-THREAD_COUNT=${BPL_THREAD_COUNT:=250}
+THREAD_COUNT=${BPL_JVM_THREAD_COUNT:=250}
 
 TOTAL_MEMORY=$(cat /sys/fs/cgroup/memory/memory.limit_in_bytes)
 
