@@ -59,7 +59,7 @@ func NewJDK(dependency libpak.BuildpackDependency, cache libpak.DependencyCache,
 
 	return JDK{
 		Certificates:     certificates,
-		Executor:         effect.NewExecutor(),
+		Executor:         effect.CommandExecutor{},
 		LayerContributor: layerContributor,
 	}, nil
 }
