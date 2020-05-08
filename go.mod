@@ -9,7 +9,7 @@ require (
 	github.com/magiconair/properties v1.8.1
 	github.com/miekg/dns v1.1.29
 	github.com/onsi/gomega v1.10.0
-	github.com/paketo-buildpacks/libpak v1.31.3
+	github.com/paketo-buildpacks/libpak v1.32.0
 	github.com/rakyll/statik v0.1.7
 	github.com/sclevine/spec v1.4.0
 	github.com/spf13/pflag v1.0.5
