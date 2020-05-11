@@ -39,8 +39,7 @@ type JDK struct {
 }
 
 func NewJDK(dependency libpak.BuildpackDependency, cache libpak.DependencyCache, certificates string, plan *libcnb.BuildpackPlan) (JDK, error) {
-	layerContributor := libpak.NewDependencyLayerContributor(dependency, cache, plan)
-	expected := map[string]interface{}{"dependency": layerContributor.Dependency}
+	expected := map[string]interface{}{"dependency": dependency}
 
 	in, err := os.Open(certificates)
 	if err != nil && !os.IsNotExist(err) {
@@ -55,6 +54,7 @@ func NewJDK(dependency libpak.BuildpackDependency, cache libpak.DependencyCache,
 		expected["cacerts-sha256"] = hex.EncodeToString(s.Sum(nil))
 	}
 
+	layerContributor := libpak.NewDependencyLayerContributor(dependency, cache, plan)
 	layerContributor.LayerContributor.ExpectedMetadata = expected
 
 	return JDK{
