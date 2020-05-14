@@ -9,11 +9,12 @@ require (
 	github.com/magiconair/properties v1.8.1
 	github.com/miekg/dns v1.1.29
 	github.com/onsi/gomega v1.10.0
-	github.com/paketo-buildpacks/libpak v1.33.0
+	github.com/paketo-buildpacks/libpak v1.33.1
 	github.com/rakyll/statik v0.1.7
 	github.com/sclevine/spec v1.4.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.5.1
-	golang.org/x/crypto v0.0.0-20200429183012-4b2356b1ed79 // indirect
-	golang.org/x/net v0.0.0-20200506145744-7e3656a0809f // indirect
+	golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37 // indirect
+	golang.org/x/net v0.0.0-20200513185701-a91f0712d120 // indirect
+	golang.org/x/sys v0.0.0-20200513112337-417ce2331b5c // indirect
 )
