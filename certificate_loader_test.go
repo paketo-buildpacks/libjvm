@@ -17,57 +17,71 @@
 package libjvm_test
 
 import (
+	"io"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
 	. "github.com/onsi/gomega"
 	"github.com/paketo-buildpacks/libjvm"
-	"github.com/paketo-buildpacks/libpak/bard"
-	"github.com/paketo-buildpacks/libpak/effect/mocks"
+	"github.com/pavel-v-chernykh/keystore-go"
 	"github.com/sclevine/spec"
-	"github.com/stretchr/testify/mock"
 )
 
 func testCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 	var (
 		Expect = NewWithT(t).Expect
 
-		executor *mocks.Executor
+		path string
 	)
 
 	it.Before(func() {
-		executor = &mocks.Executor{}
+		in, err := os.Open(filepath.Join("testdata", "test-keystore.jks"))
+		Expect(err).NotTo(HaveOccurred())
+		defer in.Close()
+
+		out, err := ioutil.TempFile("", "certificate-loader")
+		Expect(err).NotTo(HaveOccurred())
+		defer out.Close()
+
+		_, err = io.Copy(out, in)
+		Expect(err).NotTo(HaveOccurred())
+
+		path = out.Name()
 	})
 
-	it("does not return error for non-existent file", func() {
-		executor.On("Execute", mock.Anything).Return(nil)
+	it.After(func() {
+		Expect(os.RemoveAll(path)).To(Succeed())
+	})
 
+	it("short circuits if no CA certificates file does not exist", func() {
 		c := libjvm.CertificateLoader{
-			KeyTool:         "test-key-tool",
-			SourcePath:      filepath.Join("testdata", "invalid-certificates.crt"),
-			DestinationPath: "test-path",
-			Executor:        executor,
-			Logger:          bard.NewLogger(ioutil.Discard),
+			CACertificatesPath: filepath.Join("testdata", "non-existent-file"),
+			KeyStorePath:       path,
+			KeyStorePassword:   []byte("changeit"),
+			Logger:             ioutil.Discard,
 		}
 
 		Expect(c.Load()).To(Succeed())
-		Expect(len(executor.Calls)).To(Equal(0))
 	})
 
-	it("calls keytool", func() {
-		executor.On("Execute", mock.Anything).Return(nil)
-
+	it("loads additional certificates", func() {
 		c := libjvm.CertificateLoader{
-			KeyTool:         "test-key-tool",
-			SourcePath:      filepath.Join("testdata", "ca-certificates.crt"),
-			DestinationPath: "test-path",
-			Executor:        executor,
-			Logger:          bard.NewLogger(ioutil.Discard),
+			CACertificatesPath: filepath.Join("testdata", "test-certificates.crt"),
+			KeyStorePath:       path,
+			KeyStorePassword:   []byte("changeit"),
+			Logger:             ioutil.Discard,
 		}
 
 		Expect(c.Load()).To(Succeed())
-		Expect(len(executor.Calls)).To(Equal(133))
+
+		in, err := os.Open(path)
+		Expect(err).NotTo(HaveOccurred())
+		defer in.Close()
+
+		ks, err := keystore.Decode(in, []byte("changeit"))
+		Expect(ks).To(HaveLen(2))
 	})
 
 }

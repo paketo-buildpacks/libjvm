@@ -26,18 +26,16 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/paketo-buildpacks/libjvm"
 	"github.com/paketo-buildpacks/libpak"
-	"github.com/paketo-buildpacks/libpak/effect"
-	"github.com/paketo-buildpacks/libpak/effect/mocks"
+	"github.com/paketo-buildpacks/libpak/bard"
+	"github.com/pavel-v-chernykh/keystore-go"
 	"github.com/sclevine/spec"
-	"github.com/stretchr/testify/mock"
 )
 
 func testJDK(t *testing.T, context spec.G, it spec.S) {
 	var (
 		Expect = NewWithT(t).Expect
 
-		ctx      libcnb.BuildContext
-		executor *mocks.Executor
+		ctx libcnb.BuildContext
 	)
 
 	it.Before(func() {
@@ -45,8 +43,6 @@ func testJDK(t *testing.T, context spec.G, it spec.S) {
 
 		ctx.Layers.Path, err = ioutil.TempDir("", "jdk-layers")
 		Expect(err).NotTo(HaveOccurred())
-
-		executor = &mocks.Executor{}
 	})
 
 	it.After(func() {
@@ -54,20 +50,19 @@ func testJDK(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	it("contributes JDK", func() {
-		executor.On("Execute", mock.Anything).Return(nil)
-
 		dep := libpak.BuildpackDependency{
-			URI:    "https://localhost/stub-jdk.tar.gz",
-			SHA256: "c03a11439c65028091a9328024ce97d6b90ca220f4e2c90c5d8a65e3ba7c1ef2",
+			Version: "11.0.0",
+			URI:     "https://localhost/stub-jdk-11.tar.gz",
+			SHA256:  "0bdf99b069660cf63f33d26edf11cc1aea5aba9126ca06a86b8f1cfd610352b1",
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, err := libjvm.NewJDK(dep, dc, filepath.Join("testdata", "ca-certificates.crt"), &libcnb.BuildpackPlan{})
+		j, err := libjvm.NewJDK(dep, dc, filepath.Join("testdata", "test-certificates.crt"), &libcnb.BuildpackPlan{})
 		Expect(err).NotTo(HaveOccurred())
-		j.Executor = executor
+		j.Logger = bard.NewLogger(ioutil.Discard)
 
 		Expect(j.LayerContributor.LayerContributor.ExpectedMetadata.(map[string]interface{})["cacerts-sha256"]).
-			To(Equal("d3f4f98b2670973c120d3cc4f4991d260646af116c621d194a0df2533d9dcb83"))
+			To(Equal("04846f73d9d0421c60076fd02bad7f0a81a3f11a028d653b0de53290e41dcead"))
 
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
@@ -80,22 +75,19 @@ func testJDK(t *testing.T, context spec.G, it spec.S) {
 		Expect(filepath.Join(layer.Path, "fixture-marker")).To(BeARegularFile())
 		Expect(layer.BuildEnvironment["JAVA_HOME.override"]).To(Equal(layer.Path))
 		Expect(layer.BuildEnvironment["JDK_HOME.override"]).To(Equal(layer.Path))
-		Expect(len(executor.Calls)).To(Equal(133))
 	})
 
 	it("updates before Java 9 certificates", func() {
-		executor.On("Execute", mock.Anything).Return(nil)
-
 		dep := libpak.BuildpackDependency{
 			Version: "8.0.0",
-			URI:    "https://localhost/stub-jdk.tar.gz",
-			SHA256: "e8a33e8283efc5a039d90b0ef61ce4613ad01544316caaf307b28da46d49a108",
+			URI:     "https://localhost/stub-jdk-8.tar.gz",
+			SHA256:  "c16f4c171399b7cdfd7ad83e76934eef8e1776578e803b82164956d68a0f3aa7",
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, err := libjvm.NewJDK(dep, dc, filepath.Join("testdata", "ca-certificates.crt"), &libcnb.BuildpackPlan{})
+		j, err := libjvm.NewJDK(dep, dc, filepath.Join("testdata", "test-certificates.crt"), &libcnb.BuildpackPlan{})
 		Expect(err).NotTo(HaveOccurred())
-		j.Executor = executor
+		j.Logger = bard.NewLogger(ioutil.Discard)
 
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
@@ -103,24 +95,27 @@ func testJDK(t *testing.T, context spec.G, it spec.S) {
 		layer, err = j.Contribute(layer)
 		Expect(err).NotTo(HaveOccurred())
 
-		execution := executor.Calls[0].Arguments[0].(effect.Execution)
-		Expect(execution.Command).To(Equal(filepath.Join(layer.Path, "bin", "keytool")))
-		Expect(execution.Args[6]).To(Equal(filepath.Join(layer.Path, "jre", "lib", "security", "cacerts")))
+		in, err := os.Open(filepath.Join(layer.Path, "jre", "lib", "security", "cacerts"))
+		Expect(err).NotTo(HaveOccurred())
+		defer in.Close()
+
+		ks, err := keystore.Decode(in, []byte("changeit"))
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(ks).To(HaveLen(2))
 	})
 
 	it("updates after Java 9 certificates", func() {
-		executor.On("Execute", mock.Anything).Return(nil)
-
 		dep := libpak.BuildpackDependency{
 			Version: "11.0.0",
-			URI:    "https://localhost/stub-jdk.tar.gz",
-			SHA256: "00abd23ea484b935aa7565a0bbc1b6d56b4875a80f6a5b3b4d36ff7b3ac01a1c",
+			URI:     "https://localhost/stub-jdk-11.tar.gz",
+			SHA256:  "0bdf99b069660cf63f33d26edf11cc1aea5aba9126ca06a86b8f1cfd610352b1",
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, err := libjvm.NewJDK(dep, dc, filepath.Join("testdata", "ca-certificates.crt"), &libcnb.BuildpackPlan{})
+		j, err := libjvm.NewJDK(dep, dc, filepath.Join("testdata", "test-certificates.crt"), &libcnb.BuildpackPlan{})
 		Expect(err).NotTo(HaveOccurred())
-		j.Executor = executor
+		j.Logger = bard.NewLogger(ioutil.Discard)
 
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
@@ -128,8 +123,13 @@ func testJDK(t *testing.T, context spec.G, it spec.S) {
 		layer, err = j.Contribute(layer)
 		Expect(err).NotTo(HaveOccurred())
 
-		execution := executor.Calls[0].Arguments[0].(effect.Execution)
-		Expect(execution.Command).To(Equal(filepath.Join(layer.Path, "bin", "keytool")))
-		Expect(execution.Args[6]).To(Equal(filepath.Join(layer.Path, "lib", "security", "cacerts")))
+		in, err := os.Open(filepath.Join(layer.Path, "lib", "security", "cacerts"))
+		Expect(err).NotTo(HaveOccurred())
+		defer in.Close()
+
+		ks, err := keystore.Decode(in, []byte("changeit"))
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(ks).To(HaveLen(2))
 	})
 }
