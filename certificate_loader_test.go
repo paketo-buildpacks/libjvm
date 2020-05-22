@@ -59,7 +59,7 @@ func testCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 		c := libjvm.CertificateLoader{
 			CACertificatesPath: filepath.Join("testdata", "non-existent-file"),
 			KeyStorePath:       path,
-			KeyStorePassword:   []byte("changeit"),
+			KeyStorePassword:   "changeit",
 			Logger:             ioutil.Discard,
 		}
 
@@ -70,7 +70,7 @@ func testCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 		c := libjvm.CertificateLoader{
 			CACertificatesPath: filepath.Join("testdata", "test-certificates.crt"),
 			KeyStorePath:       path,
-			KeyStorePassword:   []byte("changeit"),
+			KeyStorePassword:   "changeit",
 			Logger:             ioutil.Discard,
 		}
 
