@@ -29,8 +29,8 @@ import (
 
 type CertificateLoader struct {
 	CACertificatesPath string
+	KeyStorePassword   string
 	KeyStorePath       string
-	KeyStorePassword   []byte
 	Logger             io.Writer
 }
 
@@ -44,7 +44,7 @@ func (c *CertificateLoader) Load() error {
 	case i == 0:
 		return nil
 	default:
-		_, _ = fmt.Fprintf(c.Logger, "Populating with %d container certificates\n", len(blocks))
+		_, _ = fmt.Fprintf(c.Logger, "Adding %d container CA certificates to JVM truststore\n", len(blocks))
 	}
 
 	ks, err := c.ReadKeyStore()
@@ -98,7 +98,7 @@ func (c CertificateLoader) ReadKeyStore() (keystore.KeyStore, error) {
 	}
 	defer in.Close()
 
-	ks, err := keystore.Decode(in, c.KeyStorePassword)
+	ks, err := keystore.Decode(in, []byte(c.KeyStorePassword))
 	if err != nil {
 		return nil, fmt.Errorf("unable to decode keystore\n %w", err)
 	}
@@ -113,7 +113,7 @@ func (c CertificateLoader) WriteKeyStore(ks keystore.KeyStore) error {
 	}
 	defer out.Close()
 
-	if err := keystore.Encode(out, ks, c.KeyStorePassword); err != nil {
+	if err := keystore.Encode(out, ks, []byte(c.KeyStorePassword)); err != nil {
 		return fmt.Errorf("unable to encode keystore\n%w", err)
 	}
 

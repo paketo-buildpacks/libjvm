@@ -83,7 +83,7 @@ func (j JDK) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 		c := CertificateLoader{
 			CACertificatesPath: j.Certificates,
 			KeyStorePath:       keyStorePath,
-			KeyStorePassword:   []byte("changeit"),
+			KeyStorePassword:   "changeit",
 			Logger:             j.Logger.BodyWriter(),
 		}
 

@@ -44,7 +44,7 @@ func TestUnit(t *testing.T) {
 	suite("Manifest", testManifest)
 	suite("MavenJARListing", testMavenJARListing)
 	suite("MemoryCalculator", testMemoryCalculator)
-	suite("OpenSSLSecurityProvider", testOpenSSLSecurityProvider)
+	suite("OpenSSLCertificateLoader", testOpenSSLCertificateLoader)
 	suite("SecurityProvidersConfigurer", testSecurityProvidersConfigurer)
 	suite("Versions", testVersions)
 	suite.Run(t)

@@ -28,17 +28,6 @@ import (
 	"github.com/paketo-buildpacks/libpak/sherpa"
 )
 
-type DistributionType uint8
-
-const (
-	JDKType DistributionType = iota
-	JREType
-)
-
-func (d DistributionType) String() string {
-	return []string{"jdk", "jre"}[d]
-}
-
 type SecurityProvidersConfigurer struct {
 	DistributionType DistributionType
 	JavaVersion      string
