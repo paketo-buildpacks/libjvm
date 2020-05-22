@@ -126,9 +126,9 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 			spc.Logger = b.Logger
 			result.Layers = append(result.Layers, spc)
 
-			osp := NewOpenSSLCertificateLoader(context.Buildpack, dt, depJRE.Version, result.Plan)
-			osp.Logger = b.Logger
-			result.Layers = append(result.Layers, osp)
+			osl := NewOpenSSLCertificateLoader(context.Buildpack, dt, depJRE.Version, result.Plan)
+			osl.Logger = b.Logger
+			result.Layers = append(result.Layers, osl)
 		}
 	}
 
