@@ -71,14 +71,14 @@ func testMemoryCalculator(t *testing.T, context spec.G, it spec.S) {
 		Expect(layer.Profile["memory-calculator.sh"]).To(Equal(fmt.Sprintf(`HEAD_ROOM=${BPL_JVM_HEAD_ROOM:=0}
 
 if [[ -z "${BPL_JVM_LOADED_CLASS_COUNT+x}" ]]; then
-  LOADED_CLASS_COUNT=$(class-counter --source "%s" --jvm-class-count "27867")
+  LOADED_CLASS_COUNT=$(class-counter --source "%s" --jvm-class-count "27867") || exit $?
 else
   LOADED_CLASS_COUNT=${BPL_JVM_LOADED_CLASS_COUNT}
 fi
 
 THREAD_COUNT=${BPL_JVM_THREAD_COUNT:=250}
 
-TOTAL_MEMORY=$(cat /sys/fs/cgroup/memory/memory.limit_in_bytes)
+TOTAL_MEMORY=$(cat /sys/fs/cgroup/memory/memory.limit_in_bytes) || exit $?
 
 if [ "${TOTAL_MEMORY}" -eq 9223372036854771712 ]; then
   printf "Container memory limit unset. Configuring JVM for 1G container.\n"
@@ -93,7 +93,7 @@ MEMORY_CONFIGURATION=$(java-buildpack-memory-calculator \
     --jvm-options "${JAVA_OPTS}" \
     --loaded-class-count "${LOADED_CLASS_COUNT}" \
     --thread-count "${THREAD_COUNT}" \
-    --total-memory "${TOTAL_MEMORY}")
+    --total-memory "${TOTAL_MEMORY}") || exit $?
 
 printf "Calculated JVM Memory Configuration: ${MEMORY_CONFIGURATION} (Head Room: ${HEAD_ROOM}%%%%, Loaded Class Count: ${LOADED_CLASS_COUNT}, Thread Count: ${THREAD_COUNT}, Total Memory: ${TOTAL_MEMORY})\n"
 export JAVA_OPTS="${JAVA_OPTS} ${MEMORY_CONFIGURATION}"
