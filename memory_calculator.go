@@ -23,11 +23,12 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/buildpacks/libcnb"
-	_ "github.com/paketo-buildpacks/libjvm/statik"
 	"github.com/paketo-buildpacks/libpak"
 	"github.com/paketo-buildpacks/libpak/bard"
 	"github.com/paketo-buildpacks/libpak/crush"
 	"github.com/paketo-buildpacks/libpak/sherpa"
+
+	_ "github.com/paketo-buildpacks/libjvm/statik"
 )
 
 type MemoryCalculator struct {

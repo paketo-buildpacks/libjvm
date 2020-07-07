@@ -24,9 +24,10 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"github.com/paketo-buildpacks/libjvm"
 	"github.com/pavel-v-chernykh/keystore-go"
 	"github.com/sclevine/spec"
+
+	"github.com/paketo-buildpacks/libjvm"
 )
 
 func testCertificateLoader(t *testing.T, context spec.G, it spec.S) {

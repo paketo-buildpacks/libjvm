@@ -23,8 +23,9 @@ import (
 
 	ddns "github.com/miekg/dns"
 	. "github.com/onsi/gomega"
-	"github.com/paketo-buildpacks/libjvm/dns"
 	"github.com/sclevine/spec"
+
+	"github.com/paketo-buildpacks/libjvm/dns"
 )
 
 func testLinkLocalDNS(t *testing.T, context spec.G, it spec.S) {

@@ -21,11 +21,12 @@ import (
 	"os"
 
 	"github.com/buildpacks/libcnb"
-	_ "github.com/paketo-buildpacks/libjvm/statik"
 	"github.com/paketo-buildpacks/libpak"
 	"github.com/paketo-buildpacks/libpak/bard"
 	"github.com/paketo-buildpacks/libpak/crush"
 	"github.com/paketo-buildpacks/libpak/sherpa"
+
+	_ "github.com/paketo-buildpacks/libjvm/statik"
 )
 
 type JRE struct {

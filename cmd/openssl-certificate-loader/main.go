@@ -20,9 +20,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/paketo-buildpacks/libjvm"
 	"github.com/paketo-buildpacks/libpak/sherpa"
 	"github.com/spf13/pflag"
+
+	"github.com/paketo-buildpacks/libjvm"
 )
 
 func main() {

@@ -21,9 +21,10 @@ import (
 	"math"
 	"os"
 
-	"github.com/paketo-buildpacks/libjvm/count"
 	"github.com/paketo-buildpacks/libpak/sherpa"
 	"github.com/spf13/pflag"
+
+	"github.com/paketo-buildpacks/libjvm/count"
 )
 
 func main() {

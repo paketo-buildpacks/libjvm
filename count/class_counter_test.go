@@ -23,8 +23,9 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"github.com/paketo-buildpacks/libjvm/count"
 	"github.com/sclevine/spec"
+
+	"github.com/paketo-buildpacks/libjvm/count"
 )
 
 func testClassCounter(t *testing.T, context spec.G, it spec.S) {

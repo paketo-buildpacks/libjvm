@@ -20,8 +20,9 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"github.com/paketo-buildpacks/libjvm"
 	"github.com/sclevine/spec"
+
+	"github.com/paketo-buildpacks/libjvm"
 )
 
 func testVersions(t *testing.T, context spec.G, it spec.S) {
