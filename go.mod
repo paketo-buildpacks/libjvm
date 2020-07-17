@@ -4,7 +4,7 @@ go 1.14
 
 require (
 	github.com/Masterminds/semver/v3 v3.1.0
-	github.com/buildpacks/libcnb v1.15.1
+	github.com/buildpacks/libcnb v1.15.2
 	github.com/heroku/color v0.0.6
 	github.com/magiconair/properties v1.8.1
 	github.com/miekg/dns v1.1.30
