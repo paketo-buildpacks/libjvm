@@ -79,12 +79,16 @@ fi
 
 THREAD_COUNT=${BPL_JVM_THREAD_COUNT:=250}
 
-TOTAL_MEMORY=$(cat /sys/fs/cgroup/memory/memory.limit_in_bytes) || exit $?
+if [[ -f /sys/fs/cgroup/memory/memory.limit_in_bytes ]]; then
+  TOTAL_MEMORY=$(cat /sys/fs/cgroup/memory/memory.limit_in_bytes) || exit $?
+else
+  TOTAL_MEMORY=9223372036854771712
+fi
 
 if [ "${TOTAL_MEMORY}" -eq 9223372036854771712 ]; then
   printf "Container memory limit unset. Configuring JVM for 1G container.\n"
   TOTAL_MEMORY=1073741824
-elif [ ${TOTAL_MEMORY} -gt 70368744177664 ]; then
+elif [ "${TOTAL_MEMORY}" -gt 70368744177664 ]; then
   printf "Container memory limit too large. Configuring JVM for 64T container.\n"
   TOTAL_MEMORY=70368744177664
 fi
