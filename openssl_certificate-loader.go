@@ -82,6 +82,6 @@ func (o OpenSSLCertificateLoader) Contribute(layer libcnb.Layer) (libcnb.Layer, 
 	})
 }
 
-func (OpenSSLCertificateLoader) Name() string {
-	return "openssl-security-provider"
+func (o OpenSSLCertificateLoader) Name() string {
+	return o.LayerContributor.LayerName()
 }

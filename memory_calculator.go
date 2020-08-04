@@ -79,8 +79,8 @@ func (m MemoryCalculator) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 	})
 }
 
-func (MemoryCalculator) Name() string {
-	return "memory-calculator"
+func (m MemoryCalculator) Name() string {
+	return m.LayerContributor.LayerName()
 }
 
 func (m MemoryCalculator) JvmClassCount() (int, error) {

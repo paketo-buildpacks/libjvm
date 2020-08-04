@@ -78,6 +78,6 @@ func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 	})
 }
 
-func (JRE) Name() string {
-	return "jre"
+func (j JRE) Name() string {
+	return j.LayerContributor.LayerName()
 }

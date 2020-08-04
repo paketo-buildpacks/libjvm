@@ -52,6 +52,6 @@ func (j JavaSecurityProperties) Contribute(layer libcnb.Layer) (libcnb.Layer, er
 	})
 }
 
-func (JavaSecurityProperties) Name() string {
+func (j JavaSecurityProperties) Name() string {
 	return "java-security-properties"
 }

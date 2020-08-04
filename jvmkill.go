@@ -53,6 +53,6 @@ func (j JVMKill) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 	})
 }
 
-func (JVMKill) Name() string {
-	return "jvmkill"
+func (j JVMKill) Name() string {
+	return j.LayerContributor.LayerName()
 }

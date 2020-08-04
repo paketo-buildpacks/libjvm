@@ -106,6 +106,6 @@ func (s SecurityProvidersConfigurer) Contribute(layer libcnb.Layer) (libcnb.Laye
 	})
 }
 
-func (SecurityProvidersConfigurer) Name() string {
-	return "security-providers-configurer"
+func (s SecurityProvidersConfigurer) Name() string {
+	return s.LayerContributor.LayerName()
 }

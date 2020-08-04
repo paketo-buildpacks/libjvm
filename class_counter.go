@@ -53,6 +53,6 @@ func (c ClassCounter) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 	})
 }
 
-func (ClassCounter) Name() string {
-	return "class-counter"
+func (c ClassCounter) Name() string {
+	return c.LayerContributor.LayerName()
 }

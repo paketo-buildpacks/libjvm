@@ -64,6 +64,6 @@ func (l LinkLocalDNS) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 	})
 }
 
-func (LinkLocalDNS) Name() string {
-	return "link-local-dns"
+func (l LinkLocalDNS) Name() string {
+	return l.LayerContributor.LayerName()
 }

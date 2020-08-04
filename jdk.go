@@ -97,6 +97,6 @@ func (j JDK) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 	})
 }
 
-func (JDK) Name() string {
-	return "jdk"
+func (j JDK) Name() string {
+	return j.LayerContributor.LayerName()
 }
