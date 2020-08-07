@@ -24,11 +24,11 @@ fi
 
 MEMORY_CONFIGURATION=$(java-buildpack-memory-calculator \
     --head-room "${HEAD_ROOM}" \
-    --jvm-options "${JAVA_OPTS}" \
+    --jvm-options "${JAVA_TOOL_OPTIONS}" \
     --loaded-class-count "${LOADED_CLASS_COUNT}" \
     --thread-count "${THREAD_COUNT}" \
     --total-memory "${TOTAL_MEMORY}") || exit $?
 
 printf "Calculated JVM Memory Configuration: %s (Head Room: %d%%, Loaded Class Count: %d, Thread Count: %d, Total Memory: %s)\n" \
   "${MEMORY_CONFIGURATION}" "${HEAD_ROOM}" "${LOADED_CLASS_COUNT}" "${THREAD_COUNT}" "$(numfmt --to=iec "${TOTAL_MEMORY}")"
-export JAVA_OPTS="${JAVA_OPTS} ${MEMORY_CONFIGURATION}"
+export JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS} ${MEMORY_CONFIGURATION}"

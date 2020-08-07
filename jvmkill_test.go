@@ -65,7 +65,7 @@ func testJVMKill(t *testing.T, context spec.G, it spec.S) {
 
 		Expect(layer.Launch).To(BeTrue())
 		Expect(filepath.Join(layer.Path, "stub-jvmkill.so")).To(BeARegularFile())
-		Expect(layer.LaunchEnvironment["JAVA_OPTS.append"]).To(Equal(fmt.Sprintf(" -agentpath:%s/stub-jvmkill.so=printHeapHistogram=1", layer.Path)))
+		Expect(layer.LaunchEnvironment["JAVA_TOOL_OPTIONS.append"]).To(Equal(fmt.Sprintf(" -agentpath:%s/stub-jvmkill.so=printHeapHistogram=1", layer.Path)))
 	})
 
 }

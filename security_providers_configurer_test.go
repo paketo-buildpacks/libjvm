@@ -88,7 +88,7 @@ for I in ${SECURITY_PROVIDERS_CLASSPATH//:/$'\n'}; do
   EXT_DIRS="${EXT_DIRS}:$(dirname "${I}")" || exit $?
 done
 
-export JAVA_OPTS="${JAVA_OPTS} -Djava.ext.dirs=${EXT_DIRS}"
+export JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS} -Djava.ext.dirs=${EXT_DIRS}"
 `))
 			Expect(layer.Profile["security-providers-configurer.sh"]).To(Equal(`security-providers-configurer \
   --source "${JAVA_HOME}/jre/lib/security/java.security" \
@@ -115,7 +115,7 @@ for I in ${SECURITY_PROVIDERS_CLASSPATH//:/$'\n'}; do
   EXT_DIRS="${EXT_DIRS}:$(dirname "${I}")" || exit $?
 done
 
-export JAVA_OPTS="${JAVA_OPTS} -Djava.ext.dirs=${EXT_DIRS}"
+export JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS} -Djava.ext.dirs=${EXT_DIRS}"
 `))
 			Expect(layer.Profile["security-providers-configurer.sh"]).To(Equal(`security-providers-configurer \
   --source "${JAVA_HOME}/lib/security/java.security" \

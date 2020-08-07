@@ -71,6 +71,12 @@ func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 			}
 			layer.Profile.Add("active-processor-count.sh", s)
 
+			s, err = sherpa.StaticFile("/java-tool-options.sh")
+			if err != nil {
+				return libcnb.Layer{}, fmt.Errorf("unable to load java-tool-options.sh\n%w", err)
+			}
+			layer.Profile.Add("java-tool-options.sh", s)
+
 			layer.Launch = true
 		}
 
