@@ -1,2 +1,2 @@
-JAVA_OPTS="${JAVA_OPTS} -XX:ActiveProcessorCount=$(nproc)" || exit $?
-export JAVA_OPTS
+JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS} -XX:ActiveProcessorCount=$(nproc)" || exit $?
+export JAVA_TOOL_OPTIONS

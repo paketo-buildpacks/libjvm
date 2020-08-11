@@ -101,8 +101,12 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		Expect(layer.Launch).To(BeTrue())
 		Expect(layer.LaunchEnvironment["JAVA_HOME.override"]).To(Equal(layer.Path))
 		Expect(layer.LaunchEnvironment["MALLOC_ARENA_MAX.override"]).To(Equal("2"))
-		Expect(layer.Profile["active-processor-count.sh"]).To(Equal(`JAVA_OPTS="${JAVA_OPTS} -XX:ActiveProcessorCount=$(nproc)" || exit $?
-export JAVA_OPTS
+		Expect(layer.Profile["active-processor-count.sh"]).To(Equal(`JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS} -XX:ActiveProcessorCount=$(nproc)" || exit $?
+export JAVA_TOOL_OPTIONS
+`))
+		Expect(layer.Profile["java-tool-options.sh"]).To(Equal(`[[ -z "${JAVA_OPTS+x}" ]] && return
+
+export JAVA_TOOL_OPTIONS="${JAVA_OPTS} ${JAVA_TOOL_OPTIONS}"
 `))
 	})
 }

@@ -44,7 +44,7 @@ func (j JavaSecurityProperties) Contribute(layer libcnb.Layer) (libcnb.Layer, er
 			return libcnb.Layer{}, fmt.Errorf("unable to touch file %s\n%w", file, err)
 		}
 
-		layer.LaunchEnvironment.Appendf("JAVA_OPTS", ` -Djava.security.properties=%s`, file)
+		layer.LaunchEnvironment.Appendf("JAVA_TOOL_OPTIONS", ` -Djava.security.properties=%s`, file)
 		layer.LaunchEnvironment.Override("JAVA_SECURITY_PROPERTIES", file)
 
 		layer.Launch = true
