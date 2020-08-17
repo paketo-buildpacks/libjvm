@@ -4,7 +4,7 @@ go 1.14
 
 require (
 	github.com/Masterminds/semver/v3 v3.1.0
-	github.com/buildpacks/libcnb v1.15.2
+	github.com/buildpacks/libcnb v1.16.0
 	github.com/heroku/color v0.0.6
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/magiconair/properties v1.8.1
@@ -17,5 +17,5 @@ require (
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de // indirect
 	golang.org/x/net v0.0.0-20200813134508-3edf25e44fcc // indirect
-	golang.org/x/sys v0.0.0-20200812155832-6a926be9bd1d // indirect
+	golang.org/x/sys v0.0.0-20200817155316-9781c653f443 // indirect
 )
