@@ -62,8 +62,8 @@ func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 		}
 
 		if IsLaunchContribution(j.Metadata) {
-			layer.LaunchEnvironment.Override("JAVA_HOME", layer.Path)
-			layer.LaunchEnvironment.Override("MALLOC_ARENA_MAX", "2")
+			layer.LaunchEnvironment.Default("JAVA_HOME", layer.Path)
+			layer.LaunchEnvironment.Default("MALLOC_ARENA_MAX", "2")
 
 			s, err := sherpa.StaticFile("/active-processor-count.sh")
 			if err != nil {
