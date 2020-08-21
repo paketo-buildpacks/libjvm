@@ -14,17 +14,10 @@
  * limitations under the License.
  */
 
-package count_test
+package calc
 
-import (
-	"testing"
+type HeadRoom Size
 
-	"github.com/sclevine/spec"
-	"github.com/sclevine/spec/report"
-)
-
-func TestUnit(t *testing.T) {
-	suite := spec.New("libjvm/count", spec.Report(report.Terminal{}))
-	suite("CountClasses", testCountClasses)
-	suite.Run(t)
+func (h HeadRoom) String() string {
+	return Size(h).String()
 }

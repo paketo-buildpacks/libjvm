@@ -14,17 +14,24 @@
  * limitations under the License.
  */
 
-package count_test
+package calc_test
 
 import (
 	"testing"
 
+	. "github.com/onsi/gomega"
 	"github.com/sclevine/spec"
-	"github.com/sclevine/spec/report"
+
+	"github.com/paketo-buildpacks/libjvm/calc"
 )
 
-func TestUnit(t *testing.T) {
-	suite := spec.New("libjvm/count", spec.Report(report.Terminal{}))
-	suite("CountClasses", testCountClasses)
-	suite.Run(t)
+func testHeadroom(t *testing.T, context spec.G, it spec.S) {
+	var (
+		Expect = NewWithT(t).Expect
+	)
+
+	it("formats", func() {
+		Expect(calc.HeadRoom{Value: calc.Kibi}.String()).To(Equal("1K"))
+	})
+
 }

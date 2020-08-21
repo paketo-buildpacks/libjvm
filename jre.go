@@ -17,34 +17,62 @@
 package libjvm
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"io"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/buildpacks/libcnb"
+	"github.com/magiconair/properties"
 	"github.com/paketo-buildpacks/libpak"
 	"github.com/paketo-buildpacks/libpak/bard"
 	"github.com/paketo-buildpacks/libpak/crush"
-	"github.com/paketo-buildpacks/libpak/sherpa"
 
-	_ "github.com/paketo-buildpacks/libjvm/statik"
+	"github.com/paketo-buildpacks/libjvm/count"
 )
 
 type JRE struct {
+	ApplicationPath  string
+	Certificates     string
+	DistributionType DistributionType
 	LayerContributor libpak.DependencyLayerContributor
 	Logger           bard.Logger
 	Metadata         map[string]interface{}
 }
 
-func NewJRE(dependency libpak.BuildpackDependency, cache libpak.DependencyCache, metadata map[string]interface{},
-	plan *libcnb.BuildpackPlan) JRE {
+func NewJRE(applicationPath string, dependency libpak.BuildpackDependency, cache libpak.DependencyCache,
+	distributionType DistributionType, certificates string, metadata map[string]interface{},
+	plan *libcnb.BuildpackPlan) (JRE, error) {
+
+	expected := map[string]interface{}{"dependency": dependency}
+
+	in, err := os.Open(certificates)
+	if err != nil && !os.IsNotExist(err) {
+		return JRE{}, fmt.Errorf("unable to open file %s\n%w", certificates, err)
+	} else if err == nil {
+		defer in.Close()
+
+		s := sha256.New()
+		if _, err := io.Copy(s, in); err != nil {
+			return JRE{}, fmt.Errorf("unable to hash file %s\n%w", certificates, err)
+		}
+		expected["cacerts-sha256"] = hex.EncodeToString(s.Sum(nil))
+	}
+
+	layerContributor := libpak.NewDependencyLayerContributor(dependency, cache, plan)
+	layerContributor.LayerContributor.ExpectedMetadata = expected
 
 	return JRE{
-		LayerContributor: libpak.NewDependencyLayerContributor(dependency, cache, plan),
+		ApplicationPath:  applicationPath,
+		Certificates:     certificates,
+		DistributionType: distributionType,
+		LayerContributor: layerContributor,
 		Metadata:         metadata,
-	}
+	}, nil
 }
-
-//go:generate statik -src . -include *.sh
 
 func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 	j.LayerContributor.Logger = j.Logger
@@ -55,6 +83,24 @@ func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 			return libcnb.Layer{}, fmt.Errorf("unable to expand JRE\n%w", err)
 		}
 
+		var cacertsPath string
+		if IsBeforeJava9(j.LayerContributor.Dependency.Version) && j.DistributionType == JDKType {
+			cacertsPath = filepath.Join(layer.Path, "jre", "lib", "security", "cacerts")
+		} else {
+			cacertsPath = filepath.Join(layer.Path, "lib", "security", "cacerts")
+		}
+
+		c := CertificateLoader{
+			CACertificatesPath: j.Certificates,
+			KeyStorePath:       cacertsPath,
+			KeyStorePassword:   "changeit",
+			Logger:             j.Logger.BodyWriter(),
+		}
+
+		if err := c.Load(); err != nil {
+			return libcnb.Layer{}, fmt.Errorf("unable to load certificates\n%w", err)
+		}
+
 		if IsBuildContribution(j.Metadata) {
 			layer.BuildEnvironment.Default("JAVA_HOME", layer.Path)
 			layer.Build = true
@@ -62,21 +108,44 @@ func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 		}
 
 		if IsLaunchContribution(j.Metadata) {
+			layer.LaunchEnvironment.Default("BPI_APPLICATION_PATH", j.ApplicationPath)
+			layer.LaunchEnvironment.Default("BPI_JVM_CACERTS", cacertsPath)
+
+			if c, err := count.Classes(layer.Path); err != nil {
+				return libcnb.Layer{}, fmt.Errorf("unable to count JVM classes\n%w", err)
+			} else {
+				layer.LaunchEnvironment.Default("BPI_JVM_CLASS_COUNT", c)
+			}
+
+			if IsBeforeJava9(j.LayerContributor.Dependency.Version) && j.DistributionType == JDKType {
+				layer.LaunchEnvironment.Default("BPI_JVM_EXT_DIR", filepath.Join(layer.Path, "jre", "lib", "ext"))
+			} else if IsBeforeJava9(j.LayerContributor.Dependency.Version) && j.DistributionType == JREType {
+				layer.LaunchEnvironment.Default("BPI_JVM_EXT_DIR", filepath.Join(layer.Path, "lib", "ext"))
+			}
+
+			var file string
+			if IsBeforeJava9(j.LayerContributor.Dependency.Version) && j.DistributionType == JDKType {
+				file = filepath.Join(layer.Path, "jre", "lib", "security", "java.security")
+			} else if IsBeforeJava9(j.LayerContributor.Dependency.Version) && j.DistributionType == JREType {
+				file = filepath.Join(layer.Path, "lib", "security", "java.security")
+			} else {
+				file = filepath.Join(layer.Path, "conf", "security", "java.security")
+			}
+
+			p, err := properties.LoadFile(file, properties.UTF8)
+			if err != nil {
+				return libcnb.Layer{}, fmt.Errorf("unable to read properties file %s\n%w", file, err)
+			}
+			p = p.FilterStripPrefix("security.provider.")
+
+			var providers []string
+			for k, v := range p.Map() {
+				providers = append(providers, fmt.Sprintf("%s|%s", k, v))
+			}
+			layer.LaunchEnvironment.Default("BPI_JVM_SECURITY_PROVIDERS", strings.Join(providers, " "))
+
 			layer.LaunchEnvironment.Default("JAVA_HOME", layer.Path)
 			layer.LaunchEnvironment.Default("MALLOC_ARENA_MAX", "2")
-
-			s, err := sherpa.StaticFile("/active-processor-count.sh")
-			if err != nil {
-				return libcnb.Layer{}, fmt.Errorf("unable to load active-processor-count.sh\n%w", err)
-			}
-			layer.Profile.Add("active-processor-count.sh", s)
-
-			s, err = sherpa.StaticFile("/java-tool-options.sh")
-			if err != nil {
-				return libcnb.Layer{}, fmt.Errorf("unable to load java-tool-options.sh\n%w", err)
-			}
-			layer.Profile.Add("java-tool-options.sh", s)
-
 			layer.Launch = true
 		}
 

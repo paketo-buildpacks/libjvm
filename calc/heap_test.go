@@ -14,17 +14,36 @@
  * limitations under the License.
  */
 
-package count_test
+package calc_test
 
 import (
 	"testing"
 
+	. "github.com/onsi/gomega"
 	"github.com/sclevine/spec"
-	"github.com/sclevine/spec/report"
+
+	"github.com/paketo-buildpacks/libjvm/calc"
 )
 
-func TestUnit(t *testing.T) {
-	suite := spec.New("libjvm/count", spec.Report(report.Terminal{}))
-	suite("CountClasses", testCountClasses)
-	suite.Run(t)
+func testHeap(t *testing.T, context spec.G, it spec.S) {
+	var (
+		Expect = NewWithT(t).Expect
+	)
+
+	it("formats", func() {
+		Expect(calc.Heap{Value: calc.Kibi}.String()).To(Equal("-Xmx1K"))
+	})
+
+	it("matches -Xmx", func() {
+		Expect(calc.MatchHeap("-Xmx1K")).To(BeTrue())
+	})
+
+	it("does not match non -Xmx", func() {
+		Expect(calc.MatchHeap("-Xss1K")).To(BeFalse())
+	})
+
+	it("parses", func() {
+		Expect(calc.ParseHeap("-Xmx1K")).To(Equal(&calc.Heap{Value: calc.Kibi}))
+	})
+
 }

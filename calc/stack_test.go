@@ -14,17 +14,36 @@
  * limitations under the License.
  */
 
-package count_test
+package calc_test
 
 import (
 	"testing"
 
+	. "github.com/onsi/gomega"
 	"github.com/sclevine/spec"
-	"github.com/sclevine/spec/report"
+
+	"github.com/paketo-buildpacks/libjvm/calc"
 )
 
-func TestUnit(t *testing.T) {
-	suite := spec.New("libjvm/count", spec.Report(report.Terminal{}))
-	suite("CountClasses", testCountClasses)
-	suite.Run(t)
+func testStack(t *testing.T, context spec.G, it spec.S) {
+	var (
+		Expect = NewWithT(t).Expect
+	)
+
+	it("formats", func() {
+		Expect(calc.Stack{Value: calc.Kibi}.String()).To(Equal("-Xss1K"))
+	})
+
+	it("matches -Xss", func() {
+		Expect(calc.MatchStack("-Xss1K")).To(BeTrue())
+	})
+
+	it("does not match non -Xss", func() {
+		Expect(calc.MatchStack("-Xmx1K")).To(BeFalse())
+	})
+
+	it("parses", func() {
+		Expect(calc.ParseStack("-Xss1K")).To(Equal(calc.Stack{Value: calc.Kibi}))
+	})
+
 }

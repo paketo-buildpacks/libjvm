@@ -25,7 +25,10 @@ import (
 	"time"
 
 	"github.com/pavel-v-chernykh/keystore-go"
+	"golang.org/x/sys/unix"
 )
+
+const CACertificates = "/etc/ssl/certs/ca-certificates.crt"
 
 type CertificateLoader struct {
 	CACertificatesPath string
@@ -107,6 +110,11 @@ func (c CertificateLoader) ReadKeyStore() (keystore.KeyStore, error) {
 }
 
 func (c CertificateLoader) WriteKeyStore(ks keystore.KeyStore) error {
+	if unix.Access(c.KeyStorePath, unix.W_OK) != nil {
+		_, _ = fmt.Fprintf(c.Logger, "WARNING: Unable to add container CA certificates to JVM because %s is read-only", c.KeyStorePath)
+		return nil
+	}
+
 	out, err := os.OpenFile(c.KeyStorePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
 		return fmt.Errorf("unable to open %s\n%w", c.KeyStorePath, err)

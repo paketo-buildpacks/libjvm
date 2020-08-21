@@ -14,17 +14,33 @@
  * limitations under the License.
  */
 
-package count_test
+package helper
 
 import (
-	"testing"
+	"os"
+	"strings"
 
-	"github.com/sclevine/spec"
-	"github.com/sclevine/spec/report"
+	"github.com/paketo-buildpacks/libpak/bard"
 )
 
-func TestUnit(t *testing.T) {
-	suite := spec.New("libjvm/count", spec.Report(report.Terminal{}))
-	suite("CountClasses", testCountClasses)
-	suite.Run(t)
+type SecurityProvidersClasspath9 struct {
+	Logger bard.Logger
+}
+
+func (s SecurityProvidersClasspath9) Execute() (map[string]string, error) {
+	p, ok := os.LookupEnv("SECURITY_PROVIDERS_CLASSPATH")
+	if !ok {
+		return nil, nil
+	}
+
+	s.Logger.Info("Adding $SECURITY_PROVIDERS_CLASSPATH to $CLASSPATH")
+
+	var values []string
+	if s, ok := os.LookupEnv("CLASSPATH"); ok {
+		values = append(values, s)
+	}
+
+	values = append(values, p)
+
+	return map[string]string{"CLASSPATH": strings.Join(values, ":")}, nil
 }

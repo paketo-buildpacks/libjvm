@@ -14,17 +14,36 @@
  * limitations under the License.
  */
 
-package count_test
+package calc_test
 
 import (
 	"testing"
 
+	. "github.com/onsi/gomega"
 	"github.com/sclevine/spec"
-	"github.com/sclevine/spec/report"
+
+	"github.com/paketo-buildpacks/libjvm/calc"
 )
 
-func TestUnit(t *testing.T) {
-	suite := spec.New("libjvm/count", spec.Report(report.Terminal{}))
-	suite("CountClasses", testCountClasses)
-	suite.Run(t)
+func testMetaspace(t *testing.T, context spec.G, it spec.S) {
+	var (
+		Expect = NewWithT(t).Expect
+	)
+
+	it("formats", func() {
+		Expect(calc.Metaspace{Value: calc.Kibi}.String()).To(Equal("-XX:MaxMetaspaceSize=1K"))
+	})
+
+	it("matches -XX:MaxMetaspaceSize", func() {
+		Expect(calc.MatchMetaspace("-XX:MaxMetaspaceSize=1K")).To(BeTrue())
+	})
+
+	it("does not match non -XX:MaxMetaspaceSize", func() {
+		Expect(calc.MatchMetaspace("-Xss1K")).To(BeFalse())
+	})
+
+	it("parses", func() {
+		Expect(calc.ParseMetaspace("-XX:MaxMetaspaceSize=1K")).To(Equal(&calc.Metaspace{Value: calc.Kibi}))
+	})
+
 }
