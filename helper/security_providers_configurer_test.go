@@ -25,6 +25,7 @@ import (
 	"github.com/sclevine/spec"
 
 	"github.com/paketo-buildpacks/libjvm/helper"
+	"github.com/paketo-buildpacks/libjvm/internal"
 )
 
 func testSecurityProvidersConfigurer(t *testing.T, context spec.G, it spec.S) {
@@ -92,14 +93,6 @@ func testSecurityProvidersConfigurer(t *testing.T, context spec.G, it spec.S) {
 					Expect(os.Unsetenv("JAVA_SECURITY_PROPERTIES"))
 				})
 
-				it("warns if the file is read only", func() {
-					Expect(os.Chmod(path, 0555)).To(Succeed())
-
-					Expect(helper.SecurityProvidersConfigurer{}.Execute()).To(BeNil())
-
-					Expect(ioutil.ReadFile(path)).To(Equal([]byte("test")))
-				})
-
 				it("modifies the security properties file", func() {
 					Expect(helper.SecurityProvidersConfigurer{}.Execute()).To(BeNil())
 
@@ -111,6 +104,18 @@ security.provider.4=CHARLIE
 security.provider.5=ECHO
 security.provider.6=FOXTROT
 `)))
+				})
+
+				if internal.IsRoot() {
+					return
+				}
+
+				it("warns if the file is read-only", func() {
+					Expect(os.Chmod(path, 0555)).To(Succeed())
+
+					Expect(helper.SecurityProvidersConfigurer{}.Execute()).To(BeNil())
+
+					Expect(ioutil.ReadFile(path)).To(Equal([]byte("test")))
 				})
 			})
 		})
