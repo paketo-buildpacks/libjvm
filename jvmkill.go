@@ -46,7 +46,8 @@ func (j JVMKill) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 			return libcnb.Layer{}, fmt.Errorf("unable to copy %s to %s\n%w", artifact.Name(), file, err)
 		}
 
-		layer.LaunchEnvironment.Appendf("JAVA_TOOL_OPTIONS", " -agentpath:%s=printHeapHistogram=1", file)
+		layer.LaunchEnvironment.Delimiter("JAVA_TOOL_OPTIONS", " ")
+		layer.LaunchEnvironment.Appendf("JAVA_TOOL_OPTIONS", "-agentpath:%s=printHeapHistogram=1", file)
 
 		layer.Launch = true
 		return layer, nil
