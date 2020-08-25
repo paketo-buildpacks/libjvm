@@ -61,7 +61,6 @@ func testCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 			CACertificatesPath: filepath.Join("testdata", "non-existent-file"),
 			KeyStorePath:       path,
 			KeyStorePassword:   "changeit",
-			Logger:             ioutil.Discard,
 		}
 
 		Expect(c.Load()).To(Succeed())
@@ -83,6 +82,26 @@ func testCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 
 		ks, err := keystore.Decode(in, []byte("changeit"))
 		Expect(ks).To(HaveLen(2))
+	})
+
+	it("does not return error when keystore is read-only", func() {
+		Expect(os.Chmod(path, 0555)).To(Succeed())
+
+		c := libjvm.CertificateLoader{
+			CACertificatesPath: filepath.Join("testdata", "test-certificates.crt"),
+			KeyStorePath:       path,
+			KeyStorePassword:   "changeit",
+			Logger:             ioutil.Discard,
+		}
+
+		Expect(c.Load()).To(Succeed())
+
+		in, err := os.Open(path)
+		Expect(err).NotTo(HaveOccurred())
+		defer in.Close()
+
+		ks, err := keystore.Decode(in, []byte("changeit"))
+		Expect(ks).To(HaveLen(1))
 	})
 
 }

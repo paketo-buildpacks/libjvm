@@ -14,17 +14,33 @@
  * limitations under the License.
  */
 
-package count_test
+package helper
 
 import (
-	"testing"
+	"os"
+	"strings"
 
-	"github.com/sclevine/spec"
-	"github.com/sclevine/spec/report"
+	"github.com/paketo-buildpacks/libpak/bard"
 )
 
-func TestUnit(t *testing.T) {
-	suite := spec.New("libjvm/count", spec.Report(report.Terminal{}))
-	suite("CountClasses", testCountClasses)
-	suite.Run(t)
+type JavaOpts struct{
+	Logger bard.Logger
+}
+
+func (j JavaOpts) Execute() (map[string]string, error) {
+	jo, ok := os.LookupEnv("JAVA_OPTS")
+	if !ok {
+		return nil, nil
+	}
+
+	j.Logger.Info("Adding $JAVA_OPTS to $JAVA_TOOL_OPTIONS")
+
+	var values []string
+	if s, ok := os.LookupEnv("JAVA_TOOL_OPTIONS"); ok {
+		values = append(values, s)
+	}
+
+	values = append(values, jo)
+
+	return map[string]string{"JAVA_TOOL_OPTIONS": strings.Join(values, " ")}, nil
 }

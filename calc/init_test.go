@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package count_test
+package calc_test
 
 import (
 	"testing"
@@ -24,7 +24,15 @@ import (
 )
 
 func TestUnit(t *testing.T) {
-	suite := spec.New("libjvm/count", spec.Report(report.Terminal{}))
-	suite("CountClasses", testCountClasses)
+	suite := spec.New("libjvm/calc", spec.Report(report.Terminal{}))
+	suite("Calculator", testCalculator)
+	suite("DirectMemory", testDirectMemory)
+	suite("Headroom", testHeadroom)
+	suite("Heap", testHeap)
+	suite("Metaspace", testMetaspace)
+	suite("MemoryRegions", testMemoryRegions)
+	suite("ReservedCodeCache", testReservedCodeCache)
+	suite("Size", testSize)
+	suite("Stack", testStack)
 	suite.Run(t)
 }

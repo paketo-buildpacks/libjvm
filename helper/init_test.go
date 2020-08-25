@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package count_test
+package helper_test
 
 import (
 	"testing"
@@ -24,7 +24,14 @@ import (
 )
 
 func TestUnit(t *testing.T) {
-	suite := spec.New("libjvm/count", spec.Report(report.Terminal{}))
-	suite("CountClasses", testCountClasses)
+	suite := spec.New("libjvm/helper", spec.Report(report.Terminal{}))
+	suite("ActiveProcessorCount", testActiveProcessorCount)
+	suite("JavaOpts", testJavaOpts)
+	suite("LinkLocalDNS", testLinkLocalDNS)
+	suite("MemoryCalculator", testMemoryCalculator)
+	suite("OpenSSLCertificateLoader", testOpenSSLCertificateLoader)
+	suite("SecurityProvidersClasspath8", testSecurityProvidersClasspath8)
+	suite("SecurityProvidersClasspath9", testSecurityProvidersClasspath9)
+	suite("SecurityProvidersConfigurer", testSecurityProvidersConfigurer)
 	suite.Run(t)
 }

@@ -22,6 +22,7 @@ import (
 
 	"github.com/buildpacks/libcnb"
 	. "github.com/onsi/gomega"
+	"github.com/paketo-buildpacks/libpak"
 	"github.com/sclevine/spec"
 
 	"github.com/paketo-buildpacks/libjvm"
@@ -45,16 +46,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				},
 				{
 					"id":      "jvmkill",
-					"version": "1.1.1",
-					"stacks":  []interface{}{"test-stack-id"},
-				},
-				{
-					"id":      "memory-calculator",
-					"version": "1.1.1",
-					"stacks":  []interface{}{"test-stack-id"},
-				},
-				{
-					"id":      "openssl-security-provider",
 					"version": "1.1.1",
 					"stacks":  []interface{}{"test-stack-id"},
 				},
@@ -83,13 +74,31 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					"version": "1.1.1",
 					"stacks":  []interface{}{"test-stack-id"},
 				},
+			},
+		}
+		ctx.StackID = "test-stack-id"
+
+		result, err := libjvm.Build{}.Build(ctx)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(result.Layers).To(HaveLen(4))
+		Expect(result.Layers[0].Name()).To(Equal("jre"))
+		Expect(result.Layers[1].Name()).To(Equal("helper"))
+		Expect(result.Layers[2].Name()).To(Equal("jvmkill"))
+		Expect(result.Layers[3].Name()).To(Equal("java-security-properties"))
+	})
+
+	it("contributes security-providers-classpath-8 before Java 9", func() {
+		ctx.Plan.Entries = append(ctx.Plan.Entries, libcnb.BuildpackPlanEntry{Name: "jre", Metadata: LaunchContribution})
+		ctx.Buildpack.Metadata = map[string]interface{}{
+			"dependencies": []map[string]interface{}{
 				{
-					"id":      "memory-calculator",
-					"version": "1.1.1",
+					"id":      "jre",
+					"version": "8.0.0",
 					"stacks":  []interface{}{"test-stack-id"},
 				},
 				{
-					"id":      "openssl-security-provider",
+					"id":      "jvmkill",
 					"version": "1.1.1",
 					"stacks":  []interface{}{"test-stack-id"},
 				},
@@ -100,15 +109,47 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		result, err := libjvm.Build{}.Build(ctx)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(result.Layers).To(HaveLen(8))
-		Expect(result.Layers[0].Name()).To(Equal("jre"))
-		Expect(result.Layers[1].Name()).To(Equal("memory-calculator"))
-		Expect(result.Layers[2].Name()).To(Equal("class-counter"))
-		Expect(result.Layers[3].Name()).To(Equal("jvmkill"))
-		Expect(result.Layers[4].Name()).To(Equal("link-local-dns"))
-		Expect(result.Layers[5].Name()).To(Equal("java-security-properties"))
-		Expect(result.Layers[6].Name()).To(Equal("security-providers-configurer"))
-		Expect(result.Layers[7].Name()).To(Equal("openssl-certificate-loader"))
+		Expect(result.Layers[1].(libpak.HelperLayerContributor).Names).To(Equal([]string{
+			"active-processor-count",
+			"java-opts",
+			"link-local-dns",
+			"memory-calculator",
+			"openssl-certificate-loader",
+			"security-providers-configurer",
+			"security-providers-classpath-8",
+		}))
+	})
+
+	it("contributes security-providers-classpath-9 after Java 9", func() {
+		ctx.Plan.Entries = append(ctx.Plan.Entries, libcnb.BuildpackPlanEntry{Name: "jre", Metadata: LaunchContribution})
+		ctx.Buildpack.Metadata = map[string]interface{}{
+			"dependencies": []map[string]interface{}{
+				{
+					"id":      "jre",
+					"version": "11.0.0",
+					"stacks":  []interface{}{"test-stack-id"},
+				},
+				{
+					"id":      "jvmkill",
+					"version": "1.1.1",
+					"stacks":  []interface{}{"test-stack-id"},
+				},
+			},
+		}
+		ctx.StackID = "test-stack-id"
+
+		result, err := libjvm.Build{}.Build(ctx)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(result.Layers[1].(libpak.HelperLayerContributor).Names).To(Equal([]string{
+			"active-processor-count",
+			"java-opts",
+			"link-local-dns",
+			"memory-calculator",
+			"openssl-certificate-loader",
+			"security-providers-configurer",
+			"security-providers-classpath-9",
+		}))
 	})
 
 	it("contributes JDK when no JRE", func() {
@@ -122,16 +163,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				},
 				{
 					"id":      "jvmkill",
-					"version": "1.1.1",
-					"stacks":  []interface{}{"test-stack-id"},
-				},
-				{
-					"id":      "memory-calculator",
-					"version": "1.1.1",
-					"stacks":  []interface{}{"test-stack-id"},
-				},
-				{
-					"id":      "openssl-security-provider",
 					"version": "1.1.1",
 					"stacks":  []interface{}{"test-stack-id"},
 				},
@@ -184,16 +215,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					},
 					{
 						"id":      "jvmkill",
-						"version": "1.1.1",
-						"stacks":  []interface{}{"test-stack-id"},
-					},
-					{
-						"id":      "memory-calculator",
-						"version": "1.1.1",
-						"stacks":  []interface{}{"test-stack-id"},
-					},
-					{
-						"id":      "openssl-security-provider",
 						"version": "1.1.1",
 						"stacks":  []interface{}{"test-stack-id"},
 					},
