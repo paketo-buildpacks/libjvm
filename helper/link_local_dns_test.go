@@ -26,6 +26,7 @@ import (
 	"github.com/sclevine/spec"
 
 	"github.com/paketo-buildpacks/libjvm/helper"
+	"github.com/paketo-buildpacks/libjvm/internal"
 )
 
 func testLinkLocalDNS(t *testing.T, context spec.G, it spec.S) {
@@ -78,16 +79,6 @@ func testLinkLocalDNS(t *testing.T, context spec.G, it spec.S) {
 			Expect(os.Unsetenv("JAVA_SECURITY_PROPERTIES")).To(Succeed())
 		})
 
-		it("warns if file is read-only", func() {
-			Expect(os.Chmod(path, 0555)).To(Succeed())
-
-			config := &ddns.ClientConfig{Servers: []string{"169.254.0.1"}}
-			l := helper.LinkLocalDNS{Config: config}
-
-			Expect(l.Execute()).To(BeNil())
-			Expect(ioutil.ReadFile(path)).To(Equal([]byte(`test`)))
-		})
-
 		it("modifies file if link local", func() {
 			config := &ddns.ClientConfig{Servers: []string{"169.254.0.1"}}
 			l := helper.LinkLocalDNS{Config: config}
@@ -97,6 +88,20 @@ func testLinkLocalDNS(t *testing.T, context spec.G, it spec.S) {
 networkaddress.cache.ttl=0
 networkaddress.cache.negative.ttl=0
 `)))
+		})
+
+		if internal.IsRoot() {
+			return
+		}
+
+		it("warns if file is read-only", func() {
+			Expect(os.Chmod(path, 0555)).To(Succeed())
+
+			config := &ddns.ClientConfig{Servers: []string{"169.254.0.1"}}
+			l := helper.LinkLocalDNS{Config: config}
+
+			Expect(l.Execute()).To(BeNil())
+			Expect(ioutil.ReadFile(path)).To(Equal([]byte(`test`)))
 		})
 
 	})

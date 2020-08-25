@@ -28,6 +28,7 @@ import (
 	"github.com/sclevine/spec"
 
 	"github.com/paketo-buildpacks/libjvm"
+	"github.com/paketo-buildpacks/libjvm/internal"
 )
 
 func testCertificateLoader(t *testing.T, context spec.G, it spec.S) {
@@ -84,6 +85,10 @@ func testCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 		Expect(ks).To(HaveLen(2))
 	})
 
+	if internal.IsRoot() {
+		return
+	}
+
 	it("does not return error when keystore is read-only", func() {
 		Expect(os.Chmod(path, 0555)).To(Succeed())
 
@@ -103,5 +108,4 @@ func testCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 		ks, err := keystore.Decode(in, []byte("changeit"))
 		Expect(ks).To(HaveLen(1))
 	})
-
 }
