@@ -91,10 +91,8 @@ func (j JDK) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 			return libcnb.Layer{}, fmt.Errorf("unable to load certificates\n%w", err)
 		}
 
-		layer.Build = true
-		layer.Cache = true
 		return layer, nil
-	})
+	}, libpak.BuildLayer, libpak.CacheLayer)
 }
 
 func (j JDK) Name() string {

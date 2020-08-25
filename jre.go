@@ -77,6 +77,14 @@ func NewJRE(applicationPath string, dependency libpak.BuildpackDependency, cache
 func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 	j.LayerContributor.Logger = j.Logger
 
+	var flags []libpak.LayerFlag
+	if IsBuildContribution(j.Metadata) {
+		flags = append(flags, libpak.BuildLayer, libpak.CacheLayer)
+	}
+	if IsLaunchContribution(j.Metadata) {
+		flags = append(flags, libpak.LaunchLayer)
+	}
+
 	return j.LayerContributor.Contribute(layer, func(artifact *os.File) (libcnb.Layer, error) {
 		j.Logger.Bodyf("Expanding to %s", layer.Path)
 		if err := crush.ExtractTarGz(artifact, layer.Path, 1); err != nil {
@@ -103,8 +111,6 @@ func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 
 		if IsBuildContribution(j.Metadata) {
 			layer.BuildEnvironment.Default("JAVA_HOME", layer.Path)
-			layer.Build = true
-			layer.Cache = true
 		}
 
 		if IsLaunchContribution(j.Metadata) {
@@ -146,11 +152,10 @@ func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 
 			layer.LaunchEnvironment.Default("JAVA_HOME", layer.Path)
 			layer.LaunchEnvironment.Default("MALLOC_ARENA_MAX", "2")
-			layer.Launch = true
 		}
 
 		return layer, nil
-	})
+	}, flags...)
 }
 
 func (j JRE) Name() string {

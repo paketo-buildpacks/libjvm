@@ -48,9 +48,8 @@ func (j JavaSecurityProperties) Contribute(layer libcnb.Layer) (libcnb.Layer, er
 		layer.LaunchEnvironment.Appendf("JAVA_TOOL_OPTIONS", "-Djava.security.properties=%s", file)
 		layer.LaunchEnvironment.Default("JAVA_SECURITY_PROPERTIES", file)
 
-		layer.Launch = true
 		return layer, nil
-	})
+	}, libpak.LaunchLayer)
 }
 
 func (j JavaSecurityProperties) Name() string {
