@@ -106,7 +106,15 @@ func NewMavenJARListing(roots ...string) ([]MavenJAR, error) {
 		m = append(m, r.value)
 	}
 	sort.Slice(m, func(i, j int) bool {
-		return m[i].Name < m[j].Name
+		if m[i].Name != m[j].Name {
+			return m[i].Name < m[j].Name
+		}
+
+		if m[i].Version != m[j].Version {
+			return m[i].Version < m[j].Version
+		}
+
+		return m[i].SHA256 < m[j].SHA256
 	})
 
 	return m, nil
