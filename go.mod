@@ -6,7 +6,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.1.0
 	github.com/buildpacks/libcnb v1.17.0
 	github.com/heroku/color v0.0.6
-	github.com/magiconair/properties v1.8.3
+	github.com/magiconair/properties v1.8.4
 	github.com/mattn/go-shellwords v1.0.10
 	github.com/miekg/dns v1.1.31
 	github.com/onsi/gomega v1.10.2
@@ -15,5 +15,5 @@ require (
 	github.com/sclevine/spec v1.4.0
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a // indirect
 	golang.org/x/net v0.0.0-20200904194848-62affa334b73 // indirect
-	golang.org/x/sys v0.0.0-20200909081042-eff7692f9009
+	golang.org/x/sys v0.0.0-20200922070232-aee5d888a860
 )
