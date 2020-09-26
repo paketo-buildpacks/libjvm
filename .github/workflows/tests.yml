@@ -1,6 +1,9 @@
 name: Tests
 "on":
     pull_request: {}
+    push:
+        branches:
+            - main
 jobs:
     unit:
         name: Unit Test
@@ -14,11 +17,21 @@ jobs:
             - uses: actions/cache@v2
               with:
                 key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-                path: ~/go/pkg/mod
+                path: ${{ env.HOME }}/go/pkg/mod
                 restore-keys: ${{ runner.os }}-go-
             - name: Install richgo
-              run: go get -u github.com/kyoh86/richgo
+              run: |
+                #!/usr/bin/env bash
+
+                set -euo pipefail
+
+                GO111MODULE=on go get -u -ldflags="-s -w" github.com/kyoh86/richgo
             - name: Run Tests
-              run: richgo test ./...
+              run: |
+                #!/usr/bin/env bash
+
+                set -euo pipefail
+
+                richgo test ./...
               env:
                 RICHGO_FORCE_COLOR: "1"
