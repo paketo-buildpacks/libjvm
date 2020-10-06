@@ -13,7 +13,5 @@ require (
 	github.com/paketo-buildpacks/libpak v1.45.1
 	github.com/pavel-v-chernykh/keystore-go v2.1.0+incompatible
 	github.com/sclevine/spec v1.4.0
-	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a // indirect
-	golang.org/x/net v0.0.0-20200904194848-62affa334b73 // indirect
 	golang.org/x/sys v0.0.0-20200922070232-aee5d888a860
 )
