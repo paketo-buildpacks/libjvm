@@ -10,7 +10,7 @@ require (
 	github.com/mattn/go-shellwords v1.0.10
 	github.com/miekg/dns v1.1.31
 	github.com/onsi/gomega v1.10.2
-	github.com/paketo-buildpacks/libpak v1.45.1
+	github.com/paketo-buildpacks/libpak v1.46.0
 	github.com/pavel-v-chernykh/keystore-go v2.1.0+incompatible
 	github.com/sclevine/spec v1.4.0
 	golang.org/x/sys v0.0.0-20200922070232-aee5d888a860
