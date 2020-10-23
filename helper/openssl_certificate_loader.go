@@ -26,8 +26,8 @@ import (
 )
 
 type OpenSSLCertificateLoader struct {
-	CACertificatesPath string
-	Logger             bard.Logger
+	CertificateDirs []string
+	Logger          bard.Logger
 }
 
 func (o OpenSSLCertificateLoader) Execute() (map[string]string, error) {
@@ -37,10 +37,10 @@ func (o OpenSSLCertificateLoader) Execute() (map[string]string, error) {
 	}
 
 	c := libjvm.CertificateLoader{
-		CACertificatesPath: o.CACertificatesPath,
-		KeyStorePath:       k,
-		KeyStorePassword:   "changeit",
-		Logger:             o.Logger.InfoWriter(),
+		CertificateDirs:  o.CertificateDirs,
+		KeyStorePath:     k,
+		KeyStorePassword: "changeit",
+		Logger:           o.Logger.InfoWriter(),
 	}
 
 	if err := c.Load(); err != nil {

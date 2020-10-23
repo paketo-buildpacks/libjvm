@@ -36,6 +36,8 @@ func testOpenSSLCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 	var (
 		Expect = NewWithT(t).Expect
 
+		certificateDirs = []string{filepath.Join("testdata", "certificates")}
+
 		path string
 	)
 
@@ -60,8 +62,8 @@ func testOpenSSLCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 
 	it("returns error if BPI_JVM_CACERTS is not set", func() {
 		o := helper.OpenSSLCertificateLoader{
-			CACertificatesPath: filepath.Join("testdata", "test-certificates.crt"),
-			Logger:             bard.NewLogger(ioutil.Discard),
+			CertificateDirs: certificateDirs,
+			Logger:          bard.NewLogger(ioutil.Discard),
 		}
 
 		_, err := o.Execute()
@@ -79,10 +81,10 @@ func testOpenSSLCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 			Expect(os.Unsetenv("BPI_JVM_CACERTS")).To(Succeed())
 		})
 
-		it("short circuits if no CA certificates file does not exist", func() {
+		it("ignores non-existent directory", func() {
 			o := helper.OpenSSLCertificateLoader{
-				CACertificatesPath: filepath.Join("testdata", "non-existent-file"),
-				Logger:             bard.NewLogger(ioutil.Discard),
+				CertificateDirs: []string{filepath.Join("testdata", "non-existent-directory")},
+				Logger:          bard.NewLogger(ioutil.Discard),
 			}
 
 			Expect(o.Execute()).To(BeNil())
@@ -90,8 +92,8 @@ func testOpenSSLCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 
 		it("loads additional certificates", func() {
 			o := helper.OpenSSLCertificateLoader{
-				CACertificatesPath: filepath.Join("testdata", "test-certificates.crt"),
-				Logger:             bard.NewLogger(ioutil.Discard),
+				CertificateDirs: certificateDirs,
+				Logger:          bard.NewLogger(ioutil.Discard),
 			}
 
 			Expect(o.Execute()).To(BeNil())
@@ -101,7 +103,7 @@ func testOpenSSLCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 			defer in.Close()
 
 			ks, err := keystore.Decode(in, []byte("changeit"))
-			Expect(ks).To(HaveLen(2))
+			Expect(ks).To(HaveLen(3))
 		})
 
 		if internal.IsRoot() {
@@ -112,8 +114,8 @@ func testOpenSSLCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 			Expect(os.Chmod(path, 0555)).To(Succeed())
 
 			o := helper.OpenSSLCertificateLoader{
-				CACertificatesPath: filepath.Join("testdata", "test-certificates.crt"),
-				Logger:             bard.NewLogger(ioutil.Discard),
+				CertificateDirs: certificateDirs,
+				Logger:          bard.NewLogger(ioutil.Discard),
 			}
 
 			Expect(o.Execute()).To(BeNil())

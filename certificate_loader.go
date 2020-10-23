@@ -22,19 +22,21 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
+	"regexp"
 	"time"
 
 	"github.com/pavel-v-chernykh/keystore-go"
 	"golang.org/x/sys/unix"
 )
 
-const CACertificates = "/etc/ssl/certs/ca-certificates.crt"
+const DefaultCertsDir = "/etc/ssl/certs"
 
 type CertificateLoader struct {
-	CACertificatesPath string
-	KeyStorePassword   string
-	KeyStorePath       string
-	Logger             io.Writer
+	CertificateDirs  []string
+	KeyStorePassword string
+	KeyStorePath     string
+	Logger           io.Writer
 }
 
 func (c *CertificateLoader) Load() error {
@@ -55,8 +57,8 @@ func (c *CertificateLoader) Load() error {
 		return fmt.Errorf("unable to read keystore\n%w", err)
 	}
 
-	for i, b := range blocks {
-		ks[fmt.Sprintf("openssl-%03d", i)] = &keystore.TrustedCertificateEntry{
+	for f, b := range blocks {
+		ks[f] = &keystore.TrustedCertificateEntry{
 			Entry: keystore.Entry{
 				CreationDate: time.Now(),
 			},
@@ -74,24 +76,48 @@ func (c *CertificateLoader) Load() error {
 	return nil
 }
 
-func (c CertificateLoader) ReadBlocks() ([]*pem.Block, error) {
-	rest, err := ioutil.ReadFile(c.CACertificatesPath)
-	if os.IsNotExist(err) {
-		return nil, nil
-	} else if err != nil {
-		return nil, fmt.Errorf("unable to read %s\n%w", c.CACertificatesPath, err)
+func (c CertificateLoader) ReadBlocks() (map[string]*pem.Block, error) {
+	read := make(map[string]*pem.Block)
+
+	re := regexp.MustCompile(`^[[:xdigit:]]{8}\.[\d]$`)
+	for _, d := range c.CertificateDirs {
+		children, err := ioutil.ReadDir(d)
+		if os.IsNotExist(err) {
+			continue
+		} else if err != nil {
+			return nil, fmt.Errorf("unable to list children of %s\n%w", d, err)
+		}
+
+		for _, c := range children {
+			if c.IsDir() || !re.MatchString(c.Name()) {
+				continue
+			}
+
+			file := filepath.Join(d, c.Name())
+			rest, err := ioutil.ReadFile(file)
+			if os.IsNotExist(err) {
+				return nil, nil
+			} else if err != nil {
+				return nil, fmt.Errorf("unable to read %s\n%w", file, err)
+			}
+
+			var (
+				block  *pem.Block
+				blocks []*pem.Block
+			)
+
+			for len(rest) != 0 {
+				block, rest = pem.Decode(rest)
+				blocks = append(blocks, block)
+			}
+
+			for i, b := range blocks {
+				read[fmt.Sprintf("%s-%d", file, i)] = b
+			}
+		}
 	}
 
-	var (
-		block  *pem.Block
-		blocks []*pem.Block
-	)
-	for len(rest) != 0 {
-		block, rest = pem.Decode(rest)
-		blocks = append(blocks, block)
-	}
-
-	return blocks, nil
+	return read, nil
 }
 
 func (c CertificateLoader) ReadKeyStore() (keystore.KeyStore, error) {
@@ -126,4 +152,12 @@ func (c CertificateLoader) WriteKeyStore(ks keystore.KeyStore) error {
 	}
 
 	return nil
+}
+
+func CertificateDirs() []string {
+	if s, ok := os.LookupEnv("SSL_CERT_DIR"); ok {
+		return filepath.SplitList(s)
+	}
+
+	return []string{DefaultCertsDir}
 }

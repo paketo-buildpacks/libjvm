@@ -36,6 +36,8 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 	var (
 		Expect = NewWithT(t).Expect
 
+		certificateDirs = []string{filepath.Join("testdata", "certificates")}
+
 		ctx libcnb.BuildContext
 	)
 
@@ -62,12 +64,11 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, filepath.Join("testdata", "test-certificates.crt"), NoContribution, &libcnb.BuildpackPlan{})
+		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, certificateDirs, NoContribution, &libcnb.BuildpackPlan{})
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
-		Expect(j.LayerContributor.LayerContributor.ExpectedMetadata.(map[string]interface{})["cacerts-sha256"]).
-			To(Equal("04846f73d9d0421c60076fd02bad7f0a81a3f11a028d653b0de53290e41dcead"))
+		Expect(j.LayerContributor.LayerContributor.ExpectedMetadata.(map[string]interface{})["certificates"]).To(HaveLen(4))
 
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
@@ -86,7 +87,7 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, filepath.Join("testdata", "test-certificates.crt"), NoContribution, &libcnb.BuildpackPlan{})
+		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, certificateDirs, NoContribution, &libcnb.BuildpackPlan{})
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
@@ -103,7 +104,7 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		ks, err := keystore.Decode(in, []byte("changeit"))
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(ks).To(HaveLen(2))
+		Expect(ks).To(HaveLen(3))
 	})
 
 	it("updates before Java 9 JDK certificates", func() {
@@ -114,7 +115,7 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JDKType, filepath.Join("testdata", "test-certificates.crt"), NoContribution, &libcnb.BuildpackPlan{})
+		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JDKType, certificateDirs, NoContribution, &libcnb.BuildpackPlan{})
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
@@ -131,7 +132,7 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		ks, err := keystore.Decode(in, []byte("changeit"))
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(ks).To(HaveLen(2))
+		Expect(ks).To(HaveLen(3))
 	})
 
 	it("updates after Java 9 JDK certificates", func() {
@@ -142,7 +143,7 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JDKType, filepath.Join("testdata", "test-certificates.crt"), NoContribution, &libcnb.BuildpackPlan{})
+		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JDKType, certificateDirs, NoContribution, &libcnb.BuildpackPlan{})
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
@@ -159,7 +160,7 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		ks, err := keystore.Decode(in, []byte("changeit"))
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(ks).To(HaveLen(2))
+		Expect(ks).To(HaveLen(3))
 	})
 
 	it("marks layer for build", func() {
@@ -170,12 +171,11 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, filepath.Join("testdata", "test-certificates.crt"), BuildContribution, &libcnb.BuildpackPlan{})
+		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, certificateDirs, BuildContribution, &libcnb.BuildpackPlan{})
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
-		Expect(j.LayerContributor.LayerContributor.ExpectedMetadata.(map[string]interface{})["cacerts-sha256"]).
-			To(Equal("04846f73d9d0421c60076fd02bad7f0a81a3f11a028d653b0de53290e41dcead"))
+		Expect(j.LayerContributor.LayerContributor.ExpectedMetadata.(map[string]interface{})["certificates"]).To(HaveLen(4))
 
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
@@ -196,12 +196,11 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, filepath.Join("testdata", "test-certificates.crt"), LaunchContribution, &libcnb.BuildpackPlan{})
+		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, certificateDirs, LaunchContribution, &libcnb.BuildpackPlan{})
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
-		Expect(j.LayerContributor.LayerContributor.ExpectedMetadata.(map[string]interface{})["cacerts-sha256"]).
-			To(Equal("04846f73d9d0421c60076fd02bad7f0a81a3f11a028d653b0de53290e41dcead"))
+		Expect(j.LayerContributor.LayerContributor.ExpectedMetadata.(map[string]interface{})["certificates"]).To(HaveLen(4))
 
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
@@ -227,12 +226,11 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, filepath.Join("testdata", "test-certificates.crt"), LaunchContribution, &libcnb.BuildpackPlan{})
+		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, certificateDirs, LaunchContribution, &libcnb.BuildpackPlan{})
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
-		Expect(j.LayerContributor.LayerContributor.ExpectedMetadata.(map[string]interface{})["cacerts-sha256"]).
-			To(Equal("04846f73d9d0421c60076fd02bad7f0a81a3f11a028d653b0de53290e41dcead"))
+		Expect(j.LayerContributor.LayerContributor.ExpectedMetadata.(map[string]interface{})["certificates"]).To(HaveLen(4))
 
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
@@ -257,12 +255,11 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JDKType, filepath.Join("testdata", "test-certificates.crt"), LaunchContribution, &libcnb.BuildpackPlan{})
+		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JDKType, certificateDirs, LaunchContribution, &libcnb.BuildpackPlan{})
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
-		Expect(j.LayerContributor.LayerContributor.ExpectedMetadata.(map[string]interface{})["cacerts-sha256"]).
-			To(Equal("04846f73d9d0421c60076fd02bad7f0a81a3f11a028d653b0de53290e41dcead"))
+		Expect(j.LayerContributor.LayerContributor.ExpectedMetadata.(map[string]interface{})["certificates"]).To(HaveLen(4))
 
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
@@ -288,12 +285,11 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JDKType, filepath.Join("testdata", "test-certificates.crt"), LaunchContribution, &libcnb.BuildpackPlan{})
+		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JDKType, certificateDirs, LaunchContribution, &libcnb.BuildpackPlan{})
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
-		Expect(j.LayerContributor.LayerContributor.ExpectedMetadata.(map[string]interface{})["cacerts-sha256"]).
-			To(Equal("04846f73d9d0421c60076fd02bad7f0a81a3f11a028d653b0de53290e41dcead"))
+		Expect(j.LayerContributor.LayerContributor.ExpectedMetadata.(map[string]interface{})["certificates"]).To(HaveLen(4))
 
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())

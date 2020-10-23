@@ -17,10 +17,7 @@
 package libjvm
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -30,13 +27,14 @@ import (
 	"github.com/paketo-buildpacks/libpak"
 	"github.com/paketo-buildpacks/libpak/bard"
 	"github.com/paketo-buildpacks/libpak/crush"
+	"github.com/paketo-buildpacks/libpak/sherpa"
 
 	"github.com/paketo-buildpacks/libjvm/count"
 )
 
 type JRE struct {
 	ApplicationPath  string
-	Certificates     string
+	CertificateDirs  []string
 	DistributionType DistributionType
 	LayerContributor libpak.DependencyLayerContributor
 	Logger           bard.Logger
@@ -44,22 +42,15 @@ type JRE struct {
 }
 
 func NewJRE(applicationPath string, dependency libpak.BuildpackDependency, cache libpak.DependencyCache,
-	distributionType DistributionType, certificates string, metadata map[string]interface{},
+	distributionType DistributionType, certificateDirs []string, metadata map[string]interface{},
 	plan *libcnb.BuildpackPlan) (JRE, error) {
 
 	expected := map[string]interface{}{"dependency": dependency}
 
-	in, err := os.Open(certificates)
-	if err != nil && !os.IsNotExist(err) {
-		return JRE{}, fmt.Errorf("unable to open file %s\n%w", certificates, err)
-	} else if err == nil {
-		defer in.Close()
-
-		s := sha256.New()
-		if _, err := io.Copy(s, in); err != nil {
-			return JRE{}, fmt.Errorf("unable to hash file %s\n%w", certificates, err)
-		}
-		expected["cacerts-sha256"] = hex.EncodeToString(s.Sum(nil))
+	var err error
+	expected["certificates"], err = sherpa.NewFileListing(certificateDirs...)
+	if err != nil {
+		return JRE{}, fmt.Errorf("unable to create file listing for %s\n%w", certificateDirs, err)
 	}
 
 	layerContributor := libpak.NewDependencyLayerContributor(dependency, cache, plan)
@@ -67,7 +58,7 @@ func NewJRE(applicationPath string, dependency libpak.BuildpackDependency, cache
 
 	return JRE{
 		ApplicationPath:  applicationPath,
-		Certificates:     certificates,
+		CertificateDirs:  certificateDirs,
 		DistributionType: distributionType,
 		LayerContributor: layerContributor,
 		Metadata:         metadata,
@@ -99,10 +90,10 @@ func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 		}
 
 		c := CertificateLoader{
-			CACertificatesPath: j.Certificates,
-			KeyStorePath:       cacertsPath,
-			KeyStorePassword:   "changeit",
-			Logger:             j.Logger.BodyWriter(),
+			CertificateDirs:  j.CertificateDirs,
+			KeyStorePath:     cacertsPath,
+			KeyStorePassword: "changeit",
+			Logger:           j.Logger.BodyWriter(),
 		}
 
 		if err := c.Load(); err != nil {

@@ -17,10 +17,7 @@
 package libjvm
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 
@@ -28,35 +25,29 @@ import (
 	"github.com/paketo-buildpacks/libpak"
 	"github.com/paketo-buildpacks/libpak/bard"
 	"github.com/paketo-buildpacks/libpak/crush"
+	"github.com/paketo-buildpacks/libpak/sherpa"
 )
 
 type JDK struct {
-	Certificates     string
+	CertificateDirs  []string
 	LayerContributor libpak.DependencyLayerContributor
 	Logger           bard.Logger
 }
 
-func NewJDK(dependency libpak.BuildpackDependency, cache libpak.DependencyCache, certificates string, plan *libcnb.BuildpackPlan) (JDK, error) {
+func NewJDK(dependency libpak.BuildpackDependency, cache libpak.DependencyCache, certificateDirs []string, plan *libcnb.BuildpackPlan) (JDK, error) {
 	expected := map[string]interface{}{"dependency": dependency}
 
-	in, err := os.Open(certificates)
-	if err != nil && !os.IsNotExist(err) {
-		return JDK{}, fmt.Errorf("unable to open file %s\n%w", certificates, err)
-	} else if err == nil {
-		defer in.Close()
-
-		s := sha256.New()
-		if _, err := io.Copy(s, in); err != nil {
-			return JDK{}, fmt.Errorf("unable to hash file %s\n%w", certificates, err)
-		}
-		expected["cacerts-sha256"] = hex.EncodeToString(s.Sum(nil))
+	var err error
+	expected["certificates"], err = sherpa.NewFileListing(certificateDirs...)
+	if err != nil {
+		return JDK{}, fmt.Errorf("unable to create file listing for %s\n%w", certificateDirs, err)
 	}
 
 	layerContributor := libpak.NewDependencyLayerContributor(dependency, cache, plan)
 	layerContributor.LayerContributor.ExpectedMetadata = expected
 
 	return JDK{
-		Certificates:     certificates,
+		CertificateDirs:  certificateDirs,
 		LayerContributor: layerContributor,
 	}, nil
 }
@@ -81,10 +72,10 @@ func (j JDK) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 		}
 
 		c := CertificateLoader{
-			CACertificatesPath: j.Certificates,
-			KeyStorePath:       keyStorePath,
-			KeyStorePassword:   "changeit",
-			Logger:             j.Logger.BodyWriter(),
+			CertificateDirs:  j.CertificateDirs,
+			KeyStorePath:     keyStorePath,
+			KeyStorePassword: "changeit",
+			Logger:           j.Logger.BodyWriter(),
 		}
 
 		if err := c.Load(); err != nil {
