@@ -36,7 +36,10 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 	var (
 		Expect = NewWithT(t).Expect
 
-		certificateDirs = []string{filepath.Join("testdata", "certificates")}
+		cl = libjvm.CertificateLoader{
+			CertDirs: []string{filepath.Join("testdata", "certificates")},
+			Logger:   ioutil.Discard,
+		}
 
 		ctx libcnb.BuildContext
 	)
@@ -64,11 +67,11 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, certificateDirs, NoContribution, &libcnb.BuildpackPlan{})
+		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, cl, NoContribution, &libcnb.BuildpackPlan{})
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
-		Expect(j.LayerContributor.LayerContributor.ExpectedMetadata.(map[string]interface{})["certificates"]).To(HaveLen(4))
+		Expect(j.LayerContributor.LayerContributor.ExpectedMetadata.(map[string]interface{})["cert-dir"]).To(HaveLen(4))
 
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
@@ -87,7 +90,7 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, certificateDirs, NoContribution, &libcnb.BuildpackPlan{})
+		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, cl, NoContribution, &libcnb.BuildpackPlan{})
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
@@ -115,7 +118,7 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JDKType, certificateDirs, NoContribution, &libcnb.BuildpackPlan{})
+		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JDKType, cl, NoContribution, &libcnb.BuildpackPlan{})
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
@@ -143,7 +146,7 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JDKType, certificateDirs, NoContribution, &libcnb.BuildpackPlan{})
+		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JDKType, cl, NoContribution, &libcnb.BuildpackPlan{})
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
@@ -171,11 +174,11 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, certificateDirs, BuildContribution, &libcnb.BuildpackPlan{})
+		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, cl, BuildContribution, &libcnb.BuildpackPlan{})
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
-		Expect(j.LayerContributor.LayerContributor.ExpectedMetadata.(map[string]interface{})["certificates"]).To(HaveLen(4))
+		Expect(j.LayerContributor.LayerContributor.ExpectedMetadata.(map[string]interface{})["cert-dir"]).To(HaveLen(4))
 
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
@@ -196,11 +199,11 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, certificateDirs, LaunchContribution, &libcnb.BuildpackPlan{})
+		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, cl, LaunchContribution, &libcnb.BuildpackPlan{})
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
-		Expect(j.LayerContributor.LayerContributor.ExpectedMetadata.(map[string]interface{})["certificates"]).To(HaveLen(4))
+		Expect(j.LayerContributor.LayerContributor.ExpectedMetadata.(map[string]interface{})["cert-dir"]).To(HaveLen(4))
 
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
@@ -226,11 +229,11 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, certificateDirs, LaunchContribution, &libcnb.BuildpackPlan{})
+		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, cl, LaunchContribution, &libcnb.BuildpackPlan{})
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
-		Expect(j.LayerContributor.LayerContributor.ExpectedMetadata.(map[string]interface{})["certificates"]).To(HaveLen(4))
+		Expect(j.LayerContributor.LayerContributor.ExpectedMetadata.(map[string]interface{})["cert-dir"]).To(HaveLen(4))
 
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
@@ -255,11 +258,11 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JDKType, certificateDirs, LaunchContribution, &libcnb.BuildpackPlan{})
+		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JDKType, cl, LaunchContribution, &libcnb.BuildpackPlan{})
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
-		Expect(j.LayerContributor.LayerContributor.ExpectedMetadata.(map[string]interface{})["certificates"]).To(HaveLen(4))
+		Expect(j.LayerContributor.LayerContributor.ExpectedMetadata.(map[string]interface{})["cert-dir"]).To(HaveLen(4))
 
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
@@ -285,11 +288,11 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JDKType, certificateDirs, LaunchContribution, &libcnb.BuildpackPlan{})
+		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JDKType, cl, LaunchContribution, &libcnb.BuildpackPlan{})
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
-		Expect(j.LayerContributor.LayerContributor.ExpectedMetadata.(map[string]interface{})["certificates"]).To(HaveLen(4))
+		Expect(j.LayerContributor.LayerContributor.ExpectedMetadata.(map[string]interface{})["cert-dir"]).To(HaveLen(4))
 
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())

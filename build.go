@@ -51,6 +51,9 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 	}
 	dc.Logger = b.Logger
 
+	cl := NewCertificateLoader()
+	cl.Logger = b.Logger.BodyWriter()
+
 	v, _ := cr.Resolve("BP_JVM_VERSION")
 
 	if _, ok, err := pr.Resolve("jdk"); err != nil {
@@ -61,7 +64,7 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 			return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)
 		}
 
-		jdk, err := NewJDK(dep, dc, CertificateDirs(), result.Plan)
+		jdk, err := NewJDK(dep, dc, cl, result.Plan)
 		if err != nil {
 			return libcnb.BuildResult{}, fmt.Errorf("unable to create jdk\n%w", err)
 		}
@@ -88,7 +91,7 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 			return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)
 		}
 
-		jre, err := NewJRE(context.Application.Path, depJRE, dc, dt, CertificateDirs(), e.Metadata, result.Plan)
+		jre, err := NewJRE(context.Application.Path, depJRE, dc, dt, cl, e.Metadata, result.Plan)
 		if err != nil {
 			return libcnb.BuildResult{}, fmt.Errorf("unable to create jre\n%w", err)
 		}

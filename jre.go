@@ -27,41 +27,42 @@ import (
 	"github.com/paketo-buildpacks/libpak"
 	"github.com/paketo-buildpacks/libpak/bard"
 	"github.com/paketo-buildpacks/libpak/crush"
-	"github.com/paketo-buildpacks/libpak/sherpa"
 
 	"github.com/paketo-buildpacks/libjvm/count"
 )
 
 type JRE struct {
-	ApplicationPath  string
-	CertificateDirs  []string
-	DistributionType DistributionType
-	LayerContributor libpak.DependencyLayerContributor
-	Logger           bard.Logger
-	Metadata         map[string]interface{}
+	ApplicationPath   string
+	CertificateLoader CertificateLoader
+	DistributionType  DistributionType
+	LayerContributor  libpak.DependencyLayerContributor
+	Logger            bard.Logger
+	Metadata          map[string]interface{}
 }
 
 func NewJRE(applicationPath string, dependency libpak.BuildpackDependency, cache libpak.DependencyCache,
-	distributionType DistributionType, certificateDirs []string, metadata map[string]interface{},
+	distributionType DistributionType, certificateLoader CertificateLoader, metadata map[string]interface{},
 	plan *libcnb.BuildpackPlan) (JRE, error) {
 
 	expected := map[string]interface{}{"dependency": dependency}
 
-	var err error
-	expected["certificates"], err = sherpa.NewFileListing(certificateDirs...)
-	if err != nil {
-		return JRE{}, fmt.Errorf("unable to create file listing for %s\n%w", certificateDirs, err)
+	if md, err := certificateLoader.Metadata(); err != nil {
+		return JRE{}, fmt.Errorf("unable to generate certificate loader metadata")
+	} else {
+		for k, v := range md {
+			expected[k] = v
+		}
 	}
 
 	layerContributor := libpak.NewDependencyLayerContributor(dependency, cache, plan)
 	layerContributor.LayerContributor.ExpectedMetadata = expected
 
 	return JRE{
-		ApplicationPath:  applicationPath,
-		CertificateDirs:  certificateDirs,
-		DistributionType: distributionType,
-		LayerContributor: layerContributor,
-		Metadata:         metadata,
+		ApplicationPath:   applicationPath,
+		CertificateLoader: certificateLoader,
+		DistributionType:  distributionType,
+		LayerContributor:  layerContributor,
+		Metadata:          metadata,
 	}, nil
 }
 
@@ -89,14 +90,7 @@ func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 			cacertsPath = filepath.Join(layer.Path, "lib", "security", "cacerts")
 		}
 
-		c := CertificateLoader{
-			CertificateDirs:  j.CertificateDirs,
-			KeyStorePath:     cacertsPath,
-			KeyStorePassword: "changeit",
-			Logger:           j.Logger.BodyWriter(),
-		}
-
-		if err := c.Load(); err != nil {
+		if err := j.CertificateLoader.Load(cacertsPath, "changeit"); err != nil {
 			return libcnb.Layer{}, fmt.Errorf("unable to load certificates\n%w", err)
 		}
 

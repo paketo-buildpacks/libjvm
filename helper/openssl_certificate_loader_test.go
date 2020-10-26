@@ -28,6 +28,7 @@ import (
 	"github.com/pavel-v-chernykh/keystore-go"
 	"github.com/sclevine/spec"
 
+	"github.com/paketo-buildpacks/libjvm"
 	"github.com/paketo-buildpacks/libjvm/helper"
 	"github.com/paketo-buildpacks/libjvm/internal"
 )
@@ -36,7 +37,9 @@ func testOpenSSLCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 	var (
 		Expect = NewWithT(t).Expect
 
-		certificateDirs = []string{filepath.Join("testdata", "certificates")}
+		cl = libjvm.CertificateLoader{
+			CertDirs: []string{filepath.Join("testdata", "certificates")},
+		}
 
 		path string
 	)
@@ -61,10 +64,7 @@ func testOpenSSLCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	it("returns error if BPI_JVM_CACERTS is not set", func() {
-		o := helper.OpenSSLCertificateLoader{
-			CertificateDirs: certificateDirs,
-			Logger:          bard.NewLogger(ioutil.Discard),
-		}
+		o := helper.OpenSSLCertificateLoader{CertificateLoader: cl, Logger: bard.NewLogger(ioutil.Discard)}
 
 		_, err := o.Execute()
 
@@ -81,20 +81,8 @@ func testOpenSSLCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 			Expect(os.Unsetenv("BPI_JVM_CACERTS")).To(Succeed())
 		})
 
-		it("ignores non-existent directory", func() {
-			o := helper.OpenSSLCertificateLoader{
-				CertificateDirs: []string{filepath.Join("testdata", "non-existent-directory")},
-				Logger:          bard.NewLogger(ioutil.Discard),
-			}
-
-			Expect(o.Execute()).To(BeNil())
-		})
-
 		it("loads additional certificates", func() {
-			o := helper.OpenSSLCertificateLoader{
-				CertificateDirs: certificateDirs,
-				Logger:          bard.NewLogger(ioutil.Discard),
-			}
+			o := helper.OpenSSLCertificateLoader{CertificateLoader: cl, Logger: bard.NewLogger(ioutil.Discard)}
 
 			Expect(o.Execute()).To(BeNil())
 
@@ -113,10 +101,7 @@ func testOpenSSLCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 		it("does not return error when keystore is read-only", func() {
 			Expect(os.Chmod(path, 0555)).To(Succeed())
 
-			o := helper.OpenSSLCertificateLoader{
-				CertificateDirs: certificateDirs,
-				Logger:          bard.NewLogger(ioutil.Discard),
-			}
+			o := helper.OpenSSLCertificateLoader{CertificateLoader: cl, Logger: bard.NewLogger(ioutil.Discard)}
 
 			Expect(o.Execute()).To(BeNil())
 
