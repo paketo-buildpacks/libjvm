@@ -17,10 +17,7 @@
 package libjvm
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -35,42 +32,37 @@ import (
 )
 
 type JRE struct {
-	ApplicationPath  string
-	Certificates     string
-	DistributionType DistributionType
-	LayerContributor libpak.DependencyLayerContributor
-	Logger           bard.Logger
-	Metadata         map[string]interface{}
+	ApplicationPath   string
+	CertificateLoader CertificateLoader
+	DistributionType  DistributionType
+	LayerContributor  libpak.DependencyLayerContributor
+	Logger            bard.Logger
+	Metadata          map[string]interface{}
 }
 
 func NewJRE(applicationPath string, dependency libpak.BuildpackDependency, cache libpak.DependencyCache,
-	distributionType DistributionType, certificates string, metadata map[string]interface{},
+	distributionType DistributionType, certificateLoader CertificateLoader, metadata map[string]interface{},
 	plan *libcnb.BuildpackPlan) (JRE, error) {
 
 	expected := map[string]interface{}{"dependency": dependency}
 
-	in, err := os.Open(certificates)
-	if err != nil && !os.IsNotExist(err) {
-		return JRE{}, fmt.Errorf("unable to open file %s\n%w", certificates, err)
-	} else if err == nil {
-		defer in.Close()
-
-		s := sha256.New()
-		if _, err := io.Copy(s, in); err != nil {
-			return JRE{}, fmt.Errorf("unable to hash file %s\n%w", certificates, err)
+	if md, err := certificateLoader.Metadata(); err != nil {
+		return JRE{}, fmt.Errorf("unable to generate certificate loader metadata")
+	} else {
+		for k, v := range md {
+			expected[k] = v
 		}
-		expected["cacerts-sha256"] = hex.EncodeToString(s.Sum(nil))
 	}
 
 	layerContributor := libpak.NewDependencyLayerContributor(dependency, cache, plan)
 	layerContributor.LayerContributor.ExpectedMetadata = expected
 
 	return JRE{
-		ApplicationPath:  applicationPath,
-		Certificates:     certificates,
-		DistributionType: distributionType,
-		LayerContributor: layerContributor,
-		Metadata:         metadata,
+		ApplicationPath:   applicationPath,
+		CertificateLoader: certificateLoader,
+		DistributionType:  distributionType,
+		LayerContributor:  layerContributor,
+		Metadata:          metadata,
 	}, nil
 }
 
@@ -98,14 +90,7 @@ func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 			cacertsPath = filepath.Join(layer.Path, "lib", "security", "cacerts")
 		}
 
-		c := CertificateLoader{
-			CACertificatesPath: j.Certificates,
-			KeyStorePath:       cacertsPath,
-			KeyStorePassword:   "changeit",
-			Logger:             j.Logger.BodyWriter(),
-		}
-
-		if err := c.Load(); err != nil {
+		if err := j.CertificateLoader.Load(cacertsPath, "changeit"); err != nil {
 			return libcnb.Layer{}, fmt.Errorf("unable to load certificates\n%w", err)
 		}
 

@@ -26,8 +26,8 @@ import (
 )
 
 type OpenSSLCertificateLoader struct {
-	CACertificatesPath string
-	Logger             bard.Logger
+	CertificateLoader libjvm.CertificateLoader
+	Logger            bard.Logger
 }
 
 func (o OpenSSLCertificateLoader) Execute() (map[string]string, error) {
@@ -36,14 +36,9 @@ func (o OpenSSLCertificateLoader) Execute() (map[string]string, error) {
 		return nil, fmt.Errorf("$BPI_JVM_CACERTS must be set")
 	}
 
-	c := libjvm.CertificateLoader{
-		CACertificatesPath: o.CACertificatesPath,
-		KeyStorePath:       k,
-		KeyStorePassword:   "changeit",
-		Logger:             o.Logger.InfoWriter(),
-	}
+	o.CertificateLoader.Logger = o.Logger.InfoWriter()
 
-	if err := c.Load(); err != nil {
+	if err := o.CertificateLoader.Load(k, "changeit"); err != nil {
 		return nil, fmt.Errorf("unable to load certificates\n%w", err)
 	}
 

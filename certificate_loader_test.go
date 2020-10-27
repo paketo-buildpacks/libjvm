@@ -21,6 +21,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -34,78 +35,146 @@ import (
 func testCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 	var (
 		Expect = NewWithT(t).Expect
-
-		path string
 	)
 
-	it.Before(func() {
-		in, err := os.Open(filepath.Join("testdata", "test-keystore.jks"))
-		Expect(err).NotTo(HaveOccurred())
-		defer in.Close()
+	context("certificate sources", func() {
+		it("returns default sources", func() {
+			c := libjvm.NewCertificateLoader()
 
-		out, err := ioutil.TempFile("", "certificate-loader")
-		Expect(err).NotTo(HaveOccurred())
-		defer out.Close()
+			Expect(c.CertFile).To(Equal(libjvm.DefaultCertFile))
+			Expect(c.CertDirs).To(BeNil())
+		})
 
-		_, err = io.Copy(out, in)
-		Expect(err).NotTo(HaveOccurred())
+		context("$SSL_CERT_DIR", func() {
+			it.Before(func() {
+				Expect(os.Setenv("SSL_CERT_FILE", "another-file")).To(Succeed())
+			})
 
-		path = out.Name()
+			it.After(func() {
+				Expect(os.Unsetenv("SSL_CERT_FILE")).To(Succeed())
+			})
+
+			it("returns configured file", func() {
+				c := libjvm.NewCertificateLoader()
+
+				Expect(c.CertFile).To(Equal("another-file"))
+				Expect(c.CertDirs).To(BeNil())
+			})
+		})
+
+		context("$SSL_CERT_DIR", func() {
+			it.Before(func() {
+				Expect(os.Setenv("SSL_CERT_DIR",
+					strings.Join([]string{"test-1", "test-2"}, string(filepath.ListSeparator)))).To(Succeed())
+			})
+
+			it.After(func() {
+				Expect(os.Unsetenv("SSL_CERT_DIR")).To(Succeed())
+			})
+
+			it("returns configured directories", func() {
+				c := libjvm.NewCertificateLoader()
+
+				Expect(c.CertFile).To(Equal(libjvm.DefaultCertFile))
+				Expect(c.CertDirs).To(Equal([]string{"test-1", "test-2"}))
+			})
+		})
 	})
 
-	it.After(func() {
-		Expect(os.RemoveAll(path)).To(Succeed())
-	})
+	context("load", func() {
+		var (
+			path string
+		)
 
-	it("short circuits if no CA certificates file does not exist", func() {
-		c := libjvm.CertificateLoader{
-			CACertificatesPath: filepath.Join("testdata", "non-existent-file"),
-			KeyStorePath:       path,
-			KeyStorePassword:   "changeit",
+		it.Before(func() {
+			in, err := os.Open(filepath.Join("testdata", "test-keystore.jks"))
+			Expect(err).NotTo(HaveOccurred())
+			defer in.Close()
+
+			out, err := ioutil.TempFile("", "certificate-loader")
+			Expect(err).NotTo(HaveOccurred())
+			defer out.Close()
+
+			_, err = io.Copy(out, in)
+			Expect(err).NotTo(HaveOccurred())
+
+			path = out.Name()
+		})
+
+		it.After(func() {
+			Expect(os.RemoveAll(path)).To(Succeed())
+		})
+
+		it("ignores non-existent file", func() {
+			c := libjvm.CertificateLoader{
+				CertFile: filepath.Join("testdata", "non-existent-file"),
+				Logger:   ioutil.Discard,
+			}
+
+			Expect(c.Load(path, "changeit")).To(Succeed())
+		})
+
+		it("ignores non-existent directory", func() {
+			c := libjvm.CertificateLoader{
+				CertDirs: []string{filepath.Join("testdata", "non-existent-directory")},
+				Logger:   ioutil.Discard,
+			}
+
+			Expect(c.Load(path, "changeit")).To(Succeed())
+		})
+
+		it("loads additional certificates from file", func() {
+			c := libjvm.CertificateLoader{
+				CertFile: filepath.Join("testdata", "certificates", "certificate-1.pem"),
+				Logger:   ioutil.Discard,
+			}
+
+			Expect(c.Load(path, "changeit")).To(Succeed())
+
+			in, err := os.Open(path)
+			Expect(err).NotTo(HaveOccurred())
+			defer in.Close()
+
+			ks, err := keystore.Decode(in, []byte("changeit"))
+			Expect(ks).To(HaveLen(2))
+		})
+
+		it("loads additional certificates from directories", func() {
+			c := libjvm.CertificateLoader{
+				CertDirs: []string{filepath.Join("testdata", "certificates")},
+				Logger:   ioutil.Discard,
+			}
+
+			Expect(c.Load(path, "changeit")).To(Succeed())
+
+			in, err := os.Open(path)
+			Expect(err).NotTo(HaveOccurred())
+			defer in.Close()
+
+			ks, err := keystore.Decode(in, []byte("changeit"))
+			Expect(ks).To(HaveLen(3))
+		})
+
+		if internal.IsRoot() {
+			return
 		}
 
-		Expect(c.Load()).To(Succeed())
-	})
+		it("does not return error when keystore is read-only", func() {
+			Expect(os.Chmod(path, 0555)).To(Succeed())
 
-	it("loads additional certificates", func() {
-		c := libjvm.CertificateLoader{
-			CACertificatesPath: filepath.Join("testdata", "test-certificates.crt"),
-			KeyStorePath:       path,
-			KeyStorePassword:   "changeit",
-			Logger:             ioutil.Discard,
-		}
+			c := libjvm.CertificateLoader{
+				CertDirs: []string{filepath.Join("testdata", "certificates")},
+				Logger:   ioutil.Discard,
+			}
 
-		Expect(c.Load()).To(Succeed())
+			Expect(c.Load(path, "changeit")).To(Succeed())
 
-		in, err := os.Open(path)
-		Expect(err).NotTo(HaveOccurred())
-		defer in.Close()
+			in, err := os.Open(path)
+			Expect(err).NotTo(HaveOccurred())
+			defer in.Close()
 
-		ks, err := keystore.Decode(in, []byte("changeit"))
-		Expect(ks).To(HaveLen(2))
-	})
-
-	if internal.IsRoot() {
-		return
-	}
-
-	it("does not return error when keystore is read-only", func() {
-		Expect(os.Chmod(path, 0555)).To(Succeed())
-
-		c := libjvm.CertificateLoader{
-			CACertificatesPath: filepath.Join("testdata", "test-certificates.crt"),
-			KeyStorePath:       path,
-			KeyStorePassword:   "changeit",
-			Logger:             ioutil.Discard,
-		}
-
-		Expect(c.Load()).To(Succeed())
-
-		in, err := os.Open(path)
-		Expect(err).NotTo(HaveOccurred())
-		defer in.Close()
-
-		ks, err := keystore.Decode(in, []byte("changeit"))
-		Expect(ks).To(HaveLen(1))
+			ks, err := keystore.Decode(in, []byte("changeit"))
+			Expect(ks).To(HaveLen(1))
+		})
 	})
 }

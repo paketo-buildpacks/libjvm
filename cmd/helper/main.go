@@ -35,12 +35,14 @@ func main() {
 
 			l = bard.NewLogger(os.Stdout)
 
+			cl = libjvm.NewCertificateLoader()
+
 			a  = helper.ActiveProcessorCount{Logger: l}
 			c  = helper.SecurityProvidersConfigurer{Logger: l}
 			d  = helper.LinkLocalDNS{Logger: l}
 			j  = helper.JavaOpts{Logger: l}
 			m  = helper.MemoryCalculator{Logger: l, MemoryLimitPath: helper.DefaultMemoryLimitPath}
-			o  = helper.OpenSSLCertificateLoader{CACertificatesPath: libjvm.CACertificates, Logger: l}
+			o  = helper.OpenSSLCertificateLoader{CertificateLoader: cl, Logger: l}
 			s8 = helper.SecurityProvidersClasspath8{Logger: l}
 			s9 = helper.SecurityProvidersClasspath9{Logger: l}
 		)
