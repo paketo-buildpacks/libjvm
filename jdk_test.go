@@ -26,7 +26,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/paketo-buildpacks/libpak"
 	"github.com/paketo-buildpacks/libpak/bard"
-	"github.com/pavel-v-chernykh/keystore-go"
+	"github.com/pavel-v-chernykh/keystore-go/v4"
 	"github.com/sclevine/spec"
 
 	"github.com/paketo-buildpacks/libjvm"
@@ -104,10 +104,10 @@ func testJDK(t *testing.T, context spec.G, it spec.S) {
 		Expect(err).NotTo(HaveOccurred())
 		defer in.Close()
 
-		ks, err := keystore.Decode(in, []byte("changeit"))
+		ks := keystore.New()
+		err = ks.Load(in, []byte("changeit"))
 		Expect(err).NotTo(HaveOccurred())
-
-		Expect(ks).To(HaveLen(3))
+		Expect(ks.Aliases()).To(HaveLen(3))
 	})
 
 	it("updates after Java 9 certificates", func() {
@@ -131,10 +131,9 @@ func testJDK(t *testing.T, context spec.G, it spec.S) {
 		in, err := os.Open(filepath.Join(layer.Path, "lib", "security", "cacerts"))
 		Expect(err).NotTo(HaveOccurred())
 		defer in.Close()
-
-		ks, err := keystore.Decode(in, []byte("changeit"))
+		ks := keystore.New()
+		err = ks.Load(in, []byte("changeit"))
 		Expect(err).NotTo(HaveOccurred())
-
-		Expect(ks).To(HaveLen(3))
+		Expect(ks.Aliases()).To(HaveLen(3))
 	})
 }

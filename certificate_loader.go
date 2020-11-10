@@ -29,11 +29,13 @@ import (
 	"time"
 
 	"github.com/paketo-buildpacks/libpak/sherpa"
-	"github.com/pavel-v-chernykh/keystore-go"
+	"github.com/pavel-v-chernykh/keystore-go/v4"
 	"golang.org/x/sys/unix"
 )
 
 const DefaultCertFile = "/etc/ssl/certs/ca-certificates.crt"
+
+var NormalizedDateTime = time.Date(1980, time.January, 1, 0, 0, 1, 0, time.UTC)
 
 type CertificateLoader struct {
 	CertFile string
@@ -74,15 +76,18 @@ func (c *CertificateLoader) Load(path string, password string) error {
 		}
 
 		for i, b := range blocks {
-			ks[fmt.Sprintf("%s-%d", f, i)] = &keystore.TrustedCertificateEntry{
-				Entry: keystore.Entry{
-					CreationDate: time.Now(),
-				},
+			entry := keystore.TrustedCertificateEntry{
+				CreationTime: NormalizedDateTime,
 				Certificate: keystore.Certificate{
 					Type:    "X.509",
 					Content: b.Bytes,
 				},
 			}
+
+			if err := ks.SetTrustedCertificateEntry(fmt.Sprintf("%s-%d", f, i), entry); err != nil {
+				return fmt.Errorf("unable to add trusted entry\n%w", err)
+			}
+
 			added++
 		}
 	}
@@ -176,13 +181,13 @@ func (c CertificateLoader) readBlocks(path string) ([]*pem.Block, error) {
 func (CertificateLoader) readKeyStore(path string, password string) (keystore.KeyStore, error) {
 	in, err := os.Open(path)
 	if err != nil {
-		return nil, fmt.Errorf("unable to open %s\n%w", path, err)
+		return keystore.KeyStore{}, fmt.Errorf("unable to open %s\n%w", path, err)
 	}
 	defer in.Close()
 
-	ks, err := keystore.Decode(in, []byte(password))
-	if err != nil {
-		return nil, fmt.Errorf("unable to decode keystore\n %w", err)
+	ks := keystore.New()
+	if err := ks.Load(in, []byte(password)); err != nil {
+		return keystore.KeyStore{}, fmt.Errorf("unable to decode keystore\n %w", err)
 	}
 
 	return ks, nil
@@ -200,7 +205,7 @@ func (c CertificateLoader) writeKeyStore(ks keystore.KeyStore, path string, pass
 	}
 	defer out.Close()
 
-	if err := keystore.Encode(out, ks, []byte(password)); err != nil {
+	if err := ks.Store(out, []byte(password)); err != nil {
 		return fmt.Errorf("unable to encode keystore\n%w", err)
 	}
 
