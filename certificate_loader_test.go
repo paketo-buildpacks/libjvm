@@ -25,7 +25,7 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"github.com/pavel-v-chernykh/keystore-go"
+	"github.com/pavel-v-chernykh/keystore-go/v4"
 	"github.com/sclevine/spec"
 
 	"github.com/paketo-buildpacks/libjvm"
@@ -135,8 +135,10 @@ func testCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 			Expect(err).NotTo(HaveOccurred())
 			defer in.Close()
 
-			ks, err := keystore.Decode(in, []byte("changeit"))
-			Expect(ks).To(HaveLen(2))
+			ks := keystore.New()
+			err = ks.Load(in, []byte("changeit"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ks.Aliases()).To(HaveLen(2))
 		})
 
 		it("loads additional certificates from directories", func() {
@@ -151,8 +153,10 @@ func testCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 			Expect(err).NotTo(HaveOccurred())
 			defer in.Close()
 
-			ks, err := keystore.Decode(in, []byte("changeit"))
-			Expect(ks).To(HaveLen(3))
+			ks := keystore.New()
+			err = ks.Load(in, []byte("changeit"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ks.Aliases()).To(HaveLen(3))
 		})
 
 		if internal.IsRoot() {
@@ -173,8 +177,10 @@ func testCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 			Expect(err).NotTo(HaveOccurred())
 			defer in.Close()
 
-			ks, err := keystore.Decode(in, []byte("changeit"))
-			Expect(ks).To(HaveLen(1))
+			ks := keystore.New()
+			err = ks.Load(in, []byte("changeit"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ks.Aliases()).To(HaveLen(1))
 		})
 	})
 }
