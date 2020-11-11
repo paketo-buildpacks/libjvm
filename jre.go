@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/buildpacks/libcnb"
@@ -133,6 +134,7 @@ func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 			for k, v := range p.Map() {
 				providers = append(providers, fmt.Sprintf("%s|%s", k, v))
 			}
+			sort.Strings(providers)
 			layer.LaunchEnvironment.Default("BPI_JVM_SECURITY_PROVIDERS", strings.Join(providers, " "))
 
 			layer.LaunchEnvironment.Default("JAVA_HOME", layer.Path)
