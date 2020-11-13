@@ -185,7 +185,7 @@ func (CertificateLoader) readKeyStore(path string, password string) (keystore.Ke
 	}
 	defer in.Close()
 
-	ks := keystore.New()
+	ks := keystore.New(keystore.WithOrderedAliases())
 	if err := ks.Load(in, []byte(password)); err != nil {
 		return keystore.KeyStore{}, fmt.Errorf("unable to decode keystore\n %w", err)
 	}
