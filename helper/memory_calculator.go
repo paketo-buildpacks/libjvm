@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -33,6 +34,7 @@ const (
 	ClassLoadFactor        = 0.35
 	DefaultHeadroom        = 0
 	DefaultMemoryLimitPath = "/sys/fs/cgroup/memory/memory.limit_in_bytes"
+	DefaultMemoryInfoPath  = "/proc/meminfo"
 	DefaultThreadCount     = 250
 	MaxJVMSize             = 64 * calc.Tibi
 	UnsetTotalMemory       = int64(9_223_372_036_854_771_712)
@@ -41,6 +43,7 @@ const (
 type MemoryCalculator struct {
 	Logger          bard.Logger
 	MemoryLimitPath string
+	MemoryInfoPath	string
 }
 
 func (m MemoryCalculator) Execute() (map[string]string, error) {
@@ -94,7 +97,7 @@ func (m MemoryCalculator) Execute() (map[string]string, error) {
 	totalMemory := UnsetTotalMemory
 
 	if b, err := ioutil.ReadFile(m.MemoryLimitPath); err != nil && !os.IsNotExist(err) {
-		return nil, fmt.Errorf("unable to read %s\n%w", m.MemoryLimitPath, err)
+		m.Logger.Info("Unable to read %s\n%w", m.MemoryLimitPath, err)
 	} else if err == nil {
 		s := strings.TrimSpace(string(b))
 		if totalMemory, err = strconv.ParseInt(s, 10, 64); err != nil {
@@ -103,7 +106,25 @@ func (m MemoryCalculator) Execute() (map[string]string, error) {
 	}
 
 	if totalMemory == UnsetTotalMemory {
-		m.Logger.Info("WARNING: Container memory limit unset. Configuring JVM for 1G container.")
+		if b, err := ioutil.ReadFile(m.MemoryInfoPath); err != nil && !os.IsNotExist(err) {
+			m.Logger.Info("Unable to read %s\n%w", m.MemoryInfoPath, err)
+		} else if err == nil {
+			rp := regexp.MustCompile("MemAvailable:\\s*(\\d*)\\skB")
+			m := rp.FindStringSubmatch(string(b))
+
+			if m != nil && len(m) > 1 {
+				s := m[1]
+				if i, err := strconv.ParseInt(s, 10, 64); err != nil {
+					return nil, fmt.Errorf("untable to convert available memory %s to integer\n%w", s, err)
+				} else {
+					totalMemory = i * calc.Kibi
+				}
+			}
+		}
+	}
+
+	if totalMemory == UnsetTotalMemory {
+		m.Logger.Info("WARNING: Unable to determine memory limit. Configuring JVM for 1G container.")
 		c.TotalMemory = calc.Size{Value: calc.Gibi}
 	} else if totalMemory > MaxJVMSize {
 		m.Logger.Info("WARNING: Container memory limit too large. Configuring JVM for 64T container.")
