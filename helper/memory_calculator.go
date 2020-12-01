@@ -97,7 +97,7 @@ func (m MemoryCalculator) Execute() (map[string]string, error) {
 	totalMemory := UnsetTotalMemory
 
 	if b, err := ioutil.ReadFile(m.MemoryLimitPath); err != nil && !os.IsNotExist(err) {
-		m.Logger.Info("Unable to read %s\n%w", m.MemoryLimitPath, err)
+		m.Logger.Info("WARNING: Unable to read %s: %s", m.MemoryLimitPath, err)
 	} else if err == nil {
 		s := strings.TrimSpace(string(b))
 		if totalMemory, err = strconv.ParseInt(s, 10, 64); err != nil {
@@ -107,12 +107,12 @@ func (m MemoryCalculator) Execute() (map[string]string, error) {
 
 	if totalMemory == UnsetTotalMemory {
 		if b, err := ioutil.ReadFile(m.MemoryInfoPath); err != nil && !os.IsNotExist(err) {
-			m.Logger.Info("Unable to read %s\n%w", m.MemoryInfoPath, err)
+			m.Logger.Info("WARNING: Unable to read %s: %s", m.MemoryInfoPath, err)
 		} else if err == nil {
 			rp := regexp.MustCompile("MemAvailable:\\s*(\\d*)\\skB")
 			m := rp.FindStringSubmatch(string(b))
 
-			if m != nil && len(m) > 1 {
+			if len(m) > 1 {
 				s := m[1]
 				if i, err := strconv.ParseInt(s, 10, 64); err != nil {
 					return nil, fmt.Errorf("untable to convert available memory %s to integer\n%w", s, err)
