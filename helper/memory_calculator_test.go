@@ -35,6 +35,7 @@ func testMemoryCalculator(t *testing.T, context spec.G, it spec.S) {
 
 		applicationPath string
 		memoryLimitPath string
+		memoryInfoPath  string
 		m               helper.MemoryCalculator
 	)
 
@@ -44,13 +45,19 @@ func testMemoryCalculator(t *testing.T, context spec.G, it spec.S) {
 		applicationPath, err = ioutil.TempDir("", "memory-calculator-application")
 		Expect(err).NotTo(HaveOccurred())
 
-		out, err := ioutil.TempFile("", "memory-calculator-memory-limit")
+		limit, err := ioutil.TempFile("", "memory-calculator-memory-limit")
 		Expect(err).NotTo(HaveOccurred())
-		Expect(out.Close()).To(Succeed())
-		Expect(os.RemoveAll(out.Name())).To(Succeed())
-		memoryLimitPath = out.Name()
+		Expect(limit.Close()).To(Succeed())
+		Expect(os.RemoveAll(limit.Name())).To(Succeed())
+		memoryLimitPath = limit.Name()
 
-		m = helper.MemoryCalculator{MemoryLimitPath: memoryLimitPath}
+		info, err := ioutil.TempFile("", "memory-calculator-memory-info")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(info.Close()).To(Succeed())
+		Expect(os.RemoveAll(info.Name())).To(Succeed())
+		memoryInfoPath = info.Name()
+
+		m = helper.MemoryCalculator{MemoryLimitPath: memoryLimitPath, MemoryInfoPath: memoryInfoPath}
 	})
 
 	it.After(func() {
@@ -142,7 +149,39 @@ func testMemoryCalculator(t *testing.T, context spec.G, it spec.S) {
 				})
 			})
 
-			it("limits total memory to 1G if unset", func() {
+			it("limits total memory to all available memory if no memory limit set", func() {
+				const s = `
+					MemTotal:       16400152 kB
+					MemFree:        10477724 kB
+					MemAvailable:   11514136 kB
+					Buffers:          112396 kB
+				`
+
+				Expect(ioutil.WriteFile(memoryLimitPath, strconv.AppendInt([]byte{}, helper.UnsetTotalMemory, 10), 0755)).To(Succeed())
+				Expect(ioutil.WriteFile(memoryInfoPath, []byte(s), 0755)).To(Succeed())
+
+				Expect(m.Execute()).To(Equal(map[string]string{
+					"JAVA_TOOL_OPTIONS": "-XX:MaxDirectMemorySize=10M -Xmx10988265K -XX:MaxMetaspaceSize=13870K -XX:ReservedCodeCacheSize=240M -Xss1M",
+				}))
+			})
+
+			it("limits total memory to 1G if unable to get amount of available memory", func() {
+				const s = `
+					MemTotal:       16400152 kB
+					MemFree:        10477724 kB
+					MemAvailable:       4136 mB
+					Buffers:          112396 kB
+				`
+
+				Expect(ioutil.WriteFile(memoryLimitPath, strconv.AppendInt([]byte{}, helper.UnsetTotalMemory, 10), 0755)).To(Succeed())
+				Expect(ioutil.WriteFile(memoryInfoPath, []byte(s), 0755)).To(Succeed())
+
+				Expect(m.Execute()).To(Equal(map[string]string{
+					"JAVA_TOOL_OPTIONS": "-XX:MaxDirectMemorySize=10M -Xmx522705K -XX:MaxMetaspaceSize=13870K -XX:ReservedCodeCacheSize=240M -Xss1M",
+				}))
+			})
+
+			it("limits total memory to 1G if unable to determine total memory", func() {
 				Expect(ioutil.WriteFile(memoryLimitPath, strconv.AppendInt([]byte{}, helper.UnsetTotalMemory, 10), 0755)).To(Succeed())
 
 				Expect(m.Execute()).To(Equal(map[string]string{
