@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	DefaultReservedCodeCache = ReservedCodeCache{Value: 240 * Mibi, Provenance: Default}
+	DefaultReservedCodeCache = ReservedCodeCache{Value: 240 * Mebi, Provenance: Default}
 	ReservedCodeCacheRE      = regexp.MustCompile(fmt.Sprintf("^-XX:ReservedCodeCacheSize=(%s)$", SizePattern))
 )
 

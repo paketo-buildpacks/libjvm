@@ -23,7 +23,7 @@ import (
 	"github.com/paketo-buildpacks/libpak/bard"
 )
 
-type JavaOpts struct{
+type JavaOpts struct {
 	Logger bard.Logger
 }
 

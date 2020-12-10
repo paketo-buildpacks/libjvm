@@ -31,7 +31,6 @@ func testSize(t *testing.T, context spec.G, it spec.S) {
 	)
 
 	context("format", func() {
-
 		it("formats bytes", func() {
 			Expect(calc.Size{Value: 1023}.String()).To(Equal("0"))
 		})
@@ -40,28 +39,26 @@ func testSize(t *testing.T, context spec.G, it spec.S) {
 			Expect(calc.Size{Value: calc.Kibi + 1023}.String()).To(Equal("1K"))
 		})
 
-		it("formats Mibi", func() {
-			Expect(calc.Size{Value: calc.Mibi + 1023}.String()).To(Equal("1M"))
+		it("formats Mebi", func() {
+			Expect(calc.Size{Value: calc.Mebi + 1023}.String()).To(Equal("1M"))
 		})
 
 		it("formats Gibi", func() {
 			Expect(calc.Size{Value: calc.Gibi + 1023}.String()).To(Equal("1G"))
 		})
 
-		it("formats Tibi", func() {
-			Expect(calc.Size{Value: calc.Tibi + 1023}.String()).To(Equal("1T"))
+		it("formats Tebi", func() {
+			Expect(calc.Size{Value: calc.Tebi + 1023}.String()).To(Equal("1T"))
 		})
 
-		it("formats larger than Tibi", func() {
-			Expect(calc.Size{Value: (calc.Tibi * 1024) + 1023}.String()).To(Equal("1024T"))
+		it("formats larger than Tebi", func() {
+			Expect(calc.Size{Value: (calc.Tebi * 1024) + 1023}.String()).To(Equal("1024T"))
 		})
 	})
 
 	context("parse", func() {
-
 		it("parses bytes", func() {
 			Expect(calc.ParseSize("1")).To(Equal(calc.Size{Value: 1}))
-			Expect(calc.ParseSize("1b")).To(Equal(calc.Size{Value: 1}))
 		})
 
 		it("parses Kibi", func() {
@@ -69,9 +66,9 @@ func testSize(t *testing.T, context spec.G, it spec.S) {
 			Expect(calc.ParseSize("1K")).To(Equal(calc.Size{Value: calc.Kibi}))
 		})
 
-		it("parses Mibi", func() {
-			Expect(calc.ParseSize("1m")).To(Equal(calc.Size{Value: calc.Mibi}))
-			Expect(calc.ParseSize("1M")).To(Equal(calc.Size{Value: calc.Mibi}))
+		it("parses Mebi", func() {
+			Expect(calc.ParseSize("1m")).To(Equal(calc.Size{Value: calc.Mebi}))
+			Expect(calc.ParseSize("1M")).To(Equal(calc.Size{Value: calc.Mebi}))
 		})
 
 		it("parses Gibi", func() {
@@ -79,9 +76,9 @@ func testSize(t *testing.T, context spec.G, it spec.S) {
 			Expect(calc.ParseSize("1G")).To(Equal(calc.Size{Value: calc.Gibi}))
 		})
 
-		it("parses Tibi", func() {
-			Expect(calc.ParseSize("1t")).To(Equal(calc.Size{Value: calc.Tibi}))
-			Expect(calc.ParseSize("1T")).To(Equal(calc.Size{Value: calc.Tibi}))
+		it("parses Tebi", func() {
+			Expect(calc.ParseSize("1t")).To(Equal(calc.Size{Value: calc.Tebi}))
+			Expect(calc.ParseSize("1T")).To(Equal(calc.Size{Value: calc.Tebi}))
 		})
 
 		it("parses zero", func() {
@@ -124,4 +121,41 @@ func testSize(t *testing.T, context spec.G, it spec.S) {
 		})
 	})
 
+	context("parse", func() {
+		it("parses bytes", func() {
+			Expect(calc.ParseUnit("")).To(Equal(int64(1)))
+			Expect(calc.ParseUnit("B")).To(Equal(int64(1)))
+		})
+
+		it("parses Kibi", func() {
+			Expect(calc.ParseUnit("kB")).To(Equal(calc.Kibi))
+			Expect(calc.ParseUnit("KB")).To(Equal(calc.Kibi))
+			Expect(calc.ParseUnit("KiB")).To(Equal(calc.Kibi))
+		})
+
+		it("parses Mebi", func() {
+			Expect(calc.ParseUnit("MB")).To(Equal(calc.Mebi))
+			Expect(calc.ParseUnit("MiB")).To(Equal(calc.Mebi))
+		})
+
+		it("parses Gibi", func() {
+			Expect(calc.ParseUnit("GB")).To(Equal(calc.Gibi))
+			Expect(calc.ParseUnit("GiB")).To(Equal(calc.Gibi))
+		})
+
+		it("parses Tebi", func() {
+			Expect(calc.ParseUnit("TB")).To(Equal(calc.Tebi))
+			Expect(calc.ParseUnit("TiB")).To(Equal(calc.Tebi))
+		})
+
+		it("trims whitespace", func() {
+			Expect(calc.ParseUnit("\t\r\n kB")).To(Equal(calc.Kibi))
+			Expect(calc.ParseUnit("GB \t\r\n")).To(Equal(calc.Gibi))
+		})
+
+		it("does not parse unknown units", func() {
+			_, err := calc.ParseUnit("X")
+			Expect(err).To(HaveOccurred())
+		})
+	})
 }

@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	DefaultStack = Stack{Value: 1 * Mibi, Provenance: Default}
+	DefaultStack = Stack{Value: 1 * Mebi, Provenance: Default}
 	StackRE      = regexp.MustCompile(fmt.Sprintf("^-Xss(%s)$", SizePattern))
 )
 
