@@ -169,7 +169,7 @@ func testMemoryCalculator(t *testing.T, context spec.G, it spec.S) {
 				const s = `
 					MemTotal:       16400152 kB
 					MemFree:        10477724 kB
-					MemAvailable:       4136 mB
+					MemAvailable:   WILL NOT PARSE
 					Buffers:          112396 kB
 				`
 
@@ -190,7 +190,7 @@ func testMemoryCalculator(t *testing.T, context spec.G, it spec.S) {
 			})
 
 			it("limits total memory to 64T", func() {
-				Expect(ioutil.WriteFile(memoryLimitPath, strconv.AppendInt([]byte{}, helper.MaxJVMSize + 1, 10), 0755)).To(Succeed())
+				Expect(ioutil.WriteFile(memoryLimitPath, strconv.AppendInt([]byte{}, helper.MaxJVMSize+1, 10), 0755)).To(Succeed())
 
 				Expect(m.Execute()).To(Equal(map[string]string{
 					"JAVA_TOOL_OPTIONS": "-XX:MaxDirectMemorySize=10M -Xmx68718950865K -XX:MaxMetaspaceSize=13870K -XX:ReservedCodeCacheSize=240M -Xss1M",
@@ -198,7 +198,7 @@ func testMemoryCalculator(t *testing.T, context spec.G, it spec.S) {
 			})
 
 			it("limits total memory to container size if set", func() {
-				Expect(ioutil.WriteFile(memoryLimitPath, strconv.AppendInt([]byte{}, 10 * calc.Gibi, 10), 0755)).To(Succeed())
+				Expect(ioutil.WriteFile(memoryLimitPath, strconv.AppendInt([]byte{}, 10*calc.Gibi, 10), 0755)).To(Succeed())
 
 				Expect(m.Execute()).To(Equal(map[string]string{
 					"JAVA_TOOL_OPTIONS": "-XX:MaxDirectMemorySize=10M -Xmx9959889K -XX:MaxMetaspaceSize=13870K -XX:ReservedCodeCacheSize=240M -Xss1M",

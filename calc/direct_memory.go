@@ -23,7 +23,7 @@ import (
 )
 
 var (
-	DefaultDirectMemory = DirectMemory{Value: 10 * Mibi, Provenance: Default}
+	DefaultDirectMemory = DirectMemory{Value: 10 * Mebi, Provenance: Default}
 	DirectMemoryRE      = regexp.MustCompile(fmt.Sprintf("^-XX:MaxDirectMemorySize=(%s)$", SizePattern))
 )
 

@@ -32,11 +32,11 @@ const (
 	Calculated
 
 	Kibi = int64(1_024)
-	Mibi = 1_024 * Kibi
-	Gibi = 1_024 * Mibi
-	Tibi = 1_024 * Gibi
+	Mebi = 1_024 * Kibi
+	Gibi = 1_024 * Mebi
+	Tebi = 1_024 * Gibi
 
-	SizePattern = "([\\d]+)([bkmgtBKMGT]?)"
+	SizePattern = "([\\d]+)([kmgtKMGT]?)"
 )
 
 var SizeRE = regexp.MustCompile(fmt.Sprintf("^%s$", SizePattern))
@@ -46,28 +46,30 @@ type Size struct {
 	Provenance Provenance
 }
 
+// ParseSize parses a memory size in bytes from the given string. Size my include a K, M, G, or T suffix which indicates
+// kibibytes, mebibytes, gibibytes or tebibytes respectively.
 func ParseSize(s string) (Size, error) {
 	t := strings.TrimSpace(s)
 
 	if !SizeRE.MatchString(t) {
-		return Size{}, fmt.Errorf("memory size does not match pattern '%s': %s", SizeRE.String(), t)
+		return Size{}, fmt.Errorf("memory size %q does not match pattern %q", t, SizeRE.String())
 	}
 
 	groups := SizeRE.FindStringSubmatch(t)
 	size, err := strconv.ParseInt(groups[1], 10, 64)
 	if err != nil {
-		return Size{}, fmt.Errorf("memory size is not an integer: %s", groups[1])
+		return Size{}, fmt.Errorf("memory size %q is not an integer", groups[1])
 	}
 
 	switch strings.ToLower(groups[2]) {
 	case "k":
 		size *= Kibi
 	case "m":
-		size *= Mibi
+		size *= Mebi
 	case "g":
 		size *= Gibi
 	case "t":
-		size *= Tibi
+		size *= Tebi
 	}
 
 	return Size{Value: size}, nil
@@ -84,8 +86,8 @@ func (s Size) String() string {
 		return fmt.Sprintf("%dT", b/Gibi)
 	}
 
-	if b%Mibi == 0 {
-		return fmt.Sprintf("%dG", b/Mibi)
+	if b%Mebi == 0 {
+		return fmt.Sprintf("%dG", b/Mebi)
 	}
 
 	if b%Kibi == 0 {
@@ -93,4 +95,23 @@ func (s Size) String() string {
 	}
 
 	return fmt.Sprintf("%dK", b)
+}
+
+// ParseUnit parses a unit string and returns the number of bytes in the given unit. It assumes all units are binary
+// units.
+func ParseUnit(u string) (int64, error) {
+	switch strings.TrimSpace(u) {
+	case "kB", "KB", "KiB":
+		return Kibi, nil
+	case "MB", "MiB":
+		return Mebi, nil
+	case "GB", "GiB":
+		return Gibi, nil
+	case "TB", "TiB":
+		return Tebi, nil
+	case "B", "":
+		return int64(1), nil
+	default:
+		return 0, fmt.Errorf("unrecognized unit %q", u)
+	}
 }

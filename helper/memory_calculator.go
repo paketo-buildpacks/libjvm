@@ -36,14 +36,14 @@ const (
 	DefaultMemoryLimitPath = "/sys/fs/cgroup/memory/memory.limit_in_bytes"
 	DefaultMemoryInfoPath  = "/proc/meminfo"
 	DefaultThreadCount     = 250
-	MaxJVMSize             = 64 * calc.Tibi
+	MaxJVMSize             = 64 * calc.Tebi
 	UnsetTotalMemory       = int64(9_223_372_036_854_771_712)
 )
 
 type MemoryCalculator struct {
 	Logger          bard.Logger
 	MemoryLimitPath string
-	MemoryInfoPath	string
+	MemoryInfoPath  string
 }
 
 func (m MemoryCalculator) Execute() (map[string]string, error) {
@@ -97,28 +97,24 @@ func (m MemoryCalculator) Execute() (map[string]string, error) {
 	totalMemory := UnsetTotalMemory
 
 	if b, err := ioutil.ReadFile(m.MemoryLimitPath); err != nil && !os.IsNotExist(err) {
-		m.Logger.Info("WARNING: Unable to read %s: %s", m.MemoryLimitPath, err)
+		m.Logger.Infof("WARNING: Unable to read %s: %s", m.MemoryLimitPath, err)
 	} else if err == nil {
-		s := strings.TrimSpace(string(b))
-		if totalMemory, err = strconv.ParseInt(s, 10, 64); err != nil {
-			return nil, fmt.Errorf("untable to convert memory limit %s to integer\n%w", s, err)
+		if size, err := calc.ParseSize(strings.TrimSpace(string(b))); err != nil {
+			m.Logger.Infof("WARNING: Unable to convert memory limit %q from path %q as int: %s", strings.TrimSpace(string(b)), m.MemoryLimitPath, err)
+		} else {
+			totalMemory = size.Value
 		}
 	}
 
 	if totalMemory == UnsetTotalMemory {
 		if b, err := ioutil.ReadFile(m.MemoryInfoPath); err != nil && !os.IsNotExist(err) {
-			m.Logger.Info("WARNING: Unable to read %s: %s", m.MemoryInfoPath, err)
+			m.Logger.Infof(`WARNING: failed to read %q: %s`, m.MemoryInfoPath, err)
 		} else if err == nil {
-			rp := regexp.MustCompile("MemAvailable:\\s*(\\d*)\\skB")
-			m := rp.FindStringSubmatch(string(b))
-
-			if len(m) > 1 {
-				s := m[1]
-				if i, err := strconv.ParseInt(s, 10, 64); err != nil {
-					return nil, fmt.Errorf("untable to convert available memory %s to integer\n%w", s, err)
-				} else {
-					totalMemory = i * calc.Kibi
-				}
+			if mem, err := parseMemInfo(string(b)); err != nil {
+				m.Logger.Infof(`WARNING: failed to parse available memory from path %q: %s`, m.MemoryInfoPath, err)
+			} else {
+				m.Logger.Infof("Calculating JVM memory based on %s available memory", calc.Size{Value: mem}.String())
+				totalMemory = mem
 			}
 		}
 	}
@@ -166,4 +162,23 @@ func (m MemoryCalculator) Execute() (map[string]string, error) {
 		strings.Join(calculated, " "), c.TotalMemory, c.ThreadCount, c.LoadedClassCount, c.HeadRoom)
 
 	return map[string]string{"JAVA_TOOL_OPTIONS": strings.Join(values, " ")}, nil
+}
+
+func parseMemInfo(s string) (int64, error) {
+	pattern := `MemAvailable:\s*(\d+)(.*)`
+	rp := regexp.MustCompile(pattern)
+	if !rp.MatchString(s) {
+		return 0, fmt.Errorf("failed to match pattern '%s'", pattern)
+	}
+	matches := rp.FindStringSubmatch(s)
+
+	num, err := strconv.ParseInt(matches[1], 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("unable to convert available memory %s to integer\n%w", matches[1], err)
+	}
+	unit, err := calc.ParseUnit(matches[2])
+	if err != nil {
+		return 0, err
+	}
+	return num * unit, nil
 }
