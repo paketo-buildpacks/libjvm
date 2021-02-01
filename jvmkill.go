@@ -32,8 +32,11 @@ type JVMKill struct {
 	Logger           bard.Logger
 }
 
-func NewJVMKill(dependency libpak.BuildpackDependency, cache libpak.DependencyCache, plan *libcnb.BuildpackPlan) JVMKill {
-	return JVMKill{LayerContributor: libpak.NewDependencyLayerContributor(dependency, cache, plan)}
+func NewJVMKill(dependency libpak.BuildpackDependency, cache libpak.DependencyCache) (JVMKill, libcnb.BOMEntry) {
+	contributor, be := libpak.NewDependencyLayer(dependency, cache, libcnb.LayerTypes{
+		Launch: true,
+	})
+	return JVMKill{LayerContributor: contributor}, be
 }
 
 func (j JVMKill) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
@@ -49,7 +52,7 @@ func (j JVMKill) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 		layer.LaunchEnvironment.Appendf("JAVA_TOOL_OPTIONS", " ", "-agentpath:%s=printHeapHistogram=1", file)
 
 		return layer, nil
-	}, libpak.LaunchLayer)
+	})
 }
 
 func (j JVMKill) Name() string {

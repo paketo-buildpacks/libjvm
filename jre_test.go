@@ -67,11 +67,11 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, cl, NoContribution, &libcnb.BuildpackPlan{})
+		j, _, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, cl, NoContribution)
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
-		Expect(j.LayerContributor.LayerContributor.ExpectedMetadata.(map[string]interface{})["cert-dir"]).To(HaveLen(4))
+		Expect(j.LayerContributor.ExpectedMetadata.(map[string]interface{})["cert-dir"]).To(HaveLen(4))
 
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
@@ -90,7 +90,7 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, cl, NoContribution, &libcnb.BuildpackPlan{})
+		j, _, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, cl, NoContribution)
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
@@ -118,7 +118,7 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JDKType, cl, NoContribution, &libcnb.BuildpackPlan{})
+		j, _, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JDKType, cl, NoContribution)
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
@@ -146,7 +146,7 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JDKType, cl, NoContribution, &libcnb.BuildpackPlan{})
+		j, _, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JDKType, cl, NoContribution)
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
@@ -174,11 +174,11 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, cl, BuildContribution, &libcnb.BuildpackPlan{})
+		j, _, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, cl, BuildContribution)
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
-		Expect(j.LayerContributor.LayerContributor.ExpectedMetadata.(map[string]interface{})["cert-dir"]).To(HaveLen(4))
+		Expect(j.LayerContributor.ExpectedMetadata.(map[string]interface{})["cert-dir"]).To(HaveLen(4))
 
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
@@ -186,8 +186,8 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		layer, err = j.Contribute(layer)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(layer.Build).To(BeTrue())
-		Expect(layer.Cache).To(BeTrue())
+		Expect(layer.LayerTypes.Build).To(BeTrue())
+		Expect(layer.LayerTypes.Cache).To(BeTrue())
 		Expect(layer.BuildEnvironment["JAVA_HOME.default"]).To(Equal(layer.Path))
 	})
 
@@ -199,11 +199,11 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, cl, LaunchContribution, &libcnb.BuildpackPlan{})
+		j, _, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, cl, LaunchContribution)
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
-		Expect(j.LayerContributor.LayerContributor.ExpectedMetadata.(map[string]interface{})["cert-dir"]).To(HaveLen(4))
+		Expect(j.LayerContributor.ExpectedMetadata.(map[string]interface{})["cert-dir"]).To(HaveLen(4))
 
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
@@ -211,7 +211,7 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		layer, err = j.Contribute(layer)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(layer.Launch).To(BeTrue())
+		Expect(layer.LayerTypes.Launch).To(BeTrue())
 		Expect(layer.LaunchEnvironment["BPI_APPLICATION_PATH.default"]).To(Equal(ctx.Application.Path))
 		Expect(layer.LaunchEnvironment["BPI_JVM_CACERTS.default"]).To(Equal(filepath.Join(layer.Path, "lib", "security", "cacerts")))
 		Expect(layer.LaunchEnvironment["BPI_JVM_CLASS_COUNT.default"]).To(Equal("0"))
@@ -229,11 +229,11 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, cl, LaunchContribution, &libcnb.BuildpackPlan{})
+		j, _, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, cl, LaunchContribution)
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
-		Expect(j.LayerContributor.LayerContributor.ExpectedMetadata.(map[string]interface{})["cert-dir"]).To(HaveLen(4))
+		Expect(j.LayerContributor.ExpectedMetadata.(map[string]interface{})["cert-dir"]).To(HaveLen(4))
 
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
@@ -241,7 +241,7 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		layer, err = j.Contribute(layer)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(layer.Launch).To(BeTrue())
+		Expect(layer.LayerTypes.Launch).To(BeTrue())
 		Expect(layer.LaunchEnvironment["BPI_APPLICATION_PATH.default"]).To(Equal(ctx.Application.Path))
 		Expect(layer.LaunchEnvironment["BPI_JVM_CACERTS.default"]).To(Equal(filepath.Join(layer.Path, "lib", "security", "cacerts")))
 		Expect(layer.LaunchEnvironment["BPI_JVM_CLASS_COUNT.default"]).To(Equal("0"))
@@ -258,11 +258,11 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JDKType, cl, LaunchContribution, &libcnb.BuildpackPlan{})
+		j, _, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JDKType, cl, LaunchContribution)
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
-		Expect(j.LayerContributor.LayerContributor.ExpectedMetadata.(map[string]interface{})["cert-dir"]).To(HaveLen(4))
+		Expect(j.LayerContributor.ExpectedMetadata.(map[string]interface{})["cert-dir"]).To(HaveLen(4))
 
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
@@ -270,7 +270,7 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		layer, err = j.Contribute(layer)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(layer.Launch).To(BeTrue())
+		Expect(layer.LayerTypes.Launch).To(BeTrue())
 		Expect(layer.LaunchEnvironment["BPI_APPLICATION_PATH.default"]).To(Equal(ctx.Application.Path))
 		Expect(layer.LaunchEnvironment["BPI_JVM_CACERTS.default"]).To(Equal(filepath.Join(layer.Path, "jre", "lib", "security", "cacerts")))
 		Expect(layer.LaunchEnvironment["BPI_JVM_CLASS_COUNT.default"]).To(Equal("0"))
@@ -288,11 +288,11 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JDKType, cl, LaunchContribution, &libcnb.BuildpackPlan{})
+		j, _, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JDKType, cl, LaunchContribution)
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
-		Expect(j.LayerContributor.LayerContributor.ExpectedMetadata.(map[string]interface{})["cert-dir"]).To(HaveLen(4))
+		Expect(j.LayerContributor.ExpectedMetadata.(map[string]interface{})["cert-dir"]).To(HaveLen(4))
 
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
@@ -300,7 +300,7 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		layer, err = j.Contribute(layer)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(layer.Launch).To(BeTrue())
+		Expect(layer.LayerTypes.Launch).To(BeTrue())
 		Expect(layer.LaunchEnvironment["BPI_APPLICATION_PATH.default"]).To(Equal(ctx.Application.Path))
 		Expect(layer.LaunchEnvironment["BPI_JVM_CACERTS.default"]).To(Equal(filepath.Join(layer.Path, "lib", "security", "cacerts")))
 		Expect(layer.LaunchEnvironment["BPI_JVM_CLASS_COUNT.default"]).To(Equal("0"))

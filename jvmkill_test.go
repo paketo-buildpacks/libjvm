@@ -56,14 +56,14 @@ func testJVMKill(t *testing.T, context spec.G, it spec.S) {
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j := libjvm.NewJVMKill(dep, dc, &libcnb.BuildpackPlan{})
+		j, _ := libjvm.NewJVMKill(dep, dc)
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
 
 		layer, err = j.Contribute(layer)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(layer.Launch).To(BeTrue())
+		Expect(layer.LayerTypes.Launch).To(BeTrue())
 		Expect(filepath.Join(layer.Path, "stub-jvmkill.so")).To(BeARegularFile())
 		Expect(layer.LaunchEnvironment["JAVA_TOOL_OPTIONS.delim"]).To(Equal(" "))
 		Expect(layer.LaunchEnvironment["JAVA_TOOL_OPTIONS.append"]).To(Equal(fmt.Sprintf("-agentpath:%s/stub-jvmkill.so=printHeapHistogram=1", layer.Path)))

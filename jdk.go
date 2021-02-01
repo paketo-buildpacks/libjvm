@@ -33,26 +33,30 @@ type JDK struct {
 	Logger            bard.Logger
 }
 
-func NewJDK(dependency libpak.BuildpackDependency, cache libpak.DependencyCache, certificateLoader CertificateLoader,
-	plan *libcnb.BuildpackPlan) (JDK, error) {
-
+func NewJDK(dependency libpak.BuildpackDependency, cache libpak.DependencyCache, certificateLoader CertificateLoader) (JDK, libcnb.BOMEntry, error) {
 	expected := map[string]interface{}{"dependency": dependency}
 
 	if md, err := certificateLoader.Metadata(); err != nil {
-		return JDK{}, fmt.Errorf("unable to generate certificate loader metadata")
+		return JDK{}, libcnb.BOMEntry{}, fmt.Errorf("unable to generate certificate loader metadata")
 	} else {
 		for k, v := range md {
 			expected[k] = v
 		}
 	}
 
-	layerContributor := libpak.NewDependencyLayerContributor(dependency, cache, plan)
-	layerContributor.LayerContributor.ExpectedMetadata = expected
+	contributor, be := libpak.NewDependencyLayer(
+		dependency,
+		cache,
+		libcnb.LayerTypes{
+			Build: true,
+			Cache: true,
+		})
+	contributor.ExpectedMetadata = expected
 
 	return JDK{
 		CertificateLoader: certificateLoader,
-		LayerContributor:  layerContributor,
-	}, nil
+		LayerContributor:  contributor,
+	}, be, nil
 }
 
 func (j JDK) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
@@ -78,7 +82,7 @@ func (j JDK) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 		}
 
 		return layer, nil
-	}, libpak.BuildLayer, libpak.CacheLayer)
+	})
 }
 
 func (j JDK) Name() string {
