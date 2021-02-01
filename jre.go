@@ -41,42 +41,35 @@ type JRE struct {
 	Metadata          map[string]interface{}
 }
 
-func NewJRE(applicationPath string, dependency libpak.BuildpackDependency, cache libpak.DependencyCache,
-	distributionType DistributionType, certificateLoader CertificateLoader, metadata map[string]interface{},
-	plan *libcnb.BuildpackPlan) (JRE, error) {
-
+func NewJRE(applicationPath string, dependency libpak.BuildpackDependency, cache libpak.DependencyCache, distributionType DistributionType, certificateLoader CertificateLoader, metadata map[string]interface{}) (JRE, libcnb.BOMEntry, error) {
 	expected := map[string]interface{}{"dependency": dependency}
 
 	if md, err := certificateLoader.Metadata(); err != nil {
-		return JRE{}, fmt.Errorf("unable to generate certificate loader metadata")
+		return JRE{}, libcnb.BOMEntry{}, fmt.Errorf("unable to generate certificate loader metadata")
 	} else {
 		for k, v := range md {
 			expected[k] = v
 		}
 	}
 
-	layerContributor := libpak.NewDependencyLayerContributor(dependency, cache, plan)
-	layerContributor.LayerContributor.ExpectedMetadata = expected
+	contributor, be := libpak.NewDependencyLayer(dependency, cache, libcnb.LayerTypes{
+		Build:  IsBuildContribution(metadata),
+		Cache:  IsBuildContribution(metadata),
+		Launch: IsLaunchContribution(metadata),
+	})
+	contributor.ExpectedMetadata = expected
 
 	return JRE{
 		ApplicationPath:   applicationPath,
 		CertificateLoader: certificateLoader,
 		DistributionType:  distributionType,
-		LayerContributor:  layerContributor,
+		LayerContributor:  contributor,
 		Metadata:          metadata,
-	}, nil
+	}, be, nil
 }
 
 func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 	j.LayerContributor.Logger = j.Logger
-
-	var flags []libpak.LayerFlag
-	if IsBuildContribution(j.Metadata) {
-		flags = append(flags, libpak.BuildLayer, libpak.CacheLayer)
-	}
-	if IsLaunchContribution(j.Metadata) {
-		flags = append(flags, libpak.LaunchLayer)
-	}
 
 	return j.LayerContributor.Contribute(layer, func(artifact *os.File) (libcnb.Layer, error) {
 		j.Logger.Bodyf("Expanding to %s", layer.Path)
@@ -142,7 +135,7 @@ func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 		}
 
 		return layer, nil
-	}, flags...)
+	})
 }
 
 func (j JRE) Name() string {

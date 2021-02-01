@@ -32,7 +32,13 @@ type JavaSecurityProperties struct {
 }
 
 func NewJavaSecurityProperties(info libcnb.BuildpackInfo) JavaSecurityProperties {
-	return JavaSecurityProperties{LayerContributor: libpak.NewLayerContributor("Java Security Properties", info)}
+	return JavaSecurityProperties{LayerContributor: libpak.NewLayerContributor(
+		"Java Security Properties",
+		info,
+		libcnb.LayerTypes{
+			Launch: true,
+		},
+	)}
 }
 
 func (j JavaSecurityProperties) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
@@ -48,7 +54,7 @@ func (j JavaSecurityProperties) Contribute(layer libcnb.Layer) (libcnb.Layer, er
 		layer.LaunchEnvironment.Default("JAVA_SECURITY_PROPERTIES", file)
 
 		return layer, nil
-	}, libpak.LaunchLayer)
+	})
 }
 
 func (j JavaSecurityProperties) Name() string {

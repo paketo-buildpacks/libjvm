@@ -58,7 +58,7 @@ func testJavaSecurityProperties(t *testing.T, context spec.G, it spec.S) {
 		layer, err = l.Contribute(layer)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(layer.Launch).To(BeTrue())
+		Expect(layer.LayerTypes.Launch).To(BeTrue())
 		file := filepath.Join(layer.Path, "java-security.properties")
 		Expect(file).To(BeARegularFile())
 		Expect(layer.LaunchEnvironment["JAVA_TOOL_OPTIONS.delim"]).To(Equal(" "))

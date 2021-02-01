@@ -37,11 +37,11 @@ func main() {
 
 			cl = libjvm.NewCertificateLoader()
 
-			a  = helper.ActiveProcessorCount{Logger: l}
-			c  = helper.SecurityProvidersConfigurer{Logger: l}
-			d  = helper.LinkLocalDNS{Logger: l}
-			j  = helper.JavaOpts{Logger: l}
-			m  = helper.MemoryCalculator{
+			a = helper.ActiveProcessorCount{Logger: l}
+			c = helper.SecurityProvidersConfigurer{Logger: l}
+			d = helper.LinkLocalDNS{Logger: l}
+			j = helper.JavaOpts{Logger: l}
+			m = helper.MemoryCalculator{
 				Logger:          l,
 				MemoryLimitPath: helper.DefaultMemoryLimitPath,
 				MemoryInfoPath:  helper.DefaultMemoryInfoPath,
