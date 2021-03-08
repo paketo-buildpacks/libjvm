@@ -10,7 +10,7 @@ require (
 	github.com/mattn/go-colorable v0.1.8 // indirect
 	github.com/mattn/go-shellwords v1.0.11
 	github.com/miekg/dns v1.1.40
-	github.com/onsi/gomega v1.10.5
+	github.com/onsi/gomega v1.11.0
 	github.com/paketo-buildpacks/libpak v1.51.0
 	github.com/pavel-v-chernykh/keystore-go/v4 v4.1.0
 	github.com/sclevine/spec v1.4.0
