@@ -9,10 +9,10 @@ require (
 	github.com/magiconair/properties v1.8.4
 	github.com/mattn/go-colorable v0.1.8 // indirect
 	github.com/mattn/go-shellwords v1.0.11
-	github.com/miekg/dns v1.1.40
+	github.com/miekg/dns v1.1.41
 	github.com/onsi/gomega v1.11.0
 	github.com/paketo-buildpacks/libpak v1.51.0
 	github.com/pavel-v-chernykh/keystore-go/v4 v4.1.0
 	github.com/sclevine/spec v1.4.0
-	golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c
+	golang.org/x/sys v0.0.0-20210303074136-134d130e1a04
 )
