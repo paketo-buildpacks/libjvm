@@ -53,11 +53,23 @@ func (m MemoryCalculator) Execute() (map[string]string, error) {
 			HeadRoom:    DefaultHeadroom,
 			ThreadCount: DefaultThreadCount,
 		}
+		deprecatedHeadroom bool
 	)
 
 	if s, ok := os.LookupEnv("BPL_JVM_HEADROOM"); ok {
 		if c.HeadRoom, err = strconv.Atoi(s); err != nil {
 			return nil, fmt.Errorf("unable to convert $BPL_JVM_HEADROOM=%s to integer\n%w", s, err)
+		}
+		deprecatedHeadroom = true
+		m.Logger.Info("WARNING: BPL_JVM_HEADROOM is deprecated and will be removed, please switch to BPL_JVM_HEAD_ROOM")
+	}
+
+	if s, ok := os.LookupEnv("BPL_JVM_HEAD_ROOM"); ok {
+		if c.HeadRoom, err = strconv.Atoi(s); err != nil {
+			return nil, fmt.Errorf("unable to convert $BPL_JVM_HEAD_ROOM=%s to integer\n%w", s, err)
+		}
+		if deprecatedHeadroom {
+			m.Logger.Info("WARNING: You have set both BPL_JVM_HEAD_ROOM and BPL_JVM_HEADROOM. BPL_JVM_HEADROOM has been deprecated, so it will be ignored.")
 		}
 	}
 
