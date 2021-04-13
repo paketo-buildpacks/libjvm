@@ -117,6 +117,40 @@ func testMemoryCalculator(t *testing.T, context spec.G, it spec.S) {
 				})
 			})
 
+			context("$BPL_JVM_HEAD_ROOM", func() {
+				it.Before(func() {
+					Expect(os.Setenv("BPL_JVM_HEAD_ROOM", "10")).To(Succeed())
+				})
+
+				it.After(func() {
+					Expect(os.Unsetenv("BPL_JVM_HEAD_ROOM")).To(Succeed())
+				})
+
+				it("passes $BPL_JVM_HEAD_ROOM to calculator", func() {
+					Expect(m.Execute()).To(Equal(map[string]string{
+						"JAVA_TOOL_OPTIONS": "-XX:MaxDirectMemorySize=10M -Xmx417848K -XX:MaxMetaspaceSize=13870K -XX:ReservedCodeCacheSize=240M -Xss1M",
+					}))
+				})
+			})
+
+			context("$BPL_JVM_HEADROOM and $BPL_JVM_HEAD_ROOM", func() {
+				it.Before(func() {
+					Expect(os.Setenv("BPL_JVM_HEADROOM", "20")).To(Succeed())
+					Expect(os.Setenv("BPL_JVM_HEAD_ROOM", "10")).To(Succeed())
+				})
+
+				it.After(func() {
+					Expect(os.Unsetenv("BPL_JVM_HEADROOM")).To(Succeed())
+					Expect(os.Unsetenv("BPL_JVM_HEAD_ROOM")).To(Succeed())
+				})
+
+				it("passes $BPL_JVM_HEAD_ROOM to calculator", func() {
+					Expect(m.Execute()).To(Equal(map[string]string{
+						"JAVA_TOOL_OPTIONS": "-XX:MaxDirectMemorySize=10M -Xmx417848K -XX:MaxMetaspaceSize=13870K -XX:ReservedCodeCacheSize=240M -Xss1M",
+					}))
+				})
+			})
+
 			context("$BPL_JVM_LOADED_CLASS_COUNT", func() {
 				it.Before(func() {
 					Expect(os.Setenv("BPL_JVM_LOADED_CLASS_COUNT", "100")).To(Succeed())
