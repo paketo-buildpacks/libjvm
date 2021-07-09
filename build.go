@@ -56,9 +56,26 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 
 	v, _ := cr.Resolve("BP_JVM_VERSION")
 
-	if _, ok, err := pr.Resolve("jdk"); err != nil {
+	_, jdkRequired, err := pr.Resolve("jdk")
+	if err != nil {
 		return libcnb.BuildResult{}, fmt.Errorf("unable to resolve jdk plan entry\n%w", err)
-	} else if ok {
+	}
+
+	jrePlanEntry, jreRequired, err := pr.Resolve("jre")
+	if err != nil {
+		return libcnb.BuildResult{}, fmt.Errorf("unable to resolve jre plan entry\n%w", err)
+	}
+
+	jreAvailable := jreRequired
+	if jreRequired {
+		_, err := dr.Resolve("jre", v)
+		if libpak.IsNoValidDependencies(err) {
+			jreAvailable = false
+		}
+	}
+
+	// we need a JDK and we're not using the JDK as a JRE
+	if jdkRequired && !(jreRequired && !jreAvailable) {
 		dep, err := dr.Resolve("jdk", v)
 		if err != nil {
 			return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)
@@ -74,15 +91,17 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 		result.BOM.Entries = append(result.BOM.Entries, be)
 	}
 
-	if e, ok, err := pr.Resolve("jre"); err != nil {
-		return libcnb.BuildResult{}, fmt.Errorf("unable to resolve jre plan entry\n%w", err)
-	} else if ok {
+	if jreRequired {
 		dt := JREType
 		depJRE, err := dr.Resolve("jre", v)
 
-		if libpak.IsNoValidDependencies(err) {
+		if !jreAvailable {
 			warn := color.New(color.FgYellow, color.Bold)
 			b.Logger.Header(warn.Sprint("No valid JRE available, providing matching JDK instead. Using a JDK at runtime has security implications."))
+
+			// This forces the contributed layer to be build + cache + launch so it's available everywhere
+			jrePlanEntry.Metadata["build"] = true
+			jrePlanEntry.Metadata["cache"] = true
 
 			dt = JDKType
 			depJRE, err = dr.Resolve("jdk", v)
@@ -92,7 +111,7 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 			return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)
 		}
 
-		jre, be, err := NewJRE(context.Application.Path, depJRE, dc, dt, cl, e.Metadata)
+		jre, be, err := NewJRE(context.Application.Path, depJRE, dc, dt, cl, jrePlanEntry.Metadata)
 		if err != nil {
 			return libcnb.BuildResult{}, fmt.Errorf("unable to create jre\n%w", err)
 		}
@@ -101,7 +120,7 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 		result.Layers = append(result.Layers, jre)
 		result.BOM.Entries = append(result.BOM.Entries, be)
 
-		if IsLaunchContribution(e.Metadata) {
+		if IsLaunchContribution(jrePlanEntry.Metadata) {
 			helpers := []string{"active-processor-count", "java-opts", "link-local-dns", "memory-calculator",
 				"openssl-certificate-loader", "security-providers-configurer"}
 

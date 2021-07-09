@@ -165,7 +165,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		}))
 	})
 
-	it("contributes JDK when no JRE", func() {
+	it("contributes JDK when no JRE and only a JRE is wanted", func() {
 		ctx.Plan.Entries = append(ctx.Plan.Entries, libcnb.BuildpackPlanEntry{Name: "jre", Metadata: LaunchContribution})
 		ctx.Buildpack.Metadata = map[string]interface{}{
 			"dependencies": []map[string]interface{}{
@@ -192,7 +192,42 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(result.BOM.Entries).To(HaveLen(3))
 		Expect(result.BOM.Entries[0].Name).To(Equal("jdk"))
 		Expect(result.BOM.Entries[0].Launch).To(BeTrue())
-		Expect(result.BOM.Entries[0].Build).To(BeFalse())
+		Expect(result.BOM.Entries[0].Build).To(BeTrue())
+		Expect(result.BOM.Entries[1].Name).To(Equal("helper"))
+		Expect(result.BOM.Entries[1].Launch).To(BeTrue())
+		Expect(result.BOM.Entries[2].Name).To(Equal("jvmkill"))
+		Expect(result.BOM.Entries[2].Launch).To(BeTrue())
+	})
+
+	it("contributes JDK when no JRE and both a JDK and JRE are wanted", func() {
+		ctx.Plan.Entries = append(ctx.Plan.Entries, libcnb.BuildpackPlanEntry{Name: "jdk", Metadata: LaunchContribution})
+		ctx.Plan.Entries = append(ctx.Plan.Entries, libcnb.BuildpackPlanEntry{Name: "jre", Metadata: LaunchContribution})
+		ctx.Buildpack.Metadata = map[string]interface{}{
+			"dependencies": []map[string]interface{}{
+				{
+					"id":      "jdk",
+					"version": "1.1.1",
+					"stacks":  []interface{}{"test-stack-id"},
+				},
+				{
+					"id":      "jvmkill",
+					"version": "1.1.1",
+					"stacks":  []interface{}{"test-stack-id"},
+				},
+			},
+		}
+		ctx.StackID = "test-stack-id"
+
+		result, err := libjvm.Build{}.Build(ctx)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(result.Layers[0].Name()).To(Equal("jdk"))
+		Expect(result.Layers[0].(libjvm.JRE).LayerContributor.Dependency.ID).To(Equal("jdk"))
+
+		Expect(result.BOM.Entries).To(HaveLen(3))
+		Expect(result.BOM.Entries[0].Name).To(Equal("jdk"))
+		Expect(result.BOM.Entries[0].Launch).To(BeTrue())
+		Expect(result.BOM.Entries[0].Build).To(BeTrue())
 		Expect(result.BOM.Entries[1].Name).To(Equal("helper"))
 		Expect(result.BOM.Entries[1].Launch).To(BeTrue())
 		Expect(result.BOM.Entries[2].Name).To(Equal("jvmkill"))
