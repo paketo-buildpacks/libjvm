@@ -105,7 +105,7 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 			warn := color.New(color.FgYellow, color.Bold)
 
 			if jreSkipped {
-				b.Logger.Header(warn.Sprint("A JRE is available, but a JDK was specifically requested by the user. Using a JDK at runtime has security implications."))
+				b.Logger.Header(warn.Sprint("A JDK was specifically requested by the user. Using a JDK at runtime has security implications."))
 			} else {
 				b.Logger.Header(warn.Sprint("No valid JRE available, providing matching JDK instead. Using a JDK at runtime has security implications."))
 			}
