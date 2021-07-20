@@ -56,6 +56,11 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 
 	v, _ := cr.Resolve("BP_JVM_VERSION")
 
+	jreSkipped := false
+	if t, _ := cr.Resolve("BP_JVM_TYPE"); t == "jdk" {
+		jreSkipped = true
+	}
+
 	_, jdkRequired, err := pr.Resolve("jdk")
 	if err != nil {
 		return libcnb.BuildResult{}, fmt.Errorf("unable to resolve jdk plan entry\n%w", err)
@@ -75,7 +80,7 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 	}
 
 	// we need a JDK and we're not using the JDK as a JRE
-	if jdkRequired && !(jreRequired && !jreAvailable) {
+	if jdkRequired && !(jreRequired && !jreAvailable) && !jreSkipped {
 		dep, err := dr.Resolve("jdk", v)
 		if err != nil {
 			return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)
@@ -95,9 +100,15 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 		dt := JREType
 		depJRE, err := dr.Resolve("jre", v)
 
-		if !jreAvailable {
+		if !jreAvailable || jreSkipped {
+
 			warn := color.New(color.FgYellow, color.Bold)
-			b.Logger.Header(warn.Sprint("No valid JRE available, providing matching JDK instead. Using a JDK at runtime has security implications."))
+
+			if jreSkipped {
+				b.Logger.Header(warn.Sprint("A JRE is available, but a JDK was specifically requested by the user. Using a JDK at runtime has security implications."))
+			} else {
+				b.Logger.Header(warn.Sprint("No valid JRE available, providing matching JDK instead. Using a JDK at runtime has security implications."))
+			}
 
 			// This forces the contributed layer to be build + cache + launch so it's available everywhere
 			jrePlanEntry.Metadata["build"] = true
