@@ -20,8 +20,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/onsi/gomega/format"
-
 	"github.com/buildpacks/libcnb"
 	. "github.com/onsi/gomega"
 	"github.com/paketo-buildpacks/libpak"
@@ -200,7 +198,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(result.BOM.Entries[2].Name).To(Equal("jvmkill"))
 		Expect(result.BOM.Entries[2].Launch).To(BeTrue())
 	})
-	format.MaxLength = 6000
+
 	it("contributes JDK when no JRE and both a JDK and JRE are wanted", func() {
 		ctx.Plan.Entries = append(ctx.Plan.Entries, libcnb.BuildpackPlanEntry{Name: "jdk", Metadata: LaunchContribution})
 		ctx.Plan.Entries = append(ctx.Plan.Entries, libcnb.BuildpackPlanEntry{Name: "jre", Metadata: LaunchContribution})
