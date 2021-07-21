@@ -326,7 +326,9 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.Layers[0].Name()).To(Equal("jdk"))
 			Expect(result.Layers[0].(libjvm.JRE).LayerContributor.Dependency.ID).To(Equal("jdk"))
-			Expect(result.Layers).To(HaveLen(4))
+
+			Expect(result.BOM.Entries[0].Name).To(Equal("jdk"))
+			Expect(result.BOM.Entries[0].Launch).To(BeTrue())
 		})
 
 		it("contributes JRE when specified explicitly in $BP_JVM_TYPE", func() {
