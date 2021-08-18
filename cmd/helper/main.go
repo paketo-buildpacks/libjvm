@@ -42,9 +42,10 @@ func main() {
 			d = helper.LinkLocalDNS{Logger: l}
 			j = helper.JavaOpts{Logger: l}
 			m = helper.MemoryCalculator{
-				Logger:          l,
-				MemoryLimitPath: helper.DefaultMemoryLimitPath,
-				MemoryInfoPath:  helper.DefaultMemoryInfoPath,
+				Logger:            l,
+				MemoryLimitPathV1: helper.DefaultMemoryLimitPathV1,
+				MemoryLimitPathV2: helper.DefaultMemoryLimitPathV2,
+				MemoryInfoPath:    helper.DefaultMemoryInfoPath,
 			}
 			o  = helper.OpenSSLCertificateLoader{CertificateLoader: cl, Logger: l}
 			s8 = helper.SecurityProvidersClasspath8{Logger: l}
