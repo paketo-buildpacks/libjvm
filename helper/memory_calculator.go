@@ -31,19 +31,21 @@ import (
 )
 
 const (
-	ClassLoadFactor        = 0.35
-	DefaultHeadroom        = 0
-	DefaultMemoryLimitPath = "/sys/fs/cgroup/memory/memory.limit_in_bytes"
-	DefaultMemoryInfoPath  = "/proc/meminfo"
-	DefaultThreadCount     = 250
-	MaxJVMSize             = 64 * calc.Tebi
-	UnsetTotalMemory       = int64(9_223_372_036_854_771_712)
+	ClassLoadFactor          = 0.35
+	DefaultHeadroom          = 0
+	DefaultMemoryLimitPathV1 = "/sys/fs/cgroup/memory/memory.limit_in_bytes"
+	DefaultMemoryLimitPathV2 = "/sys/fs/cgroup/memory.max"
+	DefaultMemoryInfoPath    = "/proc/meminfo"
+	DefaultThreadCount       = 250
+	MaxJVMSize               = 64 * calc.Tebi
+	UnsetTotalMemory         = int64(9_223_372_036_854_771_712)
 )
 
 type MemoryCalculator struct {
-	Logger          bard.Logger
-	MemoryLimitPath string
-	MemoryInfoPath  string
+	Logger            bard.Logger
+	MemoryLimitPathV1 string
+	MemoryLimitPathV2 string
+	MemoryInfoPath    string
 }
 
 func (m MemoryCalculator) Execute() (map[string]string, error) {
@@ -106,16 +108,9 @@ func (m MemoryCalculator) Execute() (map[string]string, error) {
 		}
 	}
 
-	totalMemory := UnsetTotalMemory
-
-	if b, err := ioutil.ReadFile(m.MemoryLimitPath); err != nil && !os.IsNotExist(err) {
-		m.Logger.Infof("WARNING: Unable to read %s: %s", m.MemoryLimitPath, err)
-	} else if err == nil {
-		if size, err := calc.ParseSize(strings.TrimSpace(string(b))); err != nil {
-			m.Logger.Infof("WARNING: Unable to convert memory limit %q from path %q as int: %s", strings.TrimSpace(string(b)), m.MemoryLimitPath, err)
-		} else {
-			totalMemory = size.Value
-		}
+	totalMemory := m.getMemoryLimitFromPath(m.MemoryLimitPathV1)
+	if totalMemory == UnsetTotalMemory {
+		totalMemory = m.getMemoryLimitFromPath(m.MemoryLimitPathV2)
 	}
 
 	if totalMemory == UnsetTotalMemory {
@@ -174,6 +169,19 @@ func (m MemoryCalculator) Execute() (map[string]string, error) {
 		strings.Join(calculated, " "), c.TotalMemory, c.ThreadCount, c.LoadedClassCount, c.HeadRoom)
 
 	return map[string]string{"JAVA_TOOL_OPTIONS": strings.Join(values, " ")}, nil
+}
+
+func (m MemoryCalculator) getMemoryLimitFromPath(memoryLimitPath string) int64 {
+	if b, err := ioutil.ReadFile(memoryLimitPath); err != nil && !os.IsNotExist(err) {
+		m.Logger.Infof("WARNING: Unable to read %s: %s", memoryLimitPath, err)
+	} else if err == nil {
+		if size, err := calc.ParseSize(strings.TrimSpace(string(b))); err != nil {
+			m.Logger.Infof("WARNING: Unable to convert memory limit %q from path %q as int: %s", strings.TrimSpace(string(b)), memoryLimitPath, err)
+		} else {
+			return size.Value
+		}
+	}
+	return UnsetTotalMemory
 }
 
 func parseMemInfo(s string) (int64, error) {

@@ -33,10 +33,11 @@ func testMemoryCalculator(t *testing.T, context spec.G, it spec.S) {
 	var (
 		Expect = NewWithT(t).Expect
 
-		applicationPath string
-		memoryLimitPath string
-		memoryInfoPath  string
-		m               helper.MemoryCalculator
+		applicationPath   string
+		memoryLimitPathV1 string
+		memoryLimitPathV2 string
+		memoryInfoPath    string
+		m                 helper.MemoryCalculator
 	)
 
 	it.Before(func() {
@@ -45,11 +46,17 @@ func testMemoryCalculator(t *testing.T, context spec.G, it spec.S) {
 		applicationPath, err = ioutil.TempDir("", "memory-calculator-application")
 		Expect(err).NotTo(HaveOccurred())
 
-		limit, err := ioutil.TempFile("", "memory-calculator-memory-limit")
+		limitV1, err := ioutil.TempFile("", "memory-calculator-memory-limit-v1")
 		Expect(err).NotTo(HaveOccurred())
-		Expect(limit.Close()).To(Succeed())
-		Expect(os.RemoveAll(limit.Name())).To(Succeed())
-		memoryLimitPath = limit.Name()
+		Expect(limitV1.Close()).To(Succeed())
+		Expect(os.RemoveAll(limitV1.Name())).To(Succeed())
+		memoryLimitPathV1 = limitV1.Name()
+
+		limitV2, err := ioutil.TempFile("", "memory-calculator-memory-limit-v2")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(limitV2.Close()).To(Succeed())
+		Expect(os.RemoveAll(limitV2.Name())).To(Succeed())
+		memoryLimitPathV2 = limitV2.Name()
 
 		info, err := ioutil.TempFile("", "memory-calculator-memory-info")
 		Expect(err).NotTo(HaveOccurred())
@@ -57,12 +64,17 @@ func testMemoryCalculator(t *testing.T, context spec.G, it spec.S) {
 		Expect(os.RemoveAll(info.Name())).To(Succeed())
 		memoryInfoPath = info.Name()
 
-		m = helper.MemoryCalculator{MemoryLimitPath: memoryLimitPath, MemoryInfoPath: memoryInfoPath}
+		m = helper.MemoryCalculator{
+			MemoryLimitPathV1: memoryLimitPathV1,
+			MemoryLimitPathV2: memoryLimitPathV2,
+			MemoryInfoPath:    memoryInfoPath,
+		}
 	})
 
 	it.After(func() {
 		Expect(os.RemoveAll(applicationPath)).To(Succeed())
-		Expect(os.RemoveAll(memoryLimitPath)).To(Succeed())
+		Expect(os.RemoveAll(memoryLimitPathV1)).To(Succeed())
+		Expect(os.RemoveAll(memoryLimitPathV2)).To(Succeed())
 	})
 
 	it("returns error if $BPI_APPLICATION_PATH is not set", func() {
@@ -191,7 +203,7 @@ func testMemoryCalculator(t *testing.T, context spec.G, it spec.S) {
 					Buffers:          112396 kB
 				`
 
-				Expect(ioutil.WriteFile(memoryLimitPath, strconv.AppendInt([]byte{}, helper.UnsetTotalMemory, 10), 0755)).To(Succeed())
+				Expect(ioutil.WriteFile(memoryLimitPathV1, strconv.AppendInt([]byte{}, helper.UnsetTotalMemory, 10), 0755)).To(Succeed())
 				Expect(ioutil.WriteFile(memoryInfoPath, []byte(s), 0755)).To(Succeed())
 
 				Expect(m.Execute()).To(Equal(map[string]string{
@@ -207,7 +219,7 @@ func testMemoryCalculator(t *testing.T, context spec.G, it spec.S) {
 					Buffers:          112396 kB
 				`
 
-				Expect(ioutil.WriteFile(memoryLimitPath, strconv.AppendInt([]byte{}, helper.UnsetTotalMemory, 10), 0755)).To(Succeed())
+				Expect(ioutil.WriteFile(memoryLimitPathV1, strconv.AppendInt([]byte{}, helper.UnsetTotalMemory, 10), 0755)).To(Succeed())
 				Expect(ioutil.WriteFile(memoryInfoPath, []byte(s), 0755)).To(Succeed())
 
 				Expect(m.Execute()).To(Equal(map[string]string{
@@ -216,7 +228,7 @@ func testMemoryCalculator(t *testing.T, context spec.G, it spec.S) {
 			})
 
 			it("limits total memory to 1G if unable to determine total memory", func() {
-				Expect(ioutil.WriteFile(memoryLimitPath, strconv.AppendInt([]byte{}, helper.UnsetTotalMemory, 10), 0755)).To(Succeed())
+				Expect(ioutil.WriteFile(memoryLimitPathV1, strconv.AppendInt([]byte{}, helper.UnsetTotalMemory, 10), 0755)).To(Succeed())
 
 				Expect(m.Execute()).To(Equal(map[string]string{
 					"JAVA_TOOL_OPTIONS": "-XX:MaxDirectMemorySize=10M -Xmx522705K -XX:MaxMetaspaceSize=13870K -XX:ReservedCodeCacheSize=240M -Xss1M",
@@ -224,7 +236,7 @@ func testMemoryCalculator(t *testing.T, context spec.G, it spec.S) {
 			})
 
 			it("limits total memory to 64T", func() {
-				Expect(ioutil.WriteFile(memoryLimitPath, strconv.AppendInt([]byte{}, helper.MaxJVMSize+1, 10), 0755)).To(Succeed())
+				Expect(ioutil.WriteFile(memoryLimitPathV1, strconv.AppendInt([]byte{}, helper.MaxJVMSize+1, 10), 0755)).To(Succeed())
 
 				Expect(m.Execute()).To(Equal(map[string]string{
 					"JAVA_TOOL_OPTIONS": "-XX:MaxDirectMemorySize=10M -Xmx68718950865K -XX:MaxMetaspaceSize=13870K -XX:ReservedCodeCacheSize=240M -Xss1M",
@@ -232,10 +244,18 @@ func testMemoryCalculator(t *testing.T, context spec.G, it spec.S) {
 			})
 
 			it("limits total memory to container size if set", func() {
-				Expect(ioutil.WriteFile(memoryLimitPath, strconv.AppendInt([]byte{}, 10*calc.Gibi, 10), 0755)).To(Succeed())
+				Expect(ioutil.WriteFile(memoryLimitPathV1, strconv.AppendInt([]byte{}, 10*calc.Gibi, 10), 0755)).To(Succeed())
 
 				Expect(m.Execute()).To(Equal(map[string]string{
 					"JAVA_TOOL_OPTIONS": "-XX:MaxDirectMemorySize=10M -Xmx9959889K -XX:MaxMetaspaceSize=13870K -XX:ReservedCodeCacheSize=240M -Xss1M",
+				}))
+			})
+
+			it("limits total memory to container size if V2 set", func() {
+				Expect(ioutil.WriteFile(memoryLimitPathV2, strconv.AppendInt([]byte{}, 11*calc.Gibi, 10), 0755)).To(Succeed())
+
+				Expect(m.Execute()).To(Equal(map[string]string{
+					"JAVA_TOOL_OPTIONS": "-XX:MaxDirectMemorySize=10M -Xmx11008465K -XX:MaxMetaspaceSize=13870K -XX:ReservedCodeCacheSize=240M -Xss1M",
 				}))
 			})
 
