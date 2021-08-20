@@ -18,6 +18,7 @@ package libjvm
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/buildpacks/libcnb"
 	"github.com/heroku/color"
@@ -56,6 +57,11 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 
 	v, _ := cr.Resolve("BP_JVM_VERSION")
 
+	jreSkipped := false
+	if t, _ := cr.Resolve("BP_JVM_TYPE"); strings.ToLower(t) == "jdk" {
+		jreSkipped = true
+	}
+
 	_, jdkRequired, err := pr.Resolve("jdk")
 	if err != nil {
 		return libcnb.BuildResult{}, fmt.Errorf("unable to resolve jdk plan entry\n%w", err)
@@ -74,8 +80,8 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 		}
 	}
 
-	// we need a JDK and we're not using the JDK as a JRE
-	if jdkRequired && !(jreRequired && !jreAvailable) {
+	// we need a JDK, we're not using the JDK as a JRE and the JRE has not been skipped
+	if jdkRequired && !(jreRequired && !jreAvailable) && !jreSkipped {
 		dep, err := dr.Resolve("jdk", v)
 		if err != nil {
 			return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)
@@ -95,9 +101,8 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 		dt := JREType
 		depJRE, err := dr.Resolve("jre", v)
 
-		if !jreAvailable {
-			warn := color.New(color.FgYellow, color.Bold)
-			b.Logger.Header(warn.Sprint("No valid JRE available, providing matching JDK instead. Using a JDK at runtime has security implications."))
+		if !jreAvailable || jreSkipped {
+			b.warnIfJreNotUsed(jreAvailable, jreSkipped)
 
 			// This forces the contributed layer to be build + cache + launch so it's available everywhere
 			jrePlanEntry.Metadata["build"] = true
@@ -152,4 +157,24 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 	}
 
 	return result, nil
+}
+
+func (b Build) warnIfJreNotUsed(jreAvailable, jreSkipped bool) {
+	msg := "Using a JDK at runtime has security implications."
+
+	if !jreAvailable && !jreSkipped {
+		msg = fmt.Sprintf("No valid JRE available, providing matching JDK instead. %s", msg)
+	}
+
+	if jreSkipped {
+		subMsg := "A JDK was specifically requested by the user"
+		if jreAvailable {
+			subMsg = fmt.Sprintf("%s, however a JRE is available", subMsg)
+		} else {
+			subMsg = fmt.Sprintf("%s and a JDK is the only option", subMsg)
+		}
+		msg = fmt.Sprintf("%s. %s", subMsg, msg)
+	}
+
+	b.Logger.Header(color.New(color.FgYellow, color.Bold).Sprint(msg))
 }
