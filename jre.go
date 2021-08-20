@@ -45,7 +45,7 @@ func NewJRE(applicationPath string, dependency libpak.BuildpackDependency, cache
 	expected := map[string]interface{}{"dependency": dependency}
 
 	if md, err := certificateLoader.Metadata(); err != nil {
-		return JRE{}, libcnb.BOMEntry{}, fmt.Errorf("unable to generate certificate loader metadata")
+		return JRE{}, libcnb.BOMEntry{}, fmt.Errorf("unable to generate certificate loader metadata\n%w", err)
 	} else {
 		for k, v := range md {
 			expected[k] = v
