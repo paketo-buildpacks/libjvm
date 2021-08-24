@@ -140,16 +140,6 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 			result.Layers = append(result.Layers, h)
 			result.BOM.Entries = append(result.BOM.Entries, be)
 
-			depJVMKill, err := dr.Resolve("jvmkill", "")
-			if err != nil {
-				return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)
-			}
-
-			jk, be := NewJVMKill(depJVMKill, dc)
-			jk.Logger = b.Logger
-			result.Layers = append(result.Layers, jk)
-			result.BOM.Entries = append(result.BOM.Entries, be)
-
 			jsp := NewJavaSecurityProperties(context.Buildpack.Info)
 			jsp.Logger = b.Logger
 			result.Layers = append(result.Layers, jsp)
