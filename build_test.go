@@ -107,6 +107,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(result.Layers[1].(libpak.HelperLayerContributor).Names).To(Equal([]string{
 			"active-processor-count",
 			"java-opts",
+			"jvm-heap",
 			"link-local-dns",
 			"memory-calculator",
 			"openssl-certificate-loader",
@@ -134,6 +135,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(result.Layers[1].(libpak.HelperLayerContributor).Names).To(Equal([]string{
 			"active-processor-count",
 			"java-opts",
+			"jvm-heap",
 			"link-local-dns",
 			"memory-calculator",
 			"openssl-certificate-loader",

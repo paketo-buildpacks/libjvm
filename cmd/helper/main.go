@@ -37,11 +37,12 @@ func main() {
 
 			cl = libjvm.NewCertificateLoader()
 
-			a = helper.ActiveProcessorCount{Logger: l}
-			c = helper.SecurityProvidersConfigurer{Logger: l}
-			d = helper.LinkLocalDNS{Logger: l}
-			j = helper.JavaOpts{Logger: l}
-			m = helper.MemoryCalculator{
+			a  = helper.ActiveProcessorCount{Logger: l}
+			c  = helper.SecurityProvidersConfigurer{Logger: l}
+			d  = helper.LinkLocalDNS{Logger: l}
+			j  = helper.JavaOpts{Logger: l}
+			jh = helper.JVMHeapDump{Logger: l}
+			m  = helper.MemoryCalculator{
 				Logger:            l,
 				MemoryLimitPathV1: helper.DefaultMemoryLimitPathV1,
 				MemoryLimitPathV2: helper.DefaultMemoryLimitPathV2,
@@ -61,6 +62,7 @@ func main() {
 		return sherpa.Helpers(map[string]sherpa.ExecD{
 			"active-processor-count":         a,
 			"java-opts":                      j,
+			"jvm-heap":                       jh,
 			"link-local-dns":                 d,
 			"memory-calculator":              m,
 			"openssl-certificate-loader":     o,

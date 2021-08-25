@@ -27,6 +27,7 @@ func TestUnit(t *testing.T) {
 	suite := spec.New("libjvm/helper", spec.Report(report.Terminal{}))
 	suite("ActiveProcessorCount", testActiveProcessorCount)
 	suite("JavaOpts", testJavaOpts)
+	suite("JVMHeapDump", testJVMHeapDump)
 	suite("LinkLocalDNS", testLinkLocalDNS)
 	suite("MemoryCalculator", testMemoryCalculator)
 	suite("OpenSSLCertificateLoader", testOpenSSLCertificateLoader)

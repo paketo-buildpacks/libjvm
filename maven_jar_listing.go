@@ -28,7 +28,7 @@ import (
 	"sync"
 )
 
-var maven = regexp.MustCompile(".+/(.*)-([\\d].*)\\.jar")
+var maven = regexp.MustCompile(`.+/(.*)-([\d].*)\.jar`)
 
 // MavenJAR is metadata about a JRE entry that follows Maven naming conventions.
 type MavenJAR struct {

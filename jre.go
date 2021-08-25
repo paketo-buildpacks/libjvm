@@ -132,6 +132,8 @@ func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 
 			layer.LaunchEnvironment.Default("JAVA_HOME", layer.Path)
 			layer.LaunchEnvironment.Default("MALLOC_ARENA_MAX", "2")
+
+			layer.LaunchEnvironment.Append("JAVA_TOOL_OPTIONS", " ", "-XX:+ExitOnOutOfMemoryError")
 		}
 
 		return layer, nil
