@@ -21,8 +21,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
-	"github.com/google/uuid"
 	"github.com/mattn/go-shellwords"
 	"github.com/paketo-buildpacks/libpak/bard"
 )
@@ -37,14 +37,13 @@ func (a JVMHeapDump) Execute() (map[string]string, error) {
 		return nil, nil
 	}
 
-	uuid := uuid.New()
-	heapDumpPath = filepath.Join(heapDumpPath, uuid.String())
-
 	// mkdir as the JVM will not create it, it just fails and you lose the dump
 	err := os.MkdirAll(heapDumpPath, 0755)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create heap dump path %s\n%w", heapDumpPath, err)
 	}
+
+	heapDumpPath = filepath.Join(heapDumpPath, fmt.Sprintf("java_%s.hprof", time.Now().Format(time.RFC3339)))
 
 	var values []string
 	s, ok := os.LookupEnv("JAVA_TOOL_OPTIONS")

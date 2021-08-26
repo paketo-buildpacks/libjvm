@@ -20,7 +20,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
 	. "github.com/onsi/gomega"
 	"github.com/sclevine/spec"
@@ -61,10 +64,12 @@ func testJVMHeapDump(t *testing.T, context spec.G, it spec.S) {
 
 		context("no $JAVA_TOOL_OPTIONS", func() {
 			it("enables heap dumps", func() {
+				expectedPath := filepath.Join(HeapDumpPath, fmt.Sprintf(`java_%s:.*\.hprof`,
+					strings.Join(strings.SplitN(time.Now().Format(time.RFC3339), ":", 3)[0:2], ":")))
 				env, err := helper.JVMHeapDump{}.Execute()
 				Expect(err).ToNot(HaveOccurred())
 				Expect(env).To(HaveKeyWithValue("JAVA_TOOL_OPTIONS",
-					HavePrefix(fmt.Sprintf("-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=%s", HeapDumpPath))))
+					MatchRegexp(`-XX:\+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=%s`, expectedPath)))
 			})
 		})
 
@@ -78,10 +83,12 @@ func testJVMHeapDump(t *testing.T, context spec.G, it spec.S) {
 			})
 
 			it("passes through existing options and appends heap dump options", func() {
+				expectedPath := filepath.Join(HeapDumpPath, fmt.Sprintf(`java_%s:.*\.hprof`,
+					strings.Join(strings.SplitN(time.Now().Format(time.RFC3339), ":", 3)[0:2], ":")))
 				env, err := helper.JVMHeapDump{}.Execute()
 				Expect(err).ToNot(HaveOccurred())
 				Expect(env).To(HaveKeyWithValue("JAVA_TOOL_OPTIONS",
-					HavePrefix(fmt.Sprintf("-Xmx2G -Xss256k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=%s", HeapDumpPath))))
+					MatchRegexp(`-Xmx2G -Xss256k -XX:\+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=%s`, expectedPath)))
 			})
 		})
 
@@ -95,10 +102,12 @@ func testJVMHeapDump(t *testing.T, context spec.G, it spec.S) {
 			})
 
 			it("passes through existing options and appends heap dump path option", func() {
+				expectedPath := filepath.Join(HeapDumpPath, fmt.Sprintf(`java_%s:.*\.hprof`,
+					strings.Join(strings.SplitN(time.Now().Format(time.RFC3339), ":", 3)[0:2], ":")))
 				env, err := helper.JVMHeapDump{}.Execute()
 				Expect(err).ToNot(HaveOccurred())
 				Expect(env).To(HaveKeyWithValue("JAVA_TOOL_OPTIONS",
-					HavePrefix(fmt.Sprintf("-Xmx2G -Xss256k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=%s", HeapDumpPath))))
+					MatchRegexp(`-Xmx2G -Xss256k -XX:\+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=%s`, expectedPath)))
 			})
 		})
 
