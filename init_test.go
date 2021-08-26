@@ -38,7 +38,6 @@ func TestUnit(t *testing.T) {
 	suite("JavaSecurityProperties", testJavaSecurityProperties)
 	suite("JDK", testJDK)
 	suite("JRE", testJRE)
-	suite("JVMKill", testJVMKill)
 	suite("Manifest", testManifest)
 	suite("MavenJARListing", testMavenJARListing)
 	suite("Versions", testVersions)

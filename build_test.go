@@ -44,11 +44,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					"version": "1.1.1",
 					"stacks":  []interface{}{"test-stack-id"},
 				},
-				{
-					"id":      "jvmkill",
-					"version": "1.1.1",
-					"stacks":  []interface{}{"test-stack-id"},
-				},
 			},
 		}
 		ctx.StackID = "test-stack-id"
@@ -74,11 +69,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					"version": "1.1.1",
 					"stacks":  []interface{}{"test-stack-id"},
 				},
-				{
-					"id":      "jvmkill",
-					"version": "1.1.1",
-					"stacks":  []interface{}{"test-stack-id"},
-				},
 			},
 		}
 		ctx.StackID = "test-stack-id"
@@ -86,19 +76,16 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		result, err := libjvm.Build{}.Build(ctx)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(result.Layers).To(HaveLen(4))
+		Expect(result.Layers).To(HaveLen(3))
 		Expect(result.Layers[0].Name()).To(Equal("jre"))
 		Expect(result.Layers[1].Name()).To(Equal("helper"))
-		Expect(result.Layers[2].Name()).To(Equal("jvmkill"))
-		Expect(result.Layers[3].Name()).To(Equal("java-security-properties"))
+		Expect(result.Layers[2].Name()).To(Equal("java-security-properties"))
 
-		Expect(result.BOM.Entries).To(HaveLen(3))
+		Expect(result.BOM.Entries).To(HaveLen(2))
 		Expect(result.BOM.Entries[0].Name).To(Equal("jre"))
 		Expect(result.BOM.Entries[0].Launch).To(BeTrue())
 		Expect(result.BOM.Entries[1].Name).To(Equal("helper"))
 		Expect(result.BOM.Entries[1].Launch).To(BeTrue())
-		Expect(result.BOM.Entries[2].Name).To(Equal("jvmkill"))
-		Expect(result.BOM.Entries[2].Launch).To(BeTrue())
 	})
 
 	it("contributes security-providers-classpath-8 before Java 9", func() {
@@ -108,11 +95,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				{
 					"id":      "jre",
 					"version": "8.0.0",
-					"stacks":  []interface{}{"test-stack-id"},
-				},
-				{
-					"id":      "jvmkill",
-					"version": "1.1.1",
 					"stacks":  []interface{}{"test-stack-id"},
 				},
 			},
@@ -125,6 +107,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(result.Layers[1].(libpak.HelperLayerContributor).Names).To(Equal([]string{
 			"active-processor-count",
 			"java-opts",
+			"jvm-heap",
 			"link-local-dns",
 			"memory-calculator",
 			"openssl-certificate-loader",
@@ -142,11 +125,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					"version": "11.0.0",
 					"stacks":  []interface{}{"test-stack-id"},
 				},
-				{
-					"id":      "jvmkill",
-					"version": "1.1.1",
-					"stacks":  []interface{}{"test-stack-id"},
-				},
 			},
 		}
 		ctx.StackID = "test-stack-id"
@@ -157,6 +135,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(result.Layers[1].(libpak.HelperLayerContributor).Names).To(Equal([]string{
 			"active-processor-count",
 			"java-opts",
+			"jvm-heap",
 			"link-local-dns",
 			"memory-calculator",
 			"openssl-certificate-loader",
@@ -174,11 +153,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					"version": "1.1.1",
 					"stacks":  []interface{}{"test-stack-id"},
 				},
-				{
-					"id":      "jvmkill",
-					"version": "1.1.1",
-					"stacks":  []interface{}{"test-stack-id"},
-				},
 			},
 		}
 		ctx.StackID = "test-stack-id"
@@ -189,14 +163,12 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(result.Layers[0].Name()).To(Equal("jdk"))
 		Expect(result.Layers[0].(libjvm.JRE).LayerContributor.Dependency.ID).To(Equal("jdk"))
 
-		Expect(result.BOM.Entries).To(HaveLen(3))
+		Expect(result.BOM.Entries).To(HaveLen(2))
 		Expect(result.BOM.Entries[0].Name).To(Equal("jdk"))
 		Expect(result.BOM.Entries[0].Launch).To(BeTrue())
 		Expect(result.BOM.Entries[0].Build).To(BeTrue())
 		Expect(result.BOM.Entries[1].Name).To(Equal("helper"))
 		Expect(result.BOM.Entries[1].Launch).To(BeTrue())
-		Expect(result.BOM.Entries[2].Name).To(Equal("jvmkill"))
-		Expect(result.BOM.Entries[2].Launch).To(BeTrue())
 	})
 
 	it("contributes JDK when no JRE and both a JDK and JRE are wanted", func() {
@@ -209,11 +181,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					"version": "1.1.1",
 					"stacks":  []interface{}{"test-stack-id"},
 				},
-				{
-					"id":      "jvmkill",
-					"version": "1.1.1",
-					"stacks":  []interface{}{"test-stack-id"},
-				},
 			},
 		}
 		ctx.StackID = "test-stack-id"
@@ -224,14 +191,12 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(result.Layers[0].Name()).To(Equal("jdk"))
 		Expect(result.Layers[0].(libjvm.JRE).LayerContributor.Dependency.ID).To(Equal("jdk"))
 
-		Expect(result.BOM.Entries).To(HaveLen(3))
+		Expect(result.BOM.Entries).To(HaveLen(2))
 		Expect(result.BOM.Entries[0].Name).To(Equal("jdk"))
 		Expect(result.BOM.Entries[0].Launch).To(BeTrue())
 		Expect(result.BOM.Entries[0].Build).To(BeTrue())
 		Expect(result.BOM.Entries[1].Name).To(Equal("helper"))
 		Expect(result.BOM.Entries[1].Launch).To(BeTrue())
-		Expect(result.BOM.Entries[2].Name).To(Equal("jvmkill"))
-		Expect(result.BOM.Entries[2].Launch).To(BeTrue())
 	})
 
 	context("$BP_JVM_VERSION", func() {
@@ -270,11 +235,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 						"version": "2.2.2",
 						"stacks":  []interface{}{"test-stack-id"},
 					},
-					{
-						"id":      "jvmkill",
-						"version": "1.1.1",
-						"stacks":  []interface{}{"test-stack-id"},
-					},
 				},
 			}
 			ctx.StackID = "test-stack-id"
@@ -310,12 +270,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 						"version": "2.2.2",
 						"stacks":  []interface{}{"test-stack-id"},
 					},
-
-					{
-						"id":      "jvmkill",
-						"version": "1.1.1",
-						"stacks":  []interface{}{"test-stack-id"},
-					},
 				},
 			}
 			ctx.StackID = "test-stack-id"
@@ -346,11 +300,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 						"version": "1.1.1",
 						"stacks":  []interface{}{"test-stack-id"},
 					},
-					{
-						"id":      "jvmkill",
-						"version": "1.1.1",
-						"stacks":  []interface{}{"test-stack-id"},
-					},
 				},
 			}
 			ctx.StackID = "test-stack-id"
@@ -361,7 +310,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			Expect(result.Layers[0].(libjvm.JDK).LayerContributor.Dependency.ID).To(Equal("jdk"))
 			Expect(result.Layers[1].(libjvm.JRE).LayerContributor.Dependency.ID).To(Equal("jre"))
 
-			Expect(result.BOM.Entries).To(HaveLen(4))
+			Expect(result.BOM.Entries).To(HaveLen(3))
 			Expect(result.BOM.Entries[0].Name).To(Equal("jdk"))
 			Expect(result.BOM.Entries[0].Launch).To(BeFalse())
 			Expect(result.BOM.Entries[0].Build).To(BeTrue())

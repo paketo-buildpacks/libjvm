@@ -219,6 +219,8 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		Expect(layer.LaunchEnvironment["BPI_JVM_SECURITY_PROVIDERS.default"]).To(Equal("1|ALPHA"))
 		Expect(layer.LaunchEnvironment["JAVA_HOME.default"]).To(Equal(layer.Path))
 		Expect(layer.LaunchEnvironment["MALLOC_ARENA_MAX.default"]).To(Equal("2"))
+		Expect(layer.LaunchEnvironment["JAVA_TOOL_OPTIONS.delim"]).To(Equal(" "))
+		Expect(layer.LaunchEnvironment["JAVA_TOOL_OPTIONS.append"]).To(Equal("-XX:+ExitOnOutOfMemoryError"))
 	})
 
 	it("marks after Java 9 JRE layer for launch", func() {
@@ -248,6 +250,8 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		Expect(layer.LaunchEnvironment["BPI_JVM_SECURITY_PROVIDERS.default"]).To(Equal("1|ALPHA"))
 		Expect(layer.LaunchEnvironment["JAVA_HOME.default"]).To(Equal(layer.Path))
 		Expect(layer.LaunchEnvironment["MALLOC_ARENA_MAX.default"]).To(Equal("2"))
+		Expect(layer.LaunchEnvironment["JAVA_TOOL_OPTIONS.delim"]).To(Equal(" "))
+		Expect(layer.LaunchEnvironment["JAVA_TOOL_OPTIONS.append"]).To(Equal("-XX:+ExitOnOutOfMemoryError"))
 	})
 
 	it("marks before Java 9 JDK layer for launch", func() {
@@ -278,6 +282,8 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		Expect(layer.LaunchEnvironment["BPI_JVM_SECURITY_PROVIDERS.default"]).To(Equal("1|ALPHA"))
 		Expect(layer.LaunchEnvironment["JAVA_HOME.default"]).To(Equal(layer.Path))
 		Expect(layer.LaunchEnvironment["MALLOC_ARENA_MAX.default"]).To(Equal("2"))
+		Expect(layer.LaunchEnvironment["JAVA_TOOL_OPTIONS.delim"]).To(Equal(" "))
+		Expect(layer.LaunchEnvironment["JAVA_TOOL_OPTIONS.append"]).To(Equal("-XX:+ExitOnOutOfMemoryError"))
 	})
 
 	it("marks after Java 9 JDK layer for launch", func() {
@@ -307,5 +313,7 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		Expect(layer.LaunchEnvironment["BPI_JVM_SECURITY_PROVIDERS.default"]).To(Equal("1|ALPHA"))
 		Expect(layer.LaunchEnvironment["JAVA_HOME.default"]).To(Equal(layer.Path))
 		Expect(layer.LaunchEnvironment["MALLOC_ARENA_MAX.default"]).To(Equal("2"))
+		Expect(layer.LaunchEnvironment["JAVA_TOOL_OPTIONS.delim"]).To(Equal(" "))
+		Expect(layer.LaunchEnvironment["JAVA_TOOL_OPTIONS.append"]).To(Equal("-XX:+ExitOnOutOfMemoryError"))
 	})
 }
