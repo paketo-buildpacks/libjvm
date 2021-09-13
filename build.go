@@ -131,8 +131,10 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 
 			if IsBeforeJava9(depJRE.Version) {
 				helpers = append(helpers, "security-providers-classpath-8")
+				helpers = append(helpers, "debug-8")
 			} else {
 				helpers = append(helpers, "security-providers-classpath-9")
+				helpers = append(helpers, "debug-9")
 			}
 
 			h, be := libpak.NewHelperLayer(context.Buildpack, helpers...)

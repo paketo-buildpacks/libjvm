@@ -51,6 +51,8 @@ func main() {
 			o  = helper.OpenSSLCertificateLoader{CertificateLoader: cl, Logger: l}
 			s8 = helper.SecurityProvidersClasspath8{Logger: l}
 			s9 = helper.SecurityProvidersClasspath9{Logger: l}
+			d8 = helper.Debug8{Logger: l}
+			d9 = helper.Debug9{Logger: l}
 		)
 
 		file := "/etc/resolv.conf"
@@ -69,6 +71,8 @@ func main() {
 			"security-providers-classpath-8": s8,
 			"security-providers-classpath-9": s9,
 			"security-providers-configurer":  c,
+			"debug-8":                        d8,
+			"debug-9":                        d9,
 		})
 	})
 }
