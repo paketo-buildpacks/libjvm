@@ -34,5 +34,7 @@ func TestUnit(t *testing.T) {
 	suite("SecurityProvidersClasspath8", testSecurityProvidersClasspath8)
 	suite("SecurityProvidersClasspath9", testSecurityProvidersClasspath9)
 	suite("SecurityProvidersConfigurer", testSecurityProvidersConfigurer)
+	suite("Debug8", testDebug8)
+	suite("Debug9", testDebug9)
 	suite.Run(t)
 }
