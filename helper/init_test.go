@@ -36,5 +36,6 @@ func TestUnit(t *testing.T) {
 	suite("SecurityProvidersConfigurer", testSecurityProvidersConfigurer)
 	suite("Debug8", testDebug8)
 	suite("Debug9", testDebug9)
+	suite("JMX", testJMX)
 	suite.Run(t)
 }
