@@ -127,7 +127,7 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 
 		if IsLaunchContribution(jrePlanEntry.Metadata) {
 			helpers := []string{"active-processor-count", "java-opts", "jvm-heap", "link-local-dns", "memory-calculator",
-				"openssl-certificate-loader", "security-providers-configurer", "jmx"}
+				"openssl-certificate-loader", "security-providers-configurer", "jmx", "nmt"}
 
 			if IsBeforeJava9(depJRE.Version) {
 				helpers = append(helpers, "security-providers-classpath-8")
