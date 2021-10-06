@@ -17,7 +17,9 @@
 package helper_test
 
 import (
+	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -32,21 +34,21 @@ func testJFR(t *testing.T, context spec.G, it spec.S) {
 		jfr = helper.JFR{}
 	)
 
-	it("returns if $BPL_JAVA_FLIGHT_RECORDER_ENABLED is not set", func() {
+	it("returns if $BPL_JFR_ENABLED is not set", func() {
 		Expect(jfr.Execute()).To(BeNil())
 	})
-	context("$BPL_JAVA_FLIGHT_RECORDER_ENABLED", func() {
+	context("$BPL_JFR_ENABLED", func() {
 		it.Before(func() {
-			Expect(os.Setenv("BPL_JAVA_FLIGHT_RECORDER_ENABLED", "true")).To(Succeed())
+			Expect(os.Setenv("BPL_JFR_ENABLED", "true")).To(Succeed())
 		})
 
 		it.After(func() {
-			Expect(os.Unsetenv("BPL_JAVA_FLIGHT_RECORDER_ENABLED")).To(Succeed())
+			Expect(os.Unsetenv("BPL_JFR_ENABLED")).To(Succeed())
 		})
 
 		it("contributes base JFR configuration", func() {
 			Expect(jfr.Execute()).To(Equal(map[string]string{
-				"JAVA_TOOL_OPTIONS": "-XX:StartFlightRecording=",
+				"JAVA_TOOL_OPTIONS": fmt.Sprintf("-XX:StartFlightRecording=dumponexit=true,filename=%s", filepath.Join(os.TempDir(), "recording.jfr")),
 			}))
 		})
 
@@ -55,18 +57,6 @@ func testJFR(t *testing.T, context spec.G, it spec.S) {
 				Expect(os.Setenv("BPL_JFR_ARGS", "filename=/tmp/test.jfr,name=file,delay=60s,dumponexit=true,duration=10s,maxage=1d,maxsize=1024m,path-to-gc-roots=true,settings=true")).To(Succeed())
 				Expect(jfr.Execute()).To(Equal(map[string]string{
 					"JAVA_TOOL_OPTIONS": "-XX:StartFlightRecording=filename=/tmp/test.jfr,name=file,delay=60s,dumponexit=true,duration=10s,maxage=1d,maxsize=1024m,path-to-gc-roots=true,settings=true"}))
-			})
-			it("returns an error if a JFR argument is empty", func() {
-				Expect(os.Setenv("BPL_JFR_ARGS", "filename=/tmp/test.jfr,name=")).To(Succeed())
-				_, err := jfr.Execute()
-				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError("invalid Flight Recorder argument: name="))
-			})
-			it("returns an error if JFR arguments are not parsable", func() {
-				Expect(os.Setenv("BPL_JFR_ARGS", ",filename=/tmp/test.jfr,")).To(Succeed())
-				_, err := jfr.Execute()
-				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError("unable to parse Flight Recorder arguments: ,filename=/tmp/test.jfr,"))
 			})
 		})
 

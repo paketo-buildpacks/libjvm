@@ -38,7 +38,7 @@ func testJMX(t *testing.T, context spec.G, it spec.S) {
 
 	context("$BPL_JMX_ENABLED", func() {
 		it.Before(func() {
-			Expect(os.Setenv("BPL_JMX_ENABLED", "")).To(Succeed())
+			Expect(os.Setenv("BPL_JMX_ENABLED", "true")).To(Succeed())
 		})
 
 		it.After(func() {

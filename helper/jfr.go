@@ -19,7 +19,7 @@ package helper
 import (
 	"fmt"
 	"os"
-	"strings"
+	"path/filepath"
 
 	"github.com/paketo-buildpacks/libpak/sherpa"
 
@@ -31,33 +31,19 @@ type JFR struct {
 }
 
 func (j JFR) Execute() (map[string]string, error) {
-	if val, ok := os.LookupEnv("BPL_JAVA_FLIGHT_RECORDER_ENABLED"); !ok || val != "true" {
+	if val := sherpa.ResolveBool("BPL_JFR_ENABLED"); !val {
 		return nil, nil
 	}
-	// list of valid JFR config arguments, to test user-provided args against keys
-	validArgs := map[string]string{"delay": "", "dumponexit": "", "filename": "", "name": "", "duration": "",
-		"maxage": "", "maxsize": "", "path-to-gc-roots": "", "settings": ""}
 
-	argList := sherpa.GetEnvWithDefault("BPL_JFR_ARGS", "")
-
-	j.Logger.Infof("Enabling Java Flight Recorder")
+	var argList string
+	if argList = sherpa.GetEnvWithDefault("BPL_JFR_ARGS", ""); argList == "" {
+		argList = fmt.Sprintf("dumponexit=true,filename=%s", filepath.Join(os.TempDir(), "recording.jfr"))
+	}
+	j.Logger.Infof("Enabling Java Flight Recorder with args: %s", argList)
 
 	// minimum flag to enable JFR, with default config args
-	jfrConfig := "-XX:StartFlightRecording="
+	jfrConfig := fmt.Sprintf("-XX:StartFlightRecording=%s", argList)
 
-	if argList != "" {
-		list := strings.Split(argList, ",")
-		for _, a := range list {
-			if a == "" {
-				return nil, fmt.Errorf("unable to parse Flight Recorder arguments: %s", argList)
-			}
-			kv := strings.Split(a, "=")
-			if _, ok := validArgs[kv[0]]; !ok || (kv[0] == "" || kv[1] == "") {
-				return nil, fmt.Errorf("invalid Flight Recorder argument: %s=%s", kv[0], kv[1])
-			}
-		}
-		jfrConfig += argList
-	}
 	opts := sherpa.AppendToEnvVar("JAVA_TOOL_OPTIONS", " ", jfrConfig)
 
 	return map[string]string{"JAVA_TOOL_OPTIONS": opts}, nil
