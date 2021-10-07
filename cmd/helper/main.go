@@ -55,6 +55,7 @@ func main() {
 			d9 = helper.Debug9{Logger: l}
 			jm = helper.JMX{Logger: l}
 			n  = helper.NMT{Logger: l}
+			jf = helper.JFR{Logger: l}
 		)
 
 		file := "/etc/resolv.conf"
@@ -77,6 +78,7 @@ func main() {
 			"debug-9":                        d9,
 			"jmx":                            jm,
 			"nmt":                            n,
+			"jfr":                            jf,
 		})
 	})
 }

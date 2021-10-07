@@ -38,5 +38,6 @@ func TestUnit(t *testing.T) {
 	suite("Debug9", testDebug9)
 	suite("JMX", testJMX)
 	suite("NMT", testNMT)
+	suite("JFR", testJFR)
 	suite.Run(t)
 }
