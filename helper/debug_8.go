@@ -18,11 +18,9 @@ package helper
 
 import (
 	"fmt"
-	"os"
-	"strconv"
-	"strings"
 
 	"github.com/paketo-buildpacks/libpak/bard"
+	"github.com/paketo-buildpacks/libpak/sherpa"
 )
 
 type Debug8 struct {
@@ -30,24 +28,14 @@ type Debug8 struct {
 }
 
 func (d Debug8) Execute() (map[string]string, error) {
-	if _, ok := os.LookupEnv("BPL_DEBUG_ENABLED"); !ok {
+
+	if val := sherpa.ResolveBool("BPL_DEBUG_ENABLED"); !val {
 		return nil, nil
 	}
 
-	var err error
+	port := sherpa.GetEnvWithDefault("BPL_DEBUG_PORT", "8000")
 
-	port := "8000"
-	if s, ok := os.LookupEnv("BPL_DEBUG_PORT"); ok {
-		port = s
-	}
-
-	suspend := false
-	if s, ok := os.LookupEnv("BPL_DEBUG_SUSPEND"); ok {
-		suspend, err = strconv.ParseBool(s)
-		if err != nil {
-			return nil, fmt.Errorf("unable to parse $BPL_DEBUG_SUSPEND\n%w", err)
-		}
-	}
+	suspend := sherpa.ResolveBool("BPL_DEBUG_SUSPEND")
 
 	s := fmt.Sprintf("Debugging enabled on port %s", port)
 	if suspend {
@@ -55,19 +43,13 @@ func (d Debug8) Execute() (map[string]string, error) {
 	}
 	d.Logger.Info(s)
 
-	var values []string
-	if s, ok := os.LookupEnv("JAVA_TOOL_OPTIONS"); ok {
-		values = append(values, s)
-	}
-
 	if suspend {
 		s = "y"
 	} else {
 		s = "n"
 	}
 
-	values = append(values,
-		fmt.Sprintf("-agentlib:jdwp=transport=dt_socket,server=y,address=%s,suspend=%s", port, s))
+	opts := sherpa.AppendToEnvVar("JAVA_TOOL_OPTIONS", " ", fmt.Sprintf("-agentlib:jdwp=transport=dt_socket,server=y,address=%s,suspend=%s", port, s))
 
-	return map[string]string{"JAVA_TOOL_OPTIONS": strings.Join(values, " ")}, nil
+	return map[string]string{"JAVA_TOOL_OPTIONS": opts}, nil
 }

@@ -18,10 +18,9 @@ package helper
 
 import (
 	"fmt"
-	"os"
-	"strings"
 
 	"github.com/paketo-buildpacks/libpak/bard"
+	"github.com/paketo-buildpacks/libpak/sherpa"
 )
 
 type JMX struct {
@@ -29,29 +28,19 @@ type JMX struct {
 }
 
 func (j JMX) Execute() (map[string]string, error) {
-	if _, ok := os.LookupEnv("BPL_JMX_ENABLED"); !ok {
+	if val := sherpa.ResolveBool("BPL_JMX_ENABLED"); !val {
 		return nil, nil
 	}
 
-	port := "5000"
-	if s, ok := os.LookupEnv("BPL_JMX_PORT"); ok {
-		port = s
-	}
+	port := sherpa.GetEnvWithDefault("BPL_JMX_PORT", "5000")
 
 	j.Logger.Infof("JMX enabled on port %s", port)
 
-	var values []string
-	if s, ok := os.LookupEnv("JAVA_TOOL_OPTIONS"); ok {
-		values = append(values, s)
-	}
-
-	values = append(values,
-		"-Djava.rmi.server.hostname=127.0.0.1",
+	opts := sherpa.AppendToEnvVar("JAVA_TOOL_OPTIONS", " ", "-Djava.rmi.server.hostname=127.0.0.1",
 		"-Dcom.sun.management.jmxremote.authenticate=false",
 		"-Dcom.sun.management.jmxremote.ssl=false",
 		fmt.Sprintf("-Dcom.sun.management.jmxremote.port=%s", port),
-		fmt.Sprintf("-Dcom.sun.management.jmxremote.rmi.port=%s", port),
-	)
+		fmt.Sprintf("-Dcom.sun.management.jmxremote.rmi.port=%s", port))
 
-	return map[string]string{"JAVA_TOOL_OPTIONS": strings.Join(values, " ")}, nil
+	return map[string]string{"JAVA_TOOL_OPTIONS": opts}, nil
 }

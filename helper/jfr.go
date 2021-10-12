@@ -31,7 +31,7 @@ type JFR struct {
 }
 
 func (j JFR) Execute() (map[string]string, error) {
-	if val, ok := os.LookupEnv("BPL_JFR_ENABLED"); !ok || val != "true" {
+	if val := sherpa.ResolveBool("BPL_JFR_ENABLED"); !val {
 		return nil, nil
 	}
 
