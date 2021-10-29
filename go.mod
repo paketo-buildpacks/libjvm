@@ -12,7 +12,7 @@ require (
 	github.com/miekg/dns v1.1.43
 	github.com/onsi/gomega v1.16.0
 	github.com/paketo-buildpacks/libpak v1.55.0
-	github.com/pavel-v-chernykh/keystore-go/v4 v4.1.0
+	github.com/pavel-v-chernykh/keystore-go/v4 v4.2.0
 	github.com/sclevine/spec v1.4.0
 	golang.org/x/sys v0.0.0-20210603125802-9665404d3644
 )
