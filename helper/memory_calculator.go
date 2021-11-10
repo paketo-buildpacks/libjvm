@@ -85,12 +85,12 @@ func (m MemoryCalculator) Execute() (map[string]string, error) {
 			return nil, fmt.Errorf("$BPI_APPLICATION_PATH must be set")
 		}
 
-		var j int
-		if s, ok := os.LookupEnv("BPI_JVM_CLASS_COUNT"); !ok {
+		var jvmClassCount int
+		if jvmCountStr, ok := os.LookupEnv("BPI_JVM_CLASS_COUNT"); !ok {
 			return nil, fmt.Errorf("$BPI_JVM_CLASS_COUNT must be set")
 		} else {
-			if j, err = strconv.Atoi(s); err != nil {
-				return nil, fmt.Errorf("unable to convert $BPI_JVM_CLASS_COUNT=%s to integer\n%w", s, err)
+			if jvmClassCount, err = strconv.Atoi(jvmCountStr); err != nil {
+				return nil, fmt.Errorf("unable to convert $BPI_JVM_CLASS_COUNT=%s to integer\n%w", jvmCountStr, err)
 			}
 		}
 
@@ -108,14 +108,14 @@ func (m MemoryCalculator) Execute() (map[string]string, error) {
 			}
 		}
 
-		a, err := count.Classes(appPath)
+		appClassCount, err := count.Classes(appPath)
 
-		totalClasses := float64(j+a+staticAdjustment) * float64(adjustmentFactor) / 100.0
+		totalClasses := float64(jvmClassCount+appClassCount+staticAdjustment) * (float64(adjustmentFactor) / 100.0)
 
 		if err != nil {
 			return nil, fmt.Errorf("unable to determine class count\n%w", err)
 		}
-		m.Logger.Debugf("Memory Calculation: (%d%% * (%d + %d + %d)) * %0.2f", adjustmentFactor, j, a, staticAdjustment, ClassLoadFactor)
+		m.Logger.Debugf("Memory Calculation: (%d%% * (%d + %d + %d)) * %0.2f", adjustmentFactor, jvmClassCount, appClassCount, staticAdjustment, ClassLoadFactor)
 		c.LoadedClassCount = int(totalClasses * ClassLoadFactor)
 	}
 
