@@ -193,7 +193,7 @@ func testMemoryCalculator(t *testing.T, context spec.G, it spec.S) {
 						it("fails", func() {
 							_, err := m.Execute()
 							Expect(err).To(HaveOccurred())
-							Expect(err).To(MatchError(HavePrefix("unable to parse $BPL_JVM_CLASS_ADJUSTMENT %s as a percentage:", "-40%")))
+							Expect(err).To(MatchError(HavePrefix("unable to parse $BPL_JVM_CLASS_ADJUSTMENT %s as a percentage", "-40%")))
 						})
 					})
 				})
