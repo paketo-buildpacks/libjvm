@@ -80,31 +80,48 @@ func (m MemoryCalculator) Execute() (map[string]string, error) {
 			return nil, fmt.Errorf("unable to convert $BPL_JVM_LOADED_CLASS_COUNT=%s to integer\n%w", s, err)
 		}
 	} else {
-		s, ok := os.LookupEnv("BPI_APPLICATION_PATH")
+		appPath, ok := os.LookupEnv("BPI_APPLICATION_PATH")
 		if !ok {
 			return nil, fmt.Errorf("$BPI_APPLICATION_PATH must be set")
 		}
 
-		var j int
-		if s, ok := os.LookupEnv("BPI_JVM_CLASS_COUNT"); !ok {
+		var jvmClassCount int
+		if jvmCountStr, ok := os.LookupEnv("BPI_JVM_CLASS_COUNT"); !ok {
 			return nil, fmt.Errorf("$BPI_JVM_CLASS_COUNT must be set")
 		} else {
-			if j, err = strconv.Atoi(s); err != nil {
-				return nil, fmt.Errorf("unable to convert $BPI_JVM_CLASS_COUNT=%s to integer\n%w", s, err)
+			if jvmClassCount, err = strconv.Atoi(jvmCountStr); err != nil {
+				return nil, fmt.Errorf("unable to convert $BPI_JVM_CLASS_COUNT=%s to integer\n%w", jvmCountStr, err)
 			}
 		}
 
-		a, err := count.Classes(s)
+		staticAdjustment := 0
+		adjustmentFactor := uint64(100)
+		if adj, ok := os.LookupEnv("BPL_JVM_CLASS_ADJUSTMENT"); ok {
+			if strings.HasSuffix(adj, "%") {
+				if adjustmentFactor, err = strconv.ParseUint(strings.TrimSuffix(adj, "%"), 10, 32); err != nil {
+					return nil, fmt.Errorf("unable to parse $BPL_JVM_CLASS_ADJUSTMENT %s as a percentage\n%w", adj, err)
+				}
+			} else {
+				if staticAdjustment, err = strconv.Atoi(adj); err != nil {
+					return nil, fmt.Errorf("unable to parse $BPL_JVM_CLASS_ADJUSTMENT %s as an integer\n%w", adj, err)
+				}
+			}
+		}
+
+		appClassCount, err := count.Classes(appPath)
+
+		totalClasses := float64(jvmClassCount+appClassCount+staticAdjustment) * (float64(adjustmentFactor) / 100.0)
+
 		if err != nil {
 			return nil, fmt.Errorf("unable to determine class count\n%w", err)
 		}
-		m.Logger.Debugf("Memory Calculation: (%d + %d) * %0.2f", j, a, ClassLoadFactor)
-		c.LoadedClassCount = int(float64(j+a) * ClassLoadFactor)
+		m.Logger.Debugf("Memory Calculation: (%d%% * (%d + %d + %d)) * %0.2f", adjustmentFactor, jvmClassCount, appClassCount, staticAdjustment, ClassLoadFactor)
+		c.LoadedClassCount = int(totalClasses * ClassLoadFactor)
 	}
 
-	if s, ok := os.LookupEnv("BPL_JVM_THREAD_COUNT"); ok {
-		if c.ThreadCount, err = strconv.Atoi(s); err != nil {
-			return nil, fmt.Errorf("unable to convert $BPL_JVM_THREAD_COUNT=%s to integer\n%w", s, err)
+	if threadCount, ok := os.LookupEnv("BPL_JVM_THREAD_COUNT"); ok {
+		if c.ThreadCount, err = strconv.Atoi(threadCount); err != nil {
+			return nil, fmt.Errorf("unable to convert $BPL_JVM_THREAD_COUNT=%s to integer\n%w", threadCount, err)
 		}
 	}
 

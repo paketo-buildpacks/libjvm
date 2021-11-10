@@ -113,6 +113,92 @@ func testMemoryCalculator(t *testing.T, context spec.G, it spec.S) {
 				}))
 			})
 
+			context("$BPL_JVM_CLASS_ADJUSTMENT", func() {
+				context("set to a static number", func() {
+					context("positive number", func() {
+						it.Before(func() {
+							Expect(os.Setenv("BPL_JVM_CLASS_ADJUSTMENT", "10")).To(Succeed())
+						})
+
+						it.After(func() {
+							Expect(os.Unsetenv("BPL_JVM_CLASS_ADJUSTMENT")).To(Succeed())
+						})
+
+						it("adjusts by a static factor", func() {
+							Expect(m.Execute()).To(Equal(map[string]string{
+								"JAVA_TOOL_OPTIONS": "-XX:MaxDirectMemorySize=10M -Xmx522688K -XX:MaxMetaspaceSize=13887K -XX:ReservedCodeCacheSize=240M -Xss1M",
+							}))
+						})
+					})
+
+					context("negative number", func() {
+						it.Before(func() {
+							Expect(os.Setenv("BPL_JVM_CLASS_ADJUSTMENT", "-40")).To(Succeed())
+						})
+
+						it.After(func() {
+							Expect(os.Unsetenv("BPL_JVM_CLASS_ADJUSTMENT")).To(Succeed())
+						})
+
+						it("adjusts by a static factor", func() {
+							Expect(m.Execute()).To(Equal(map[string]string{
+								"JAVA_TOOL_OPTIONS": "-XX:MaxDirectMemorySize=10M -Xmx522785K -XX:MaxMetaspaceSize=13790K -XX:ReservedCodeCacheSize=240M -Xss1M",
+							}))
+						})
+					})
+				})
+
+				context("set to a percentage", func() {
+					context("value above 100%", func() {
+						it.Before(func() {
+							Expect(os.Setenv("BPL_JVM_CLASS_ADJUSTMENT", "110%")).To(Succeed())
+						})
+
+						it.After(func() {
+							Expect(os.Unsetenv("BPL_JVM_CLASS_ADJUSTMENT")).To(Succeed())
+						})
+
+						it("adjusts by a percentage", func() {
+							Expect(m.Execute()).To(Equal(map[string]string{
+								"JAVA_TOOL_OPTIONS": "-XX:MaxDirectMemorySize=10M -Xmx522688K -XX:MaxMetaspaceSize=13887K -XX:ReservedCodeCacheSize=240M -Xss1M",
+							}))
+						})
+					})
+
+					context("value between 0 and 100%", func() {
+						it.Before(func() {
+							Expect(os.Setenv("BPL_JVM_CLASS_ADJUSTMENT", "60%")).To(Succeed())
+						})
+
+						it.After(func() {
+							Expect(os.Unsetenv("BPL_JVM_CLASS_ADJUSTMENT")).To(Succeed())
+						})
+
+						it("adjusts by a percentage", func() {
+							Expect(m.Execute()).To(Equal(map[string]string{
+								"JAVA_TOOL_OPTIONS": "-XX:MaxDirectMemorySize=10M -Xmx522785K -XX:MaxMetaspaceSize=13790K -XX:ReservedCodeCacheSize=240M -Xss1M",
+							}))
+						})
+					})
+
+					context("negative number", func() {
+						it.Before(func() {
+							Expect(os.Setenv("BPL_JVM_CLASS_ADJUSTMENT", "-40%")).To(Succeed())
+						})
+
+						it.After(func() {
+							Expect(os.Unsetenv("BPL_JVM_CLASS_ADJUSTMENT")).To(Succeed())
+						})
+
+						it("fails", func() {
+							_, err := m.Execute()
+							Expect(err).To(HaveOccurred())
+							Expect(err).To(MatchError(HavePrefix("unable to parse $BPL_JVM_CLASS_ADJUSTMENT %s as a percentage", "-40%")))
+						})
+					})
+				})
+			})
+
 			context("$BPL_JVM_HEADROOM", func() {
 				it.Before(func() {
 					Expect(os.Setenv("BPL_JVM_HEADROOM", "10")).To(Succeed())
