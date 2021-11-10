@@ -103,7 +103,7 @@ func (m MemoryCalculator) Execute() (map[string]string, error) {
 				}
 			} else {
 				if staticAdjustment, err = strconv.Atoi(adj); err != nil {
-					return nil, fmt.Errorf("could not parse $BPL_JVM_CLASS_ADJUSTMENT %s as an integer: %w", adj, err)
+					return nil, fmt.Errorf("unable to parse $BPL_JVM_CLASS_ADJUSTMENT %s as an integer: %w", adj, err)
 				}
 			}
 		}
