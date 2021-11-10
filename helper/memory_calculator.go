@@ -99,7 +99,7 @@ func (m MemoryCalculator) Execute() (map[string]string, error) {
 		if adj, ok := os.LookupEnv("BPL_JVM_CLASS_ADJUSTMENT"); ok {
 			if strings.HasSuffix(adj, "%") {
 				if adjustmentFactor, err = strconv.ParseUint(strings.TrimSuffix(adj, "%"), 10, 32); err != nil {
-					return nil, fmt.Errorf("unable to parse $BPL_JVM_CLASS_ADJUSTMENT %s as a percentage: %w", adj, err)
+					return nil, fmt.Errorf("unable to parse $BPL_JVM_CLASS_ADJUSTMENT %s as a percentage\n%w", adj, err)
 				}
 			} else {
 				if staticAdjustment, err = strconv.Atoi(adj); err != nil {
