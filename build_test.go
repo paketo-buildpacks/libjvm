@@ -62,6 +62,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 	it("contributes JRE", func() {
 		ctx.Plan.Entries = append(ctx.Plan.Entries, libcnb.BuildpackPlanEntry{Name: "jre", Metadata: LaunchContribution})
+		ctx.Buildpack.API = "0.6"
 		ctx.Buildpack.Metadata = map[string]interface{}{
 			"dependencies": []map[string]interface{}{
 				{
@@ -153,6 +154,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 	it("contributes JDK when no JRE and only a JRE is wanted", func() {
 		ctx.Plan.Entries = append(ctx.Plan.Entries, libcnb.BuildpackPlanEntry{Name: "jre", Metadata: LaunchContribution})
+		ctx.Buildpack.API = "0.6"
 		ctx.Buildpack.Metadata = map[string]interface{}{
 			"dependencies": []map[string]interface{}{
 				{
@@ -181,6 +183,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 	it("contributes JDK when no JRE and both a JDK and JRE are wanted", func() {
 		ctx.Plan.Entries = append(ctx.Plan.Entries, libcnb.BuildpackPlanEntry{Name: "jdk", Metadata: LaunchContribution})
 		ctx.Plan.Entries = append(ctx.Plan.Entries, libcnb.BuildpackPlanEntry{Name: "jre", Metadata: LaunchContribution})
+		ctx.Buildpack.API = "0.6"
 		ctx.Buildpack.Metadata = map[string]interface{}{
 			"dependencies": []map[string]interface{}{
 				{
