@@ -55,7 +55,10 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 	cl := NewCertificateLoader()
 	cl.Logger = b.Logger.BodyWriter()
 
-	v, _ := cr.Resolve("BP_JVM_VERSION")
+	v, err := b.getJVMVersion(context.Application.Path, cr)
+	if err != nil {
+		return libcnb.BuildResult{}, fmt.Errorf("unable to determine jvm version\n%w", err)
+	}
 
 	jreSkipped := false
 	if t, _ := cr.Resolve("BP_JVM_TYPE"); strings.ToLower(t) == "jdk" {
@@ -170,4 +173,47 @@ func (b Build) warnIfJreNotUsed(jreAvailable, jreSkipped bool) {
 	}
 
 	b.Logger.Header(color.New(color.FgYellow, color.Bold).Sprint(msg))
+}
+
+func (b Build) getJVMVersion(appPath string, cr libpak.ConfigurationResolver) (string, error) {
+	version, explicit := cr.Resolve("BP_JVM_VERSION")
+
+	if !explicit {
+		manifest, err := NewManifest(appPath)
+		if err != nil {
+			return version, err
+		}
+
+		javaVersion := ""
+
+		buildJdkSpecVersion, ok := manifest.Get("Build-Jdk-Spec")
+		if ok {
+			javaVersion = buildJdkSpecVersion
+		}
+
+		buildJdkVersion, ok := manifest.Get("Build-Jdk")
+		if ok {
+			javaVersion = buildJdkVersion
+		}
+
+		if len(javaVersion) > 0 {
+			javaVersionFromMaven := extractMajorVersion(javaVersion)
+			f := color.New(color.Faint)
+			b.Logger.Header(f.Sprint("Context specific overrides:"))
+			b.Logger.Body(f.Sprintf("$BP_JVM_VERSION \t\t%s\t\tthe Java version, extracted from main class", javaVersionFromMaven))
+			return javaVersionFromMaven, nil
+		}
+	}
+
+	return version, nil
+}
+
+func extractMajorVersion(version string) string {
+	versionParts := strings.Split(version, ".")
+
+	if versionParts[0] == "1" {
+		return versionParts[1]
+	}
+
+	return versionParts[0]
 }

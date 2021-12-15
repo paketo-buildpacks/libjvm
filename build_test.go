@@ -17,7 +17,11 @@
 package libjvm_test
 
 import (
+	"bytes"
+	"encoding/binary"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/buildpacks/libcnb"
@@ -73,6 +77,58 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			},
 		}
 		ctx.StackID = "test-stack-id"
+
+		result, err := libjvm.Build{}.Build(ctx)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(result.Layers).To(HaveLen(3))
+		Expect(result.Layers[0].Name()).To(Equal("jre"))
+		Expect(result.Layers[1].Name()).To(Equal("helper"))
+		Expect(result.Layers[2].Name()).To(Equal("java-security-properties"))
+
+		Expect(result.BOM.Entries).To(HaveLen(2))
+		Expect(result.BOM.Entries[0].Name).To(Equal("jre"))
+		Expect(result.BOM.Entries[0].Launch).To(BeTrue())
+		Expect(result.BOM.Entries[1].Name).To(Equal("helper"))
+		Expect(result.BOM.Entries[1].Launch).To(BeTrue())
+	})
+
+	it("contributes JRE read from JAR", func() {
+		ctx.Plan.Entries = append(ctx.Plan.Entries, libcnb.BuildpackPlanEntry{Name: "jre", Metadata: LaunchContribution})
+		ctx.Buildpack.API = "0.6"
+		ctx.Buildpack.Metadata = map[string]interface{}{
+			"dependencies": []map[string]interface{}{
+				{
+					"id":      "jre",
+					"version": "11",
+					"stacks":  []interface{}{"test-stack-id"},
+				},
+			},
+		}
+		ctx.StackID = "test-stack-id"
+		temp, err := ioutil.TempDir("", "jre-application")
+		ctx.Application.Path = temp
+		Expect(err).NotTo(HaveOccurred())
+
+		defer os.RemoveAll(temp)
+
+		err = os.Mkdir(filepath.Join(temp, "META-INF"), 0744)
+		Expect(err).NotTo(HaveOccurred())
+		manifest := filepath.Join(temp, "META-INF", "MANIFEST.MF")
+		manifestContent := []byte("Main-Class: main")
+		err = ioutil.WriteFile(manifest, manifestContent, 0644)
+		Expect(err).NotTo(HaveOccurred())
+
+		classFile := filepath.Join(temp, "main.class")
+		classFileContent := bytes.NewBuffer(nil)
+		binary.Write(classFileContent, binary.BigEndian, uint8(0xCA))
+		binary.Write(classFileContent, binary.BigEndian, uint8(0xFE))
+		binary.Write(classFileContent, binary.BigEndian, uint8(0xBA))
+		binary.Write(classFileContent, binary.BigEndian, uint8(0xBE))
+		binary.Write(classFileContent, binary.BigEndian, uint16(0))
+		binary.Write(classFileContent, binary.BigEndian, uint16(55))
+		err = ioutil.WriteFile(classFile, classFileContent.Bytes(), 0666)
+		Expect(err).NotTo(HaveOccurred())
 
 		result, err := libjvm.Build{}.Build(ctx)
 		Expect(err).NotTo(HaveOccurred())
