@@ -41,5 +41,6 @@ func TestUnit(t *testing.T) {
 	suite("Manifest", testManifest)
 	suite("MavenJARListing", testMavenJARListing)
 	suite("Versions", testVersions)
+	suite("JVMVersions", testJVMVersion)
 	suite.Run(t)
 }
