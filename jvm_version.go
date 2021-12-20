@@ -36,8 +36,7 @@ func (jvmVersion JVMVersion) GetJVMVersion(appPath string, cr libpak.Configurati
 		if len(javaVersion) > 0 {
 			javaVersionFromMaven := extractMajorVersion(javaVersion)
 			f := color.New(color.Faint)
-			jvmVersion.Logger.Header(f.Sprint("Context specific overrides:"))
-			jvmVersion.Logger.Body(f.Sprintf("$BP_JVM_VERSION \t\t %s \t\tthe Java version, extracted from main class", javaVersionFromMaven))
+			jvmVersion.Logger.Body(f.Sprintf("Using Java version %s extracted from METADATA.MF", javaVersionFromMaven))
 			return javaVersionFromMaven, nil
 		}
 	}
