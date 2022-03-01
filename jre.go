@@ -73,8 +73,14 @@ func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 
 	return j.LayerContributor.Contribute(layer, func(artifact *os.File) (libcnb.Layer, error) {
 		j.Logger.Bodyf("Expanding to %s", layer.Path)
-		if err := crush.ExtractTarGz(artifact, layer.Path, 1); err != nil {
-			return libcnb.Layer{}, fmt.Errorf("unable to expand JRE\n%w", err)
+		if strings.HasSuffix(artifact.Name(), ".zip") {
+			if err := crush.ExtractZip(artifact, layer.Path, 1); err != nil {
+				return libcnb.Layer{}, fmt.Errorf("unable to expand JRE\n%w", err)
+			}
+		} else {
+			if err := crush.ExtractTarGz(artifact, layer.Path, 1); err != nil {
+				return libcnb.Layer{}, fmt.Errorf("unable to expand JRE\n%w", err)
+			}
 		}
 
 		var cacertsPath string

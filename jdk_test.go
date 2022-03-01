@@ -82,6 +82,33 @@ func testJDK(t *testing.T, context spec.G, it spec.S) {
 		Expect(layer.BuildEnvironment["JDK_HOME.override"]).To(Equal(layer.Path))
 	})
 
+	it("contributes JDK from a zipfile", func() {
+		dep := libpak.BuildpackDependency{
+			Version: "11.0.0",
+			URI:     "https://localhost/stub-jdk-11.zip",
+			SHA256:  "8138da5a0340f89b47ec4ab3fb5f12034ce793eb45af257820ec457316559a39",
+		}
+		dc := libpak.DependencyCache{CachePath: "testdata"}
+
+		j, _, err := libjvm.NewJDK(dep, dc, cl)
+		Expect(err).NotTo(HaveOccurred())
+		j.Logger = bard.NewLogger(ioutil.Discard)
+
+		Expect(j.LayerContributor.ExpectedMetadata.(map[string]interface{})["cert-dir"]).To(HaveLen(4))
+
+		layer, err := ctx.Layers.Layer("test-layer")
+		Expect(err).NotTo(HaveOccurred())
+
+		layer, err = j.Contribute(layer)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(layer.LayerTypes.Build).To(BeTrue())
+		Expect(layer.LayerTypes.Cache).To(BeTrue())
+		Expect(filepath.Join(layer.Path, "fixture-marker")).To(BeARegularFile())
+		Expect(layer.BuildEnvironment["JAVA_HOME.override"]).To(Equal(layer.Path))
+		Expect(layer.BuildEnvironment["JDK_HOME.override"]).To(Equal(layer.Path))
+	})
+
 	it("updates before Java 9 certificates", func() {
 		dep := libpak.BuildpackDependency{
 			Version: "8.0.0",
