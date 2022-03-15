@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 the original author or authors.
+ * Copyright 2018-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,12 @@
 package libjvm
 
 import (
+	"archive/zip"
 	"bytes"
+	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 
@@ -39,31 +42,56 @@ func NewManifest(applicationPath string) (*properties.Properties, error) {
 	}
 	defer in.Close()
 
-	b, err := ioutil.ReadAll(in)
+	return loadManifest(in, file)
+}
+
+// NewManifestFromJAR reads the META-INF/MANIFEST.MF from a JAR file if it exists, normalizing it into the
+// standard properties form.
+func NewManifestFromJAR(jarFilePath string) (*properties.Properties, error) {
+	// open the JAR file
+	jarFile, err := zip.OpenReader(jarFilePath)
 	if err != nil {
-		return nil, fmt.Errorf("unable to read %s\n%w", file, err)
+		return nil, fmt.Errorf("unable to read file %s\n%w", jarFilePath, err)
+	}
+	defer jarFile.Close()
+
+	// look for the MANIFEST
+	manifestFile, err := jarFile.Open("META-INF/MANIFEST.MF")
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return &properties.Properties{}, nil
+		}
+		return nil, fmt.Errorf("unable to read MANIFEST.MF in %s\n%w", jarFilePath, err)
 	}
 
-	// The full grammar for manifests can be found here:
-	// https://docs.oracle.com/javase/8/docs/technotes/guides/jar/jar.html#JARManifest
+	return loadManifest(manifestFile, jarFilePath)
+}
+
+func loadManifest(reader io.Reader, source string) (*properties.Properties, error) {
+	// read the MANIFEST
+	manifestBytes, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, fmt.Errorf("unable to read MANIFEST.MF in %s\n%w", source, err)
+	}
 
 	// Convert Windows style line endings to UNIX
-	b = bytes.ReplaceAll(b, []byte("\r\n"), []byte("\n"))
+	manifestBytes = bytes.ReplaceAll(manifestBytes, []byte("\r\n"), []byte("\n"))
 
 	// The spec allows newlines to be single carriage-returns
 	// this is a legacy line ending only supported on System 9
 	// and before.
-	b = bytes.ReplaceAll(b, []byte("\r"), []byte("\n"))
+	manifestBytes = bytes.ReplaceAll(manifestBytes, []byte("\r"), []byte("\n"))
 
 	// The spec only allowed for line lengths of 78 bytes.
 	// All lines are blank, start a property name or are
 	// a continuation of the previous lines (indicated by a leading space).
-	b = bytes.ReplaceAll(b, []byte("\n "), []byte{})
+	manifestBytes = bytes.ReplaceAll(manifestBytes, []byte("\n "), []byte{})
 
-	p, err := properties.Load(b, properties.UTF8)
+	// parse the MANIFEST
+	manifest, err := properties.Load(manifestBytes, properties.UTF8)
 	if err != nil {
-		return nil, fmt.Errorf("unable to parse properties from %s\n%w", file, err)
+		return nil, fmt.Errorf("unable to parse properties in MANIFEST.MF in %s\n%w", source, err)
 	}
 
-	return p, nil
+	return manifest, nil
 }
