@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 the original author or authors.
+ * Copyright 2018-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package libjvm_test
 
 import (
+	"archive/zip"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -28,7 +30,7 @@ import (
 	"github.com/paketo-buildpacks/libjvm"
 )
 
-func testManifest(t *testing.T, context spec.G, it spec.S) {
+func testNewManifest(t *testing.T, context spec.G, it spec.S) {
 	var (
 		Expect = NewWithT(t).Expect
 
@@ -88,4 +90,58 @@ Main-Class: org.springframework.boot.loader.JarLauncher
 		Expect(k).To(Equal("org.springframework.samples.petclinic.PetClinicApplication"))
 	})
 
+}
+
+func testNewManifestFromJAR(t *testing.T, context spec.G, it spec.S) {
+	var (
+		Expect = NewWithT(t).Expect
+		path   string
+
+		createJARFile = func(fileName string, mainClass string) string {
+			fullPath := filepath.Join(path, fileName)
+
+			archive, err := os.Create(fullPath)
+			Expect(err).NotTo(HaveOccurred())
+			defer archive.Close()
+			zipWriter := zip.NewWriter(archive)
+
+			if mainClass != "" {
+				manifestWriter, err := zipWriter.Create("META-INF/MANIFEST.MF")
+				Expect(err).NotTo(HaveOccurred())
+				manifestWriter.Write([]byte(fmt.Sprintf("Main-Class: %s", mainClass)))
+			}
+			zipWriter.Close()
+
+			return fullPath
+		}
+	)
+
+	it.Before(func() {
+		var err error
+		path, err = ioutil.TempDir("", "jardir")
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	it.After(func() {
+		Expect(os.RemoveAll(path)).To(Succeed())
+	})
+
+	it("returns empty manifest if the JAR file doesn't contain a MANIFEST", func() {
+		filePath := createJARFile("test.jar", "")
+
+		m, err := libjvm.NewManifestFromJAR(filePath)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(m.Len()).To(Equal(0))
+	})
+
+	it("returns a filled manifest if the JAR file contains a MANIFEST", func() {
+		filePath := createJARFile("test.jar", "test.Main")
+
+		m, err := libjvm.NewManifestFromJAR(filePath)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(m.Len()).To(Equal(1))
+		mainClass, ok := m.Get("Main-Class")
+		Expect(ok).To(BeTrue())
+		Expect(mainClass).To(Equal("test.Main"))
+	})
 }
