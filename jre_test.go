@@ -82,6 +82,29 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		Expect(filepath.Join(layer.Path, "fixture-marker")).To(BeARegularFile())
 	})
 
+	it("contributes JRE from a zip file", func() {
+		dep := libpak.BuildpackDependency{
+			Version: "11.0.0",
+			URI:     "https://localhost/stub-jre-11.zip",
+			SHA256:  "e3b22e738f6e956ef576215b39d79d321157f1d3de3bddf9c4120ae0444bdba8",
+		}
+		dc := libpak.DependencyCache{CachePath: "testdata"}
+
+		j, _, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, cl, NoContribution)
+		Expect(err).NotTo(HaveOccurred())
+		j.Logger = bard.NewLogger(ioutil.Discard)
+
+		Expect(j.LayerContributor.ExpectedMetadata.(map[string]interface{})["cert-dir"]).To(HaveLen(4))
+
+		layer, err := ctx.Layers.Layer("test-layer")
+		Expect(err).NotTo(HaveOccurred())
+
+		layer, err = j.Contribute(layer)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(filepath.Join(layer.Path, "fixture-marker")).To(BeARegularFile())
+	})
+
 	it("updates JRE certificates", func() {
 		dep := libpak.BuildpackDependency{
 			Version: "11.0.0",
