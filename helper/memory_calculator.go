@@ -138,6 +138,7 @@ func (m MemoryCalculator) Execute() (map[string]string, error) {
 				m.Logger.Infof(`WARNING: failed to parse available memory from path %q: %s`, m.MemoryInfoPath, err)
 			} else {
 				m.Logger.Infof("Calculating JVM memory based on %s available memory", calc.Size{Value: mem}.String())
+				m.Logger.Info("`For more information on this calculation, see https://paketo.io/docs/reference/java-reference/#memory-calculator")
 				totalMemory = mem
 			}
 		}
