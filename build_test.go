@@ -111,12 +111,12 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			"jvm-heap",
 			"link-local-dns",
 			"memory-calculator",
-			"openssl-certificate-loader",
 			"security-providers-configurer",
 			"jmx",
 			"jfr",
 			"security-providers-classpath-8",
 			"debug-8",
+			"openssl-certificate-loader",
 		}))
 	})
 
@@ -142,13 +142,13 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			"jvm-heap",
 			"link-local-dns",
 			"memory-calculator",
-			"openssl-certificate-loader",
 			"security-providers-configurer",
 			"jmx",
 			"jfr",
 			"security-providers-classpath-9",
 			"debug-9",
 			"nmt",
+			"openssl-certificate-loader",
 		}))
 	})
 
