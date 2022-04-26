@@ -17,8 +17,10 @@
 package helper_test
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strconv"
 	"testing"
 
@@ -357,6 +359,55 @@ func testMemoryCalculator(t *testing.T, context spec.G, it spec.S) {
 				it("returns default options appended to existing $JAVA_TOOL_OPTIONS", func() {
 					Expect(m.Execute()).To(Equal(map[string]string{
 						"JAVA_TOOL_OPTIONS": "test-java-tool-options -XX:MaxDirectMemorySize=10M -Xmx522705K -XX:MaxMetaspaceSize=13870K -XX:ReservedCodeCacheSize=240M -Xss1M",
+					}))
+				})
+			})
+
+			context("$JAVA_TOOL_OPTIONS with agents", func() {
+				it.Before(func() {
+					Expect(os.Setenv("JAVA_TOOL_OPTIONS", fmt.Sprintf("-javaagent:%s", filepath.Join("../count/testdata", "stub-dependency.jar")))).To(Succeed())
+				})
+
+				it.After(func() {
+					Expect(os.Unsetenv("JAVA_TOOL_OPTIONS")).To(Succeed())
+				})
+
+				it("counts classes of agent jars supplied via $JAVA_TOOL_OPTIONS", func() {
+					c, err := m.CountAgentClasses(os.Getenv("JAVA_TOOL_OPTIONS"))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(c).To(Equal(2))
+					Expect(m.Execute()).To(Equal(map[string]string{
+						"JAVA_TOOL_OPTIONS": fmt.Sprintf("-javaagent:%s -XX:MaxDirectMemorySize=10M -Xmx522705K -XX:MaxMetaspaceSize=13870K -XX:ReservedCodeCacheSize=240M -Xss1M", filepath.Join("../count/testdata", "stub-dependency.jar")),
+					}))
+				})
+
+				it("skips counting classes if agent jar(s) supplied via $JAVA_TOOL_OPTIONS can't be found", func() {
+					Expect(os.Setenv("JAVA_TOOL_OPTIONS", fmt.Sprintf("-javaagent:!abc -javaagent:%s", filepath.Join("../count/testdata", "stub-dependency.jar")))).To(Succeed())
+					c, err := m.CountAgentClasses(os.Getenv("JAVA_TOOL_OPTIONS"))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(c).To(Equal(2))
+					Expect(m.Execute()).To(Equal(map[string]string{
+						"JAVA_TOOL_OPTIONS": fmt.Sprintf("-javaagent:!abc -javaagent:%s -XX:MaxDirectMemorySize=10M -Xmx522705K -XX:MaxMetaspaceSize=13870K -XX:ReservedCodeCacheSize=240M -Xss1M", filepath.Join("../count/testdata", "stub-dependency.jar")),
+					}))
+				})
+
+				it("skips counting agent classes if no agent jar(s) are supplied", func() {
+					Expect(os.Setenv("JAVA_TOOL_OPTIONS", "")).To(Succeed())
+					c, err := m.CountAgentClasses(os.Getenv("JAVA_TOOL_OPTIONS"))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(c).To(Equal(0))
+					Expect(m.Execute()).To(Equal(map[string]string{
+						"JAVA_TOOL_OPTIONS": " -XX:MaxDirectMemorySize=10M -Xmx522705K -XX:MaxMetaspaceSize=13870K -XX:ReservedCodeCacheSize=240M -Xss1M",
+					}))
+				})
+
+				it("does not change Metaspace if it has been user configured", func() {
+					Expect(os.Setenv("JAVA_TOOL_OPTIONS", fmt.Sprintf("-XX:MaxMetaspaceSize=20000K -javaagent:%s", filepath.Join("../count/testdata", "stub-dependency.jar")))).To(Succeed())
+					c, err := m.CountAgentClasses(os.Getenv("JAVA_TOOL_OPTIONS"))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(c).To(Equal(2))
+					Expect(m.Execute()).To(Equal(map[string]string{
+						"JAVA_TOOL_OPTIONS": "-XX:MaxMetaspaceSize=20000K -javaagent:../count/testdata/stub-dependency.jar -XX:MaxDirectMemorySize=10M -Xmx516576K -XX:ReservedCodeCacheSize=240M -Xss1M",
 					}))
 				})
 			})
