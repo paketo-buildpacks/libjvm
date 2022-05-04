@@ -54,7 +54,7 @@ func JarClasses(path string) (int, error) {
 			}
 		}
 
-		if !strings.HasSuffix(path, ".jar") {
+		if !strings.HasSuffix(path, ".jar") || info.IsDir() {
 			return nil
 		}
 
@@ -67,7 +67,11 @@ func JarClasses(path string) (int, error) {
 
 		z, err := zip.OpenReader(path)
 		if err != nil {
-			return fmt.Errorf("unable to open ZIP %s\n%w", path, err)
+			if !(errors.Is(err, zip.ErrFormat)) {
+				return fmt.Errorf("unable to open ZIP %s\n%w", path, err)
+			} else {
+				return nil
+			}
 		}
 		defer z.Close()
 
