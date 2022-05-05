@@ -18,6 +18,7 @@ package helper
 
 import (
 	"fmt"
+	"github.com/mattn/go-shellwords"
 	"io/ioutil"
 	"os"
 	"regexp"
@@ -75,6 +76,12 @@ func (m MemoryCalculator) Execute() (map[string]string, error) {
 		}
 	}
 
+	var values []string
+	opts, ok := os.LookupEnv("JAVA_TOOL_OPTIONS")
+	if ok {
+		values = append(values, opts)
+	}
+
 	if s, ok := os.LookupEnv("BPL_JVM_LOADED_CLASS_COUNT"); ok {
 		if c.LoadedClassCount, err = strconv.Atoi(s); err != nil {
 			return nil, fmt.Errorf("unable to convert $BPL_JVM_LOADED_CLASS_COUNT=%s to integer\n%w", s, err)
@@ -94,6 +101,11 @@ func (m MemoryCalculator) Execute() (map[string]string, error) {
 			}
 		}
 
+		agentClassCount, err := m.CountAgentClasses(opts)
+		if err != nil {
+			return nil, err
+		}
+
 		staticAdjustment := 0
 		adjustmentFactor := uint64(100)
 		if adj, ok := os.LookupEnv("BPL_JVM_CLASS_ADJUSTMENT"); ok {
@@ -110,12 +122,12 @@ func (m MemoryCalculator) Execute() (map[string]string, error) {
 
 		appClassCount, err := count.Classes(appPath)
 
-		totalClasses := float64(jvmClassCount+appClassCount+staticAdjustment) * (float64(adjustmentFactor) / 100.0)
+		totalClasses := float64(jvmClassCount+appClassCount+agentClassCount+staticAdjustment) * (float64(adjustmentFactor) / 100.0)
 
 		if err != nil {
 			return nil, fmt.Errorf("unable to determine class count\n%w", err)
 		}
-		m.Logger.Debugf("Memory Calculation: (%d%% * (%d + %d + %d)) * %0.2f", adjustmentFactor, jvmClassCount, appClassCount, staticAdjustment, ClassLoadFactor)
+		m.Logger.Debugf("Memory Calculation: (%d%% * (%d + %d + %d + %d)) * %0.2f", adjustmentFactor, jvmClassCount, appClassCount, agentClassCount, staticAdjustment, ClassLoadFactor)
 		c.LoadedClassCount = int(totalClasses * ClassLoadFactor)
 	}
 
@@ -154,13 +166,7 @@ func (m MemoryCalculator) Execute() (map[string]string, error) {
 		c.TotalMemory = calc.Size{Value: totalMemory}
 	}
 
-	var values []string
-	s, ok := os.LookupEnv("JAVA_TOOL_OPTIONS")
-	if ok {
-		values = append(values, s)
-	}
-
-	r, err := c.Calculate(s)
+	r, err := c.Calculate(opts)
 	if err != nil {
 		return nil, fmt.Errorf("unable to calculate memory configuration\n%w", err)
 	}
@@ -219,4 +225,27 @@ func parseMemInfo(s string) (int64, error) {
 		return 0, err
 	}
 	return num * unit, nil
+}
+
+func (m MemoryCalculator) CountAgentClasses(opts string) (int, error) {
+	var agentClassCount, skippedAgents int
+	if p, err := shellwords.Parse(opts); err != nil {
+		return 0, fmt.Errorf("unable to parse $JAVA_TOOL_OPTIONS\n%w", err)
+	} else {
+		var agentPaths []string
+		for _, s := range p {
+			if strings.HasPrefix(s, "-javaagent:") {
+				agentPaths = append(agentPaths, strings.Split(s, ":")[1])
+			}
+		}
+		if len(agentPaths) > 0 {
+			agentClassCount, skippedAgents, err = count.JarClassesFrom(agentPaths...)
+			if err != nil {
+				return 0, fmt.Errorf("error counting agent jar classes \n%w", err)
+			} else if skippedAgents > 0 {
+				m.Logger.Infof(`WARNING: could not count classes from all agent jars (skipped %d), class count and metaspace may not be sized correctly`, skippedAgents)
+			}
+		}
+	}
+	return agentClassCount, nil
 }

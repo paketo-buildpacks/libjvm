@@ -18,13 +18,15 @@ package count
 
 import (
 	"archive/zip"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
-var ClassExtensions = []string{".class", ".clj", ".groovy", ".kts"}
+var ClassExtensions = []string{".class", ".classdata", ".clj", ".groovy", ".kts"}
 
 func Classes(path string) (int, error) {
 	file := filepath.Join(path, "lib", "modules")
@@ -113,4 +115,20 @@ func ModuleClasses(file string) (int, error) {
 	}
 
 	return count, nil
+}
+
+func JarClassesFrom(paths ...string) (int, int, error) {
+	var agentClassCount, skippedPaths int
+
+	for _, path := range paths {
+		if c, err := JarClasses(path); err == nil {
+			agentClassCount += c
+		} else if errors.Is(err, fs.ErrNotExist) {
+			skippedPaths++
+			continue
+		} else {
+			return 0, 0, fmt.Errorf("unable to count classes of jar at %s\n%w", path, err)
+		}
+	}
+	return agentClassCount, skippedPaths, nil
 }
