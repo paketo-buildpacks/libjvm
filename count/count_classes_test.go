@@ -64,10 +64,15 @@ func testCountClasses(t *testing.T, context spec.G, it spec.S) {
 		Expect(count.Classes(path)).To(Equal(0))
 	})
 
-	it("fails for empty zip/jar files without none in the name", func() {
-		Expect(ioutil.WriteFile(filepath.Join(path, "test.jar"), []byte{}, 0644)).To(Succeed())
+	it("skips directories with .jar suffix", func() {
+		Expect(os.MkdirAll(filepath.Join(path, "bad-dir.jar"), 0755)).To(Succeed())
 
-		_, err := count.Classes(path)
-		Expect(err).To(MatchError(ContainSubstring("zip: not a valid zip file")))
+		Expect(count.Classes(path)).To(Equal(0))
+	})
+
+	it("skips bad jar files", func() {
+		Expect(ioutil.WriteFile(filepath.Join(path, "bad-jar.jar"), []byte{}, 0755)).To(Succeed())
+
+		Expect(count.Classes(path)).To(Equal(0))
 	})
 }
