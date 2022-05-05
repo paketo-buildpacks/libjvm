@@ -18,7 +18,9 @@ package count
 
 import (
 	"archive/zip"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -121,7 +123,7 @@ func JarClassesFrom(paths ...string) (int, int, error) {
 	for _, path := range paths {
 		if c, err := JarClasses(path); err == nil {
 			agentClassCount += c
-		} else if strings.Contains(err.Error(), "no such file or directory") {
+		} else if errors.Is(err, fs.ErrNotExist) {
 			skippedPaths++
 			continue
 		} else {
