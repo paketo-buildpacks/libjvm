@@ -243,7 +243,7 @@ func (m MemoryCalculator) CountAgentClasses(opts string) (int, error) {
 			if err != nil {
 				return 0, fmt.Errorf("error counting agent jar classes \n%w", err)
 			} else if skippedAgents > 0 {
-				m.Logger.Infof(`WARNING: could not count classes from all agent jars (skipped %d), class count and metaspace may not be sized correctly %d`, skippedAgents)
+				m.Logger.Infof(`WARNING: could not count classes from all agent jars (skipped %d), class count and metaspace may not be sized correctly`, skippedAgents)
 			}
 		}
 	}
