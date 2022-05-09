@@ -21,16 +21,16 @@ import (
 	"encoding/hex"
 	"encoding/pem"
 	"fmt"
+	"github.com/paketo-buildpacks/libpak/sherpa"
+	"github.com/pavel-v-chernykh/keystore-go/v4"
+	"golang.org/x/sys/unix"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
+	pkcs "software.sslmate.com/src/go-pkcs12"
 	"time"
-
-	"github.com/paketo-buildpacks/libpak/sherpa"
-	"github.com/pavel-v-chernykh/keystore-go/v4"
-	"golang.org/x/sys/unix"
 )
 
 const DefaultCertFile = "/etc/ssl/certs/ca-certificates.crt"
@@ -178,19 +178,46 @@ func (c CertificateLoader) readBlocks(path string) ([]*pem.Block, error) {
 	return blocks, nil
 }
 
-func (CertificateLoader) readKeyStore(path string, password string) (keystore.KeyStore, error) {
+func (c CertificateLoader) readKeyStore(path string, password string) (keystore.KeyStore, error) {
+	ks := keystore.New(keystore.WithOrderedAliases())
+	if password == "" {
+		return readPasswordlessKeyStore(ks, path)
+	}
 	in, err := os.Open(path)
 	if err != nil {
 		return keystore.KeyStore{}, fmt.Errorf("unable to open %s\n%w", path, err)
 	}
 	defer in.Close()
 
-	ks := keystore.New(keystore.WithOrderedAliases())
 	if err := ks.Load(in, []byte(password)); err != nil {
 		return keystore.KeyStore{}, fmt.Errorf("unable to decode keystore\n %w", err)
 	}
-
 	return ks, nil
+}
+
+func readPasswordlessKeyStore(ks keystore.KeyStore, path string) (keystore.KeyStore, error) {
+
+	if data, err := ioutil.ReadFile(path); err != nil {
+		return ks, fmt.Errorf("unable to open %s\n%w", path, err)
+	} else {
+		if certs, err := pkcs.DecodeTrustStore(data, ""); err != nil {
+			return keystore.KeyStore{}, fmt.Errorf("unable to decode keystore\n %w", err)
+		} else {
+			for _, cert := range certs {
+				entry := keystore.TrustedCertificateEntry{
+					CreationTime: NormalizedDateTime,
+					Certificate: keystore.Certificate{
+						Type:    "X.509",
+						Content: cert.Raw,
+					},
+				}
+				if err := ks.SetTrustedCertificateEntry(fmt.Sprintf("%s-%d", cert.Subject, 0), entry); err != nil {
+					return ks, fmt.Errorf("unable to add trusted entry\n%w", err)
+				}
+			}
+			return ks, nil
+		}
+	}
 }
 
 func (c CertificateLoader) writeKeyStore(ks keystore.KeyStore, path string, password string) error {
