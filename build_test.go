@@ -112,11 +112,11 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			"link-local-dns",
 			"memory-calculator",
 			"security-providers-configurer",
+			"openssl-certificate-loader",
 			"jmx",
 			"jfr",
 			"security-providers-classpath-8",
 			"debug-8",
-			"openssl-certificate-loader",
 		}))
 	})
 
@@ -143,12 +143,12 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			"link-local-dns",
 			"memory-calculator",
 			"security-providers-configurer",
+			"openssl-certificate-loader",
 			"jmx",
 			"jfr",
 			"security-providers-classpath-9",
 			"debug-9",
 			"nmt",
-			"openssl-certificate-loader",
 		}))
 	})
 

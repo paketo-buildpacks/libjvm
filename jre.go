@@ -23,8 +23,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/heroku/color"
-
 	"github.com/buildpacks/libcnb"
 	"github.com/magiconair/properties"
 	"github.com/paketo-buildpacks/libpak"
@@ -86,12 +84,13 @@ func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 			cacertsPath = filepath.Join(layer.Path, "lib", "security", "cacerts")
 		}
 
-		if IsBeforeJava18(j.LayerContributor.Dependency.Version) {
-			if err := j.CertificateLoader.Load(cacertsPath, "changeit"); err != nil {
-				return libcnb.Layer{}, fmt.Errorf("unable to load certificates\n%w", err)
-			}
-		} else {
-			j.Logger.Bodyf("%s: The JVM cacerts entries cannot be loaded with Java 18, for more information see: https://github.com/paketo-buildpacks/libjvm/issues/158", color.YellowString("Warning"))
+		systemCerts, err := j.CertificateLoader.LoadSystemCerts()
+		if err != nil {
+			return libcnb.Layer{}, fmt.Errorf("unable to load system certificates\n%w", err)
+		}
+
+		if err := CombineCerts(cacertsPath, systemCerts, j.CertificateLoader.Logger); err != nil {
+			return libcnb.Layer{}, fmt.Errorf("unable to read JVM Keystore\n%w", err)
 		}
 
 		if IsBuildContribution(j.Metadata) {

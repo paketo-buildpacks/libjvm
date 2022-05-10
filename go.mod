@@ -14,6 +14,7 @@ require (
 	github.com/pavel-v-chernykh/keystore-go/v4 v4.3.0
 	github.com/sclevine/spec v1.4.0
 	golang.org/x/sys v0.0.0-20220319134239-a9b59b0215f8
+	software.sslmate.com/src/go-pkcs12 v0.2.0
 )
 
 require (
@@ -26,6 +27,7 @@ require (
 	github.com/mitchellh/hashstructure/v2 v2.0.2 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
+	golang.org/x/crypto v0.0.0-20220331220935-ae2d96664a29 // indirect
 	golang.org/x/mod v0.4.2 // indirect
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
 	golang.org/x/text v0.3.7 // indirect

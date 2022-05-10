@@ -131,7 +131,7 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 
 		if IsLaunchContribution(jrePlanEntry.Metadata) {
 			helpers := []string{"active-processor-count", "java-opts", "jvm-heap", "link-local-dns", "memory-calculator",
-				"security-providers-configurer", "jmx", "jfr"}
+				"security-providers-configurer", "openssl-certificate-loader", "jmx", "jfr"}
 
 			if IsBeforeJava9(depJRE.Version) {
 				helpers = append(helpers, "security-providers-classpath-8")
@@ -140,10 +140,6 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 				helpers = append(helpers, "security-providers-classpath-9")
 				helpers = append(helpers, "debug-9")
 				helpers = append(helpers, "nmt")
-			}
-			// Java 18 bug - cacerts keystore type not readable
-			if IsBeforeJava18(depJRE.Version) {
-				helpers = append(helpers, "openssl-certificate-loader")
 			}
 
 			h, be := libpak.NewHelperLayer(context.Buildpack, helpers...)

@@ -18,16 +18,15 @@ package helper
 
 import (
 	"fmt"
-	"os"
-
-	"github.com/paketo-buildpacks/libpak/bard"
-
 	"github.com/paketo-buildpacks/libjvm"
+	"github.com/paketo-buildpacks/libpak/bard"
+	"os"
 )
 
 type OpenSSLCertificateLoader struct {
 	CertificateLoader libjvm.CertificateLoader
 	Logger            bard.Logger
+	KeystoreOps       libjvm.KeystoreOps
 }
 
 func (o OpenSSLCertificateLoader) Execute() (map[string]string, error) {
@@ -38,8 +37,12 @@ func (o OpenSSLCertificateLoader) Execute() (map[string]string, error) {
 
 	o.CertificateLoader.Logger = o.Logger.InfoWriter()
 
-	if err := o.CertificateLoader.Load(k, "changeit"); err != nil {
-		return nil, fmt.Errorf("unable to load certificates\n%w", err)
+	systemCerts, err := o.CertificateLoader.LoadSystemCerts()
+	if err != nil {
+		return nil, fmt.Errorf("unable to load system certificates\n%w", err)
+	}
+	if err := libjvm.CombineCerts(k, systemCerts, o.CertificateLoader.Logger); err != nil {
+		return nil, fmt.Errorf("unable to read JVM Keystore\n%w", err)
 	}
 
 	return nil, nil

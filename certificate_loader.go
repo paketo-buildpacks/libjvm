@@ -21,16 +21,15 @@ import (
 	"encoding/hex"
 	"encoding/pem"
 	"fmt"
+	"github.com/paketo-buildpacks/libpak/sherpa"
+	"github.com/pavel-v-chernykh/keystore-go/v4"
+	"golang.org/x/sys/unix"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
 	"time"
-
-	"github.com/paketo-buildpacks/libpak/sherpa"
-	"github.com/pavel-v-chernykh/keystore-go/v4"
-	"golang.org/x/sys/unix"
 )
 
 const DefaultCertFile = "/etc/ssl/certs/ca-certificates.crt"
@@ -55,6 +54,25 @@ func NewCertificateLoader() CertificateLoader {
 	}
 
 	return c
+}
+
+func (c *CertificateLoader) LoadSystemCerts() (map[string][]*pem.Block, error) {
+	certData := map[string][]*pem.Block{}
+	files, err := c.certFiles()
+	if err != nil {
+		return nil, fmt.Errorf("unable to identify cert files in %s and %s\n%w", c.CertFile, c.CertDirs, err)
+	}
+
+	for _, f := range files {
+		blocks, err := c.readBlocks(f)
+		if err != nil {
+			return nil, fmt.Errorf("unable to read certificates from %s\n%w", f, err)
+		}
+		for _, b := range blocks {
+			certData[f] = append(certData[f], b)
+		}
+	}
+	return certData, nil
 }
 
 func (c *CertificateLoader) Load(path string, password string) error {
@@ -189,7 +207,6 @@ func (CertificateLoader) readKeyStore(path string, password string) (keystore.Ke
 	if err := ks.Load(in, []byte(password)); err != nil {
 		return keystore.KeyStore{}, fmt.Errorf("unable to decode keystore\n %w", err)
 	}
-
 	return ks, nil
 }
 
