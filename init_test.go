@@ -41,6 +41,7 @@ func TestUnit(t *testing.T) {
 	suite("NewManifest", testNewManifest)
 	suite("NewManifestFromJAR", testNewManifestFromJAR)
 	suite("MavenJARListing", testMavenJARListing)
+	suite("SDKMAN", testSDKMAN)
 	suite("Versions", testVersions)
 	suite("JVMVersions", testJVMVersion)
 	suite.Run(t)
