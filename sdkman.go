@@ -65,9 +65,9 @@ func ReadSDKMANRC(path string) ([]SDKInfo, error) {
 			}
 
 			sdks = append(sdks, SDKInfo{
-				Type:    kv[0],
+				Type:    strings.ToLower(strings.TrimSpace(kv[0])),
 				Version: strings.TrimSpace(versionAndVendor[0]),
-				Vendor:  strings.TrimSpace(versionAndVendor[1]),
+				Vendor:  strings.ToLower(strings.TrimSpace(versionAndVendor[1])),
 			})
 		}
 	}

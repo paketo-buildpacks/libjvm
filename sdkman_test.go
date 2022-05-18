@@ -55,6 +55,17 @@ func testSDKMAN(t *testing.T, context spec.G, it spec.S) {
 		}))
 	})
 
+	it("parses single entry sdkmanrc file and forces lowercase", func() {
+		sdkmanrcFile := filepath.Join(path, "sdkmanrc")
+		Expect(ioutil.WriteFile(sdkmanrcFile, []byte(` jAva = 17.0.2-TEM `), 0644)).To(Succeed())
+
+		res, err := libjvm.ReadSDKMANRC(sdkmanrcFile)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(res).To(Equal([]libjvm.SDKInfo{
+			{Type: "java", Version: "17.0.2", Vendor: "tem"},
+		}))
+	})
+
 	it("parses multiple entry sdkmanrc and doesn't care if there's overlap", func() {
 		sdkmanrcFile := filepath.Join(path, "sdkmanrc")
 		Expect(ioutil.WriteFile(sdkmanrcFile, []byte(`java=11.0.2-tem
