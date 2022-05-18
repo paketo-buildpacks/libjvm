@@ -17,12 +17,13 @@
 package libjvm_test
 
 import (
-	"github.com/paketo-buildpacks/libpak"
-	"github.com/paketo-buildpacks/libpak/bard"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/paketo-buildpacks/libpak"
+	"github.com/paketo-buildpacks/libpak/bard"
 
 	"github.com/buildpacks/libcnb"
 	. "github.com/onsi/gomega"
@@ -40,6 +41,11 @@ func testJVMVersion(t *testing.T, context spec.G, it spec.S) {
 	)
 
 	it.Before(func() {
+		var err error
+
+		appPath, err = ioutil.TempDir("", "application")
+		Expect(err).NotTo(HaveOccurred())
+
 		buildpack = libcnb.Buildpack{
 			Metadata: map[string]interface{}{
 				"configurations": []map[string]interface{}{
@@ -51,6 +57,10 @@ func testJVMVersion(t *testing.T, context spec.G, it spec.S) {
 			},
 		}
 		logger = bard.NewLogger(ioutil.Discard)
+	})
+
+	it.After(func() {
+		Expect(os.RemoveAll(appPath)).To(Succeed())
 	})
 
 	it("detecting JVM version from default", func() {
@@ -85,13 +95,7 @@ func testJVMVersion(t *testing.T, context spec.G, it spec.S) {
 
 	context("detecting JVM version", func() {
 		it.Before(func() {
-			temp, err := prepareAppWithEntry("Build-Jdk: 1.8")
-			Expect(err).ToNot(HaveOccurred())
-			appPath = temp
-		})
-
-		it.After(func() {
-			os.RemoveAll(appPath)
+			Expect(prepareAppWithEntry(appPath, "Build-Jdk: 1.8")).ToNot(HaveOccurred())
 		})
 
 		it("from manifest via Build-Jdk-Spec", func() {
@@ -108,14 +112,11 @@ func testJVMVersion(t *testing.T, context spec.G, it spec.S) {
 	context("detecting JVM version", func() {
 		it.Before(func() {
 			Expect(os.Setenv("BP_JVM_VERSION", "17")).To(Succeed())
-			temp, err := prepareAppWithEntry("Build-Jdk: 1.8")
-			Expect(err).ToNot(HaveOccurred())
-			appPath = temp
+			Expect(prepareAppWithEntry(appPath, "Build-Jdk: 1.8")).ToNot(HaveOccurred())
 		})
 
 		it.After(func() {
 			Expect(os.Unsetenv("BP_JVM_VERSION")).To(Succeed())
-			os.RemoveAll(appPath)
 		})
 
 		it("prefers environment variable over manifest", func() {
@@ -129,22 +130,56 @@ func testJVMVersion(t *testing.T, context spec.G, it spec.S) {
 		})
 	})
 
+	context("detecting JVM version", func() {
+		var sdkmanrcFile string
+
+		it.Before(func() {
+			sdkmanrcFile = filepath.Join(appPath, ".sdkmanrc")
+			Expect(ioutil.WriteFile(sdkmanrcFile, []byte(`java=17.0.2-tem`), 0644)).To(Succeed())
+		})
+
+		it("from .sdkmanrc file", func() {
+			jvmVersion := libjvm.JVMVersion{Logger: logger}
+
+			cr, err := libpak.NewConfigurationResolver(buildpack, &logger)
+			Expect(err).ToNot(HaveOccurred())
+			version, err := jvmVersion.GetJVMVersion(appPath, cr)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(version).To(Equal("17"))
+		})
+	})
+
+	context("detecting JVM version", func() {
+		var sdkmanrcFile string
+
+		it.Before(func() {
+			sdkmanrcFile = filepath.Join(appPath, ".sdkmanrc")
+			Expect(ioutil.WriteFile(sdkmanrcFile, []byte(`java=17.0.2-tem
+java=11.0.2-tem`), 0644)).To(Succeed())
+		})
+
+		it("picks first from .sdkmanrc file if there are multiple", func() {
+			jvmVersion := libjvm.JVMVersion{Logger: logger}
+
+			cr, err := libpak.NewConfigurationResolver(buildpack, &logger)
+			Expect(err).ToNot(HaveOccurred())
+			version, err := jvmVersion.GetJVMVersion(appPath, cr)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(version).To(Equal("17"))
+		})
+	})
 }
 
-func prepareAppWithEntry(entry string) (string, error) {
-	temp, err := ioutil.TempDir("", "jre-app")
+func prepareAppWithEntry(appPath, entry string) error {
+	err := os.Mkdir(filepath.Join(appPath, "META-INF"), 0744)
 	if err != nil {
-		return "", err
+		return err
 	}
-	err = os.Mkdir(filepath.Join(temp, "META-INF"), 0744)
-	if err != nil {
-		return "", err
-	}
-	manifest := filepath.Join(temp, "META-INF", "MANIFEST.MF")
+	manifest := filepath.Join(appPath, "META-INF", "MANIFEST.MF")
 	manifestContent := []byte(entry)
 	err = ioutil.WriteFile(manifest, manifestContent, 0644)
 	if err != nil {
-		return "", err
+		return err
 	}
-	return temp, nil
+	return nil
 }

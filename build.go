@@ -55,7 +55,7 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 	cl := NewCertificateLoader()
 	cl.Logger = b.Logger.BodyWriter()
 
-	jvmVersion := JVMVersion{Logger: b.Logger}
+	jvmVersion := NewJVMVersion(b.Logger)
 	v, err := jvmVersion.GetJVMVersion(context.Application.Path, cr)
 	if err != nil {
 		return libcnb.BuildResult{}, fmt.Errorf("unable to determine jvm version\n%w", err)
