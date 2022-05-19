@@ -17,6 +17,8 @@
 package libjvm_test
 
 import (
+	"github.com/paketo-buildpacks/libpak/effect/mocks"
+	"github.com/stretchr/testify/mock"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -338,5 +340,40 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		Expect(layer.LaunchEnvironment["MALLOC_ARENA_MAX.default"]).To(Equal("2"))
 		Expect(layer.LaunchEnvironment["JAVA_TOOL_OPTIONS.delim"]).To(Equal(" "))
 		Expect(layer.LaunchEnvironment["JAVA_TOOL_OPTIONS.append"]).To(Equal("-XX:+ExitOnOutOfMemoryError"))
+	})
+
+	it("creates stripped JRE for Java 9+, when JDK is used at runtime and BP_JVM_JLINK_ENABLED is true", func() {
+		dep := libpak.BuildpackDependency{
+			Version: "11.0.0",
+			URI:     "https://localhost/stub-jdk-11.tar.gz",
+			SHA256:  "e40a6ddb7d74d78a6d5557380160a174b1273813db1caf9b1f7bcbfe1578e818",
+		}
+		dc := libpak.DependencyCache{CachePath: "testdata"}
+
+		Expect(os.Setenv("BP_JVM_JLINK_ENABLED", "true")).To(Succeed())
+
+		j, _, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JDKType, cl, LaunchContribution)
+		Expect(err).NotTo(HaveOccurred())
+		j.Logger = bard.NewLogger(ioutil.Discard)
+
+		exec := &mocks.Executor{}
+		j.Executor = exec
+
+		Expect(j.LayerContributor.ExpectedMetadata.(map[string]interface{})["cert-dir"]).To(HaveLen(4))
+
+		layer, err := ctx.Layers.Layer("jdk")
+		Expect(err).NotTo(HaveOccurred())
+
+		exec.On("Execute", mock.Anything).Run(func(args mock.Arguments) {
+			err = os.Rename(layer.Path, filepath.Join(filepath.Dir(layer.Path), "custom-jre"))
+			Expect(err).NotTo(HaveOccurred())
+			err = os.MkdirAll(filepath.Join(layer.Path, "jdk"), os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
+		}).Return(nil)
+
+		layer, err = j.Contribute(layer)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(os.Unsetenv("BP_JVM_JLINK_ENABLED")).To(Succeed())
 	})
 }

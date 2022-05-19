@@ -18,6 +18,8 @@ package libjvm
 
 import (
 	"fmt"
+	"github.com/paketo-buildpacks/libpak/effect"
+	"github.com/paketo-buildpacks/libpak/sherpa"
 	"os"
 	"path/filepath"
 	"sort"
@@ -41,6 +43,7 @@ type JRE struct {
 	LayerContributor  libpak.DependencyLayerContributor
 	Logger            bard.Logger
 	Metadata          map[string]interface{}
+	Executor          effect.Executor
 }
 
 func NewJRE(applicationPath string, dependency libpak.BuildpackDependency, cache libpak.DependencyCache, distributionType DistributionType, certificateLoader CertificateLoader, metadata map[string]interface{}) (JRE, libcnb.BOMEntry, error) {
@@ -52,6 +55,9 @@ func NewJRE(applicationPath string, dependency libpak.BuildpackDependency, cache
 		for k, v := range md {
 			expected[k] = v
 		}
+	}
+	if jlinkArgs := sherpa.GetEnvWithDefault("BP_JVM_JLINK_ARGS", ""); jlinkArgs != "" {
+		expected["jlink-args"] = jlinkArgs
 	}
 
 	contributor, be := libpak.NewDependencyLayer(dependency, cache, libcnb.LayerTypes{
@@ -67,6 +73,7 @@ func NewJRE(applicationPath string, dependency libpak.BuildpackDependency, cache
 		DistributionType:  distributionType,
 		LayerContributor:  contributor,
 		Metadata:          metadata,
+		Executor:          effect.NewExecutor(),
 	}, be, nil
 }
 
@@ -114,6 +121,12 @@ func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 				layer.LaunchEnvironment.Default("BPI_JVM_EXT_DIR", filepath.Join(layer.Path, "lib", "ext"))
 			}
 
+			if !IsBeforeJava9(j.LayerContributor.Dependency.Version) && sherpa.ResolveBool("BP_JVM_JLINK_ENABLED") && j.DistributionType == JDKType {
+				if err := j.buildCustomJRE(layer.Path); err != nil {
+					return libcnb.Layer{}, fmt.Errorf("error building custom JRE with jlink \n%w", err)
+				}
+			}
+
 			var file string
 			if IsBeforeJava9(j.LayerContributor.Dependency.Version) && j.DistributionType == JDKType {
 				file = filepath.Join(layer.Path, "jre", "lib", "security", "java.security")
@@ -148,4 +161,35 @@ func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 
 func (j JRE) Name() string {
 	return j.LayerContributor.LayerName()
+}
+
+func (j JRE) buildCustomJRE(layerPath string) error {
+	buildpackPath := filepath.Dir(layerPath)
+	customDir := filepath.Join(buildpackPath, "custom-jre")
+
+	def := fmt.Sprintf("--add-modules ALL-MODULE-PATH --no-man-pages --no-header-files --strip-debug --output %s", customDir)
+	jlinkArgs := sherpa.GetEnvWithDefault("BP_JVM_JLINK_ARGS", def)
+	if jlinkArgs != def {
+		if strings.Contains(jlinkArgs, "output") {
+			return fmt.Errorf("invalid custom jlink config, please remove 'output' arg\n")
+		}
+		jlinkArgs = fmt.Sprintf("%s --output %s", jlinkArgs, customDir)
+	}
+
+	if err := j.Executor.Execute(effect.Execution{
+		Command: filepath.Join(layerPath, "bin", "jlink"),
+		Args:    strings.Split(jlinkArgs, " "),
+	}); err != nil {
+		return fmt.Errorf("error running jlink\n%w", err)
+	}
+	if err := os.Rename(layerPath, filepath.Join(buildpackPath, "original-jdk")); err != nil {
+		return fmt.Errorf("error renaming default JDK\n%w", err)
+	}
+	if err := os.Rename(customDir, layerPath); err != nil {
+		return fmt.Errorf("error renaming custom JRE\n%w", err)
+	}
+	if err := os.RemoveAll(filepath.Join(buildpackPath, "original-jdk")); err != nil {
+		return fmt.Errorf("error removing default JDK\n%w", err)
+	}
+	return nil
 }
