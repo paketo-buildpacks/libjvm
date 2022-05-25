@@ -18,8 +18,10 @@ package count
 
 import (
 	"archive/zip"
+	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -68,7 +70,7 @@ func JarClasses(path string) (int, error) {
 		z, err := zip.OpenReader(path)
 		if err != nil {
 			if !(errors.Is(err, zip.ErrFormat)) {
-				return fmt.Errorf("unable to open ZIP %s\n%w", path, err)
+				return fmt.Errorf("unable to open Jar %s\n%w", path, err)
 			} else {
 				return nil
 			}
@@ -76,12 +78,14 @@ func JarClasses(path string) (int, error) {
 		defer z.Close()
 
 		for _, f := range z.File {
-			for _, e := range ClassExtensions {
-				if strings.HasSuffix(f.Name, e) {
-					count++
-					break
+			if strings.HasSuffix(f.FileInfo().Name(), ".jar") {
+				c, err := nestedJarContents(f)
+				if err != nil {
+					return fmt.Errorf("unable to counted nested jar%w\n", err)
 				}
+				count += c
 			}
+			count += jarContents(f)
 		}
 
 		return nil
@@ -135,4 +139,44 @@ func JarClassesFrom(paths ...string) (int, int, error) {
 		}
 	}
 	return agentClassCount, skippedPaths, nil
+}
+
+func jarContents(file *zip.File) int {
+	var count = 0
+	for _, e := range ClassExtensions {
+		if strings.HasSuffix(file.Name, e) {
+			count++
+			break
+		}
+	}
+	return count
+}
+
+func nestedJarContents(jarFile *zip.File) (int, error) {
+	var count = 0
+
+	reader, err := jarFile.Open()
+	if err != nil {
+		return 0, fmt.Errorf("unable to open nested jar%w\n", err)
+	}
+	defer reader.Close()
+
+	var b bytes.Buffer
+	size, err := io.Copy(&b, reader)
+	if err != nil {
+		return 0, fmt.Errorf("error copying nested Jar \n%w", err)
+	}
+	br := bytes.NewReader(b.Bytes())
+	nj, err := zip.NewReader(br, size)
+	if err != nil {
+		if !(errors.Is(err, zip.ErrFormat)) {
+			return 0, fmt.Errorf("error reading nested Jar contents\n%w", err)
+		} else {
+			return 0, nil
+		}
+	}
+	for _, nestedJar := range nj.File {
+		count += jarContents(nestedJar)
+	}
+	return count, nil
 }
