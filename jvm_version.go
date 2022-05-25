@@ -1,6 +1,10 @@
 package libjvm
 
 import (
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/heroku/color"
@@ -12,36 +16,76 @@ type JVMVersion struct {
 	Logger bard.Logger
 }
 
-func (jvmVersion JVMVersion) GetJVMVersion(appPath string, cr libpak.ConfigurationResolver) (string, error) {
+func NewJVMVersion(logger bard.Logger) JVMVersion {
+	return JVMVersion{Logger: logger}
+}
+
+func (j JVMVersion) GetJVMVersion(appPath string, cr libpak.ConfigurationResolver) (string, error) {
 	version, explicit := cr.Resolve("BP_JVM_VERSION")
+	if explicit {
+		f := color.New(color.Faint)
+		j.Logger.Body(f.Sprintf("Using Java version %s from BP_JVM_VERSION", version))
+		return version, nil
+	}
 
-	if !explicit {
-		manifest, err := NewManifest(appPath)
-		if err != nil {
-			return version, err
-		}
+	sdkmanrcJavaVersion, err := readJavaVersionFromSDKMANRCFile(appPath)
+	if err != nil {
+		return "", fmt.Errorf("unable to read Java version from SDMANRC file\n%w", err)
+	}
 
-		javaVersion := ""
+	if len(sdkmanrcJavaVersion) > 0 {
+		sdkmanrcJavaMajorVersion := extractMajorVersion(sdkmanrcJavaVersion)
+		f := color.New(color.Faint)
+		j.Logger.Body(f.Sprintf("Using Java version %s extracted from .sdkmanrc", sdkmanrcJavaMajorVersion))
+		return sdkmanrcJavaMajorVersion, nil
+	}
 
-		buildJdkSpecVersion, ok := manifest.Get("Build-Jdk-Spec")
-		if ok {
-			javaVersion = buildJdkSpecVersion
-		}
+	mavenJavaVersion, err := readJavaVersionFromMavenMetadata(appPath)
+	if err != nil {
+		return "", fmt.Errorf("unable to read Java version from Maven metadata\n%w", err)
+	}
 
-		buildJdkVersion, ok := manifest.Get("Build-Jdk")
-		if ok {
-			javaVersion = buildJdkVersion
-		}
+	if len(mavenJavaVersion) > 0 {
+		mavenJavaMajorVersion := extractMajorVersion(mavenJavaVersion)
+		f := color.New(color.Faint)
+		j.Logger.Body(f.Sprintf("Using Java version %s extracted from MANIFEST.MF", mavenJavaMajorVersion))
+		return mavenJavaMajorVersion, nil
+	}
 
-		if len(javaVersion) > 0 {
-			javaVersionFromMaven := extractMajorVersion(javaVersion)
-			f := color.New(color.Faint)
-			jvmVersion.Logger.Body(f.Sprintf("Using Java version %s extracted from MANIFEST.MF", javaVersionFromMaven))
-			return javaVersionFromMaven, nil
+	f := color.New(color.Faint)
+	j.Logger.Body(f.Sprintf("Using buildpack default Java version %s", version))
+	return version, nil
+}
+
+func readJavaVersionFromSDKMANRCFile(appPath string) (string, error) {
+	components, err := ReadSDKMANRC(filepath.Join(appPath, ".sdkmanrc"))
+	if err != nil && errors.Is(err, os.ErrNotExist) {
+		return "", nil
+	} else if err != nil {
+		return "", err
+	}
+
+	for _, component := range components {
+		if component.Type == "java" {
+			return component.Version, nil
 		}
 	}
 
-	return version, nil
+	return "", nil
+}
+
+func readJavaVersionFromMavenMetadata(appPath string) (string, error) {
+	manifest, err := NewManifest(appPath)
+	if err != nil {
+		return "", err
+	}
+
+	javaVersion, ok := manifest.Get("Build-Jdk-Spec")
+	if !ok {
+		javaVersion, _ = manifest.Get("Build-Jdk")
+	}
+
+	return javaVersion, nil
 }
 
 func extractMajorVersion(version string) string {
