@@ -17,6 +17,8 @@
 package libjvm_test
 
 import (
+	"github.com/paketo-buildpacks/libpak/bard"
+	"io"
 	"os"
 	"testing"
 
@@ -48,7 +50,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		}
 		ctx.StackID = "test-stack-id"
 
-		result, err := libjvm.Build{}.Build(ctx)
+		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard)).Build(ctx)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(result.Layers).To(HaveLen(1))
@@ -74,7 +76,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		}
 		ctx.StackID = "test-stack-id"
 
-		result, err := libjvm.Build{}.Build(ctx)
+		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard)).Build(ctx)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(result.Layers).To(HaveLen(3))
@@ -102,7 +104,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		}
 		ctx.StackID = "test-stack-id"
 
-		result, err := libjvm.Build{}.Build(ctx)
+		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard)).Build(ctx)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(result.Layers[1].(libpak.HelperLayerContributor).Names).To(Equal([]string{
@@ -133,7 +135,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		}
 		ctx.StackID = "test-stack-id"
 
-		result, err := libjvm.Build{}.Build(ctx)
+		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard)).Build(ctx)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(result.Layers[1].(libpak.HelperLayerContributor).Names).To(Equal([]string{
@@ -166,7 +168,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		}
 		ctx.StackID = "test-stack-id"
 
-		result, err := libjvm.Build{}.Build(ctx)
+		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard)).Build(ctx)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(result.Layers[0].Name()).To(Equal("jdk"))
@@ -195,7 +197,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		}
 		ctx.StackID = "test-stack-id"
 
-		result, err := libjvm.Build{}.Build(ctx)
+		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard)).Build(ctx)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(result.Layers[0].Name()).To(Equal("jdk"))
@@ -249,7 +251,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			}
 			ctx.StackID = "test-stack-id"
 
-			result, err := libjvm.Build{}.Build(ctx)
+			result, err := libjvm.NewBuild(bard.NewLogger(io.Discard)).Build(ctx)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(result.Layers[0].(libjvm.JDK).LayerContributor.Dependency.Version).To(Equal("1.1.1"))
@@ -284,7 +286,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			}
 			ctx.StackID = "test-stack-id"
 
-			result, err := libjvm.Build{}.Build(ctx)
+			result, err := libjvm.NewBuild(bard.NewLogger(io.Discard)).Build(ctx)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.Layers[0].Name()).To(Equal("jdk"))
 			Expect(result.Layers[0].(libjvm.JRE).LayerContributor.Dependency.ID).To(Equal("jdk"))
@@ -314,7 +316,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			}
 			ctx.StackID = "test-stack-id"
 
-			result, err := libjvm.Build{}.Build(ctx)
+			result, err := libjvm.NewBuild(bard.NewLogger(io.Discard)).Build(ctx)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.Layers[0].Name()).To(Equal("jdk"))
 			Expect(result.Layers[0].(libjvm.JDK).LayerContributor.Dependency.ID).To(Equal("jdk"))
