@@ -38,6 +38,7 @@ func TestUnit(t *testing.T) {
 	suite("JavaSecurityProperties", testJavaSecurityProperties)
 	suite("JDK", testJDK)
 	suite("JRE", testJRE)
+	suite("NIK", testNIK)
 	suite("JLink", testJLink)
 	suite("NewManifest", testNewManifest)
 	suite("NewManifestFromJAR", testNewManifestFromJAR)

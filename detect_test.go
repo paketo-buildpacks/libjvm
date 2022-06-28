@@ -41,6 +41,25 @@ func testDetect(t *testing.T, context spec.G, it spec.S) {
 				{
 					Provides: []libcnb.BuildPlanProvide{
 						{Name: "jdk"},
+						{Name: "native-image-builder"},
+						{Name: "jre"},
+					},
+					Requires: []libcnb.BuildPlanRequire{
+						{Name: "jdk"},
+					},
+				},
+				{
+					Provides: []libcnb.BuildPlanProvide{
+						{Name: "jdk"},
+						{Name: "native-image-builder"},
+					},
+					Requires: []libcnb.BuildPlanRequire{
+						{Name: "jdk"},
+					},
+				},
+				{
+					Provides: []libcnb.BuildPlanProvide{
+						{Name: "jdk"},
 						{Name: "jre"},
 					},
 				},

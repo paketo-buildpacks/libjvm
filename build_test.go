@@ -35,6 +35,20 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect = NewWithT(t).Expect
 
 		ctx libcnb.BuildContext
+
+		nativeOptionBundledWithJDK = libjvm.WithNativeImage(libjvm.NativeImage{
+			BundledWithJDK: true,
+		})
+		nativeOptionSeparateFromJDK = libjvm.WithNativeImage(libjvm.NativeImage{
+			BundledWithJDK: false,
+			CustomCommand:  "/bin/gu",
+			CustomArgs:     []string{"install", "--local-file"},
+		})
+		nativeOptionMissingCommand = libjvm.WithNativeImage(libjvm.NativeImage{
+			BundledWithJDK: false,
+			CustomCommand:  "",
+			CustomArgs:     []string{"install", "--local-file"},
+		})
 	)
 
 	it("contributes JDK", func() {
@@ -209,6 +223,185 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(result.BOM.Entries[0].Build).To(BeTrue())
 		Expect(result.BOM.Entries[1].Name).To(Equal("helper"))
 		Expect(result.BOM.Entries[1].Launch).To(BeTrue())
+	})
+
+	it("contributes NIK API <= 0.6", func() {
+
+		ctx.Plan.Entries = append(
+			ctx.Plan.Entries,
+			libcnb.BuildpackPlanEntry{Name: "jdk", Metadata: map[string]interface{}{}},
+			libcnb.BuildpackPlanEntry{Name: "native-image-builder"},
+		)
+		ctx.Buildpack.Metadata = map[string]interface{}{
+			"dependencies": []map[string]interface{}{
+				{
+					"id":      "native-image-svm",
+					"version": "1.1.1",
+					"stacks":  []interface{}{"test-stack-id"},
+				},
+			},
+		}
+		ctx.Buildpack.API = "0.6"
+		ctx.StackID = "test-stack-id"
+
+		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), nativeOptionBundledWithJDK).Build(ctx)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(result.Layers).To(HaveLen(1))
+		Expect(result.Layers[0].Name()).To(Equal("native-image-svm"))
+
+		Expect(result.BOM.Entries).To(HaveLen(1))
+		Expect(result.BOM.Entries[0].Name).To(Equal("native-image-svm"))
+		Expect(result.BOM.Entries[0].Launch).To(BeFalse())
+		Expect(result.BOM.Entries[0].Build).To(BeTrue())
+	})
+
+	it("contributes NIK API >= 0.7", func() {
+		ctx.Plan.Entries = append(
+			ctx.Plan.Entries,
+			libcnb.BuildpackPlanEntry{Name: "jdk", Metadata: map[string]interface{}{}},
+			libcnb.BuildpackPlanEntry{Name: "native-image-builder"},
+		)
+		ctx.Buildpack.Metadata = map[string]interface{}{
+			"dependencies": []map[string]interface{}{
+				{
+					"id":      "native-image-svm",
+					"version": "1.1.1",
+					"stacks":  []interface{}{"test-stack-id"},
+					"cpes":    []interface{}{"cpe:2.3:a:bellsoft:nik:1.1.1:*:*:*:*:*:*:*"},
+					"purl":    "pkg:generic/provider-nik@1.1.1?arch=amd64",
+				},
+			},
+		}
+		ctx.Buildpack.API = "0.7"
+		ctx.StackID = "test-stack-id"
+
+		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), nativeOptionBundledWithJDK).Build(ctx)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(result.Layers).To(HaveLen(1))
+		Expect(result.Layers[0].Name()).To(Equal("native-image-svm"))
+
+		Expect(result.BOM.Entries).To(HaveLen(1))
+		Expect(result.BOM.Entries[0].Name).To(Equal("native-image-svm"))
+		Expect(result.BOM.Entries[0].Launch).To(BeFalse())
+		Expect(result.BOM.Entries[0].Build).To(BeTrue())
+	})
+
+	context("native image enabled for API 0.7+ (not bundled with JDK)", func() {
+		it("contributes native image dependency", func() {
+			ctx.Plan.Entries = append(ctx.Plan.Entries,
+				libcnb.BuildpackPlanEntry{
+					Name: "jdk",
+				},
+				libcnb.BuildpackPlanEntry{
+					Name: "native-image-builder",
+				},
+			)
+			ctx.Buildpack.Metadata = map[string]interface{}{
+				"dependencies": []map[string]interface{}{
+					{
+						"id":      "jdk",
+						"version": "1.1.1",
+						"stacks":  []interface{}{"test-stack-id"},
+						"cpes":    []string{"cpe:2.3:a:oracle:graalvm:21.2.0:*:*:*:community:*:*:*"},
+						"purl":    "pkg:generic/graalvm-jdk@21.2.0",
+					},
+					{
+						"id":      "native-image-svm",
+						"version": "2.2.2",
+						"stacks":  []interface{}{"test-stack-id"},
+						"cpes":    []string{"cpe:2.3:a:oracle:graalvm:21.2.0:*:*:*:community:*:*:*"},
+						"purl":    "pkg:generic/graalvm-svm@21.2.0",
+					},
+				},
+			}
+			ctx.StackID = "test-stack-id"
+			ctx.Buildpack.API = "0.7"
+
+			result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), nativeOptionSeparateFromJDK).Build(ctx)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(result.Layers).To(HaveLen(1))
+			Expect(result.Layers[0].Name()).To(Equal("nik"))
+			Expect(result.Layers[0].(libjvm.NIK).NativeDependency).NotTo(BeNil())
+
+			Expect(result.BOM.Entries).To(HaveLen(2))
+			Expect(result.BOM.Entries[0].Name).To(Equal("jdk"))
+			Expect(result.BOM.Entries[0].Launch).To(BeFalse())
+			Expect(result.BOM.Entries[0].Build).To(BeTrue())
+			Expect(result.BOM.Entries[1].Name).To(Equal("native-image-svm"))
+			Expect(result.BOM.Entries[1].Launch).To(BeTrue())
+			Expect(result.BOM.Entries[1].Build).To(BeTrue())
+		})
+	})
+
+	context("native image enabled for API 0.7+ (not bundled with JDK) - custom command missing", func() {
+		it("contributes native image dependency", func() {
+			ctx.Plan.Entries = append(ctx.Plan.Entries,
+				libcnb.BuildpackPlanEntry{
+					Name: "jdk",
+				},
+				libcnb.BuildpackPlanEntry{
+					Name: "native-image-builder",
+				},
+			)
+			ctx.Buildpack.Metadata = map[string]interface{}{
+				"dependencies": []map[string]interface{}{
+					{
+						"id":      "jdk",
+						"version": "1.1.1",
+						"stacks":  []interface{}{"test-stack-id"},
+						"cpes":    []string{"cpe:2.3:a:oracle:graalvm:21.2.0:*:*:*:community:*:*:*"},
+						"purl":    "pkg:generic/graalvm-jdk@21.2.0",
+					},
+					{
+						"id":      "native-image-svm",
+						"version": "2.2.2",
+						"stacks":  []interface{}{"test-stack-id"},
+						"cpes":    []string{"cpe:2.3:a:oracle:graalvm:21.2.0:*:*:*:community:*:*:*"},
+						"purl":    "pkg:generic/graalvm-svm@21.2.0",
+					},
+				},
+			}
+			ctx.StackID = "test-stack-id"
+			ctx.Buildpack.API = "0.7"
+
+			_, err := libjvm.NewBuild(bard.NewLogger(io.Discard), nativeOptionMissingCommand).Build(ctx)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("unable to create NIK, custom command has not been supplied by buildpack"))
+		})
+	})
+
+	it("contributes NIK alternative buildplan (NIK bundled with JDK)", func() {
+		// NIK includes a JDK, so we don't need a second JDK
+		ctx.Plan.Entries = append(
+			ctx.Plan.Entries,
+			libcnb.BuildpackPlanEntry{Name: "native-image-builder"},
+			libcnb.BuildpackPlanEntry{Name: "jdk", Metadata: map[string]interface{}{}},
+			libcnb.BuildpackPlanEntry{Name: "jre", Metadata: map[string]interface{}{}})
+		ctx.Buildpack.Metadata = map[string]interface{}{
+			"dependencies": []map[string]interface{}{
+				{
+					"id":      "native-image-svm",
+					"version": "1.1.1",
+					"stacks":  []interface{}{"test-stack-id"},
+				},
+			},
+		}
+		ctx.Buildpack.API = "0.6"
+		ctx.StackID = "test-stack-id"
+
+		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), nativeOptionBundledWithJDK).Build(ctx)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(result.Layers).To(HaveLen(1))
+		Expect(result.Layers[0].Name()).To(Equal("native-image-svm"))
+
+		Expect(result.BOM.Entries).To(HaveLen(1))
+		Expect(result.BOM.Entries[0].Name).To(Equal("native-image-svm"))
+		Expect(result.BOM.Entries[0].Launch).To(BeFalse())
+		Expect(result.BOM.Entries[0].Build).To(BeTrue())
 	})
 
 	context("$BP_JVM_VERSION", func() {
