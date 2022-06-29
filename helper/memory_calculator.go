@@ -18,12 +18,13 @@ package helper
 
 import (
 	"fmt"
-	"github.com/mattn/go-shellwords"
 	"io/ioutil"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/mattn/go-shellwords"
 
 	"github.com/paketo-buildpacks/libpak/bard"
 
@@ -199,8 +200,12 @@ func (m MemoryCalculator) getMemoryLimitFromPath(memoryLimitPath string) int64 {
 	if b, err := ioutil.ReadFile(memoryLimitPath); err != nil && !os.IsNotExist(err) {
 		m.Logger.Infof("WARNING: Unable to read %s: %s", memoryLimitPath, err)
 	} else if err == nil {
-		if size, err := calc.ParseSize(strings.TrimSpace(string(b))); err != nil {
-			m.Logger.Infof("WARNING: Unable to convert memory limit %q from path %q as int: %s", strings.TrimSpace(string(b)), memoryLimitPath, err)
+		limit := strings.TrimSpace(string(b))
+		if size, err := calc.ParseSize(limit); err != nil {
+			if limit == "max" {
+				return UnsetTotalMemory
+			}
+			m.Logger.Infof("WARNING: Unable to convert memory limit %q from path %q as int: %s", limit, memoryLimitPath, err)
 		} else {
 			return size.Value
 		}
