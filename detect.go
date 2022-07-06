@@ -20,6 +20,12 @@ import (
 	"github.com/buildpacks/libcnb"
 )
 
+const (
+	PlanEntryNativeImageBuilder = "native-image-builder"
+	PlanEntryJRE                = "jre"
+	PlanEntryJDK                = "jdk"
+)
+
 type Detect struct{}
 
 func (d Detect) Detect(context libcnb.DetectContext) (libcnb.DetectResult, error) {
@@ -28,18 +34,37 @@ func (d Detect) Detect(context libcnb.DetectContext) (libcnb.DetectResult, error
 		Plans: []libcnb.BuildPlan{
 			{
 				Provides: []libcnb.BuildPlanProvide{
-					{Name: "jdk"},
-					{Name: "jre"},
+					{Name: PlanEntryJDK},
+					{Name: PlanEntryNativeImageBuilder},
+					{Name: PlanEntryJRE},
+				},
+				Requires: []libcnb.BuildPlanRequire{
+					{Name: PlanEntryJDK},
 				},
 			},
 			{
 				Provides: []libcnb.BuildPlanProvide{
-					{Name: "jdk"},
+					{Name: PlanEntryJDK},
+					{Name: PlanEntryNativeImageBuilder},
+				},
+				Requires: []libcnb.BuildPlanRequire{
+					{Name: PlanEntryJDK},
 				},
 			},
 			{
 				Provides: []libcnb.BuildPlanProvide{
-					{Name: "jre"},
+					{Name: PlanEntryJDK},
+					{Name: PlanEntryJRE},
+				},
+			},
+			{
+				Provides: []libcnb.BuildPlanProvide{
+					{Name: PlanEntryJDK},
+				},
+			},
+			{
+				Provides: []libcnb.BuildPlanProvide{
+					{Name: PlanEntryJRE},
 				},
 			},
 		},

@@ -33,21 +33,50 @@ type Build struct {
 	Result          libcnb.BuildResult
 	CertLoader      CertificateLoader
 	DependencyCache libpak.DependencyCache
+	Native          NativeImage
+	CustomHelpers   []string
 }
 
-func NewBuild(logger bard.Logger) Build {
+type BuildOption func(build Build) Build
+
+func WithNativeImage(nativeImage NativeImage) BuildOption {
+	return func(build Build) Build {
+		build.Native = nativeImage
+		return build
+	}
+}
+
+func WithCustomHelpers(customHelpers []string) BuildOption {
+	return func(build Build) Build {
+		build.CustomHelpers = customHelpers
+		return build
+	}
+}
+
+func NewBuild(logger bard.Logger, buildOpts ...BuildOption) Build {
 	cl := NewCertificateLoader()
 	cl.Logger = logger.BodyWriter()
 
-	return Build{
+	build := Build{
 		Logger:     logger,
 		Result:     libcnb.NewBuildResult(),
 		CertLoader: cl,
 	}
+
+	for _, option := range buildOpts {
+		build = option(build)
+	}
+	return build
+}
+
+type NativeImage struct {
+	BundledWithJDK bool
+	CustomCommand  string
+	CustomArgs     []string
 }
 
 func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
-	var jdkRequired, jreRequired, jreMissing, jreSkipped, jLinkEnabled bool
+	var jdkRequired, jreRequired, jreMissing, jreSkipped, jLinkEnabled, nativeImage bool
 
 	pr := libpak.PlanEntryResolver{Plan: context.Plan}
 
@@ -61,7 +90,12 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 		return libcnb.BuildResult{}, fmt.Errorf("unable to resolve jre plan entry\n%w", err)
 	}
 
-	if !jdkRequired && !jreRequired {
+	_, nativeImage, err = pr.Resolve("native-image-builder")
+	if err != nil {
+		return libcnb.BuildResult{}, fmt.Errorf("unable to resolve native-image-builder plan entry\n%w", err)
+	}
+
+	if !jdkRequired && !jreRequired && !nativeImage {
 		return b.Result, nil
 	}
 	b.Logger.Title(context.Buildpack)
@@ -89,7 +123,7 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 	b.DependencyCache.Logger = b.Logger
 
 	depJDK, err := dr.Resolve("jdk", v)
-	if jdkRequired && err != nil {
+	if (jdkRequired && !nativeImage) && err != nil {
 		return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)
 	}
 
@@ -105,6 +139,23 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 
 	if jl := cr.ResolveBool("BP_JVM_JLINK_ENABLED"); jl {
 		jLinkEnabled = true
+	}
+
+	if nativeImage {
+		depNative, err := dr.Resolve("native-image-svm", v)
+		if err != nil {
+			return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)
+		}
+		if b.Native.BundledWithJDK {
+			if err = b.contributeJDK(depNative); err != nil {
+				return libcnb.BuildResult{}, fmt.Errorf("unable to contribute Native Image bundled with JDK\n%w", err)
+			}
+			return b.Result, nil
+		}
+		if err = b.contributeNIK(depJDK, depNative); err != nil {
+			return libcnb.BuildResult{}, fmt.Errorf("unable to contribute Native Image\n%w", err)
+		}
+		return b.Result, nil
 	}
 
 	// jLink
@@ -158,7 +209,6 @@ func (b *Build) contributeJDK(jdkDep libpak.BuildpackDependency) error {
 	if err != nil {
 		return fmt.Errorf("unable to create jdk\n%w", err)
 	}
-
 	jdk.Logger = b.Logger
 	b.Result.Layers = append(b.Result.Layers, jdk)
 	b.Result.BOM.Entries = append(b.Result.BOM.Entries, be)
@@ -206,6 +256,20 @@ func (b *Build) contributeJLink(configurationResolver libpak.ConfigurationResolv
 	return nil
 }
 
+func (b *Build) contributeNIK(jdkDep libpak.BuildpackDependency, nativeDep libpak.BuildpackDependency) error {
+	if !(len(b.Native.CustomCommand) > 0) {
+		return fmt.Errorf("unable to create NIK, custom command has not been supplied by buildpack")
+	}
+	nik, be, err := NewNIK(jdkDep, &nativeDep, b.DependencyCache, b.CertLoader, b.Native.CustomCommand, b.Native.CustomArgs)
+	if err != nil {
+		return fmt.Errorf("unable to create NIK with custom command: %s and custom args: %s \n%w", b.Native.CustomCommand, b.Native.CustomArgs, err)
+	}
+	nik.Logger = b.Logger
+	b.Result.Layers = append(b.Result.Layers, nik)
+	b.Result.BOM.Entries = append(b.Result.BOM.Entries, be...)
+	return nil
+}
+
 func (b *Build) contributeHelpers(context libcnb.BuildContext, depJRE libpak.BuildpackDependency) {
 	helpers := []string{"active-processor-count", "java-opts", "jvm-heap", "link-local-dns", "memory-calculator",
 		"security-providers-configurer", "jmx", "jfr"}
@@ -221,6 +285,21 @@ func (b *Build) contributeHelpers(context libcnb.BuildContext, depJRE libpak.Bui
 	// Java 18 bug - cacerts keystore type not readable
 	if IsBeforeJava18(depJRE.Version) {
 		helpers = append(helpers, "openssl-certificate-loader")
+	}
+	found := false
+	for _, custom := range b.CustomHelpers {
+		if found {
+			break
+		}
+		for _, helper := range helpers {
+			if custom == helper {
+				found = true
+				break
+			}
+		}
+		if !found {
+			helpers = append(helpers, custom)
+		}
 	}
 
 	h, be := libpak.NewHelperLayer(context.Buildpack, helpers...)
