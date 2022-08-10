@@ -29,7 +29,7 @@ import (
 	"github.com/paketo-buildpacks/libpak/bard"
 	"github.com/paketo-buildpacks/libpak/effect"
 	"github.com/paketo-buildpacks/libpak/effect/mocks"
-	"github.com/pavel-v-chernykh/keystore-go"
+	"github.com/pavlo-v-chernykh/keystore-go/v4"
 	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/mock"
 )
@@ -149,10 +149,11 @@ func testNIK(t *testing.T, context spec.G, it spec.S) {
 		Expect(err).NotTo(HaveOccurred())
 		defer in.Close()
 
-		ks, err := keystore.Decode(in, []byte("changeit"))
+		ks := keystore.New()
+		err = ks.Load(in, []byte("changeit"))
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(ks).To(HaveLen(3))
+		Expect(ks.Aliases()).To(HaveLen(3))
 	})
 
 	it("updates after Java 9 certificates", func() {
@@ -179,10 +180,11 @@ func testNIK(t *testing.T, context spec.G, it spec.S) {
 		Expect(err).NotTo(HaveOccurred())
 		defer in.Close()
 
-		ks, err := keystore.Decode(in, []byte("changeit"))
+		ks := keystore.New()
+		err = ks.Load(in, []byte("changeit"))
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(ks).To(HaveLen(3))
+		Expect(ks.Aliases()).To(HaveLen(3))
 	})
 
 }

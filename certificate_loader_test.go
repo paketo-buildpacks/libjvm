@@ -25,7 +25,7 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"github.com/pavel-v-chernykh/keystore-go/v4"
+	"github.com/pavlo-v-chernykh/keystore-go/v4"
 	"github.com/sclevine/spec"
 
 	"github.com/paketo-buildpacks/libjvm"
