@@ -29,7 +29,7 @@ import (
 	"time"
 
 	"github.com/paketo-buildpacks/libpak/sherpa"
-	"github.com/pavel-v-chernykh/keystore-go/v4"
+	"github.com/pavlo-v-chernykh/keystore-go/v4"
 	"golang.org/x/sys/unix"
 )
 

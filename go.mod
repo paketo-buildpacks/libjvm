@@ -1,6 +1,6 @@
 module github.com/paketo-buildpacks/libjvm
 
-go 1.17
+go 1.18
 
 require (
 	github.com/Masterminds/semver/v3 v3.1.1
@@ -11,15 +11,14 @@ require (
 	github.com/miekg/dns v1.1.50
 	github.com/onsi/gomega v1.20.0
 	github.com/paketo-buildpacks/libpak v1.61.0
-	github.com/pavel-v-chernykh/keystore-go v2.1.0+incompatible
-	github.com/pavel-v-chernykh/keystore-go/v4 v4.3.0
+	github.com/pavlo-v-chernykh/keystore-go/v4 v4.4.0
 	github.com/sclevine/spec v1.4.0
 	github.com/stretchr/testify v1.8.0
-	golang.org/x/sys v0.0.0-20220422013727-9388b58f7150
+	golang.org/x/sys v0.0.0-20220808155132-1c4a2a72c664
 )
 
 require (
-	github.com/BurntSushi/toml v1.1.0 // indirect
+	github.com/BurntSushi/toml v1.2.0 // indirect
 	github.com/creack/pty v1.1.18 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/google/go-cmp v0.5.8 // indirect
@@ -32,10 +31,9 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stretchr/objx v0.4.0 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
-	golang.org/x/mod v0.4.2 // indirect
-	golang.org/x/net v0.0.0-20220425223048-2871e0cb64e4 // indirect
+	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
+	golang.org/x/net v0.0.0-20220809184613-07c6da5e1ced // indirect
 	golang.org/x/text v0.3.7 // indirect
-	golang.org/x/tools v0.1.6-0.20210726203631-07bc1bf47fb2 // indirect
-	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
+	golang.org/x/tools v0.1.12 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
