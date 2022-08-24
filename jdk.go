@@ -79,6 +79,9 @@ func (j JDK) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 		} else {
 			keyStorePath = filepath.Join(layer.Path, "lib", "security", "cacerts")
 		}
+		if err := os.Chmod(keyStorePath, 0664); err != nil{
+			return  libcnb.Layer{}, fmt.Errorf("unable to set keystore file permissions\n%w", err)
+		}
 
 		if IsBeforeJava18(j.LayerContributor.Dependency.Version) {
 			if err := j.CertificateLoader.Load(keyStorePath, "changeit"); err != nil {
