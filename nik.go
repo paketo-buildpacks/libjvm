@@ -24,6 +24,7 @@ import (
 	"github.com/paketo-buildpacks/libpak/bard"
 	"github.com/paketo-buildpacks/libpak/crush"
 	"github.com/paketo-buildpacks/libpak/effect"
+	"os"
 	"path/filepath"
 )
 
@@ -117,6 +118,9 @@ func (n NIK) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 			keyStorePath = filepath.Join(layer.Path, "jre", "lib", "security", "cacerts")
 		} else {
 			keyStorePath = filepath.Join(layer.Path, "lib", "security", "cacerts")
+		}
+		if err := os.Chmod(keyStorePath, 0664); err != nil{
+			return  libcnb.Layer{}, fmt.Errorf("unable to set keystore file permissions\n%w", err)
 		}
 
 		if err := n.CertificateLoader.Load(keyStorePath, "changeit"); err != nil {
