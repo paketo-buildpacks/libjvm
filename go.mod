@@ -14,7 +14,7 @@ require (
 	github.com/pavlo-v-chernykh/keystore-go/v4 v4.4.0
 	github.com/sclevine/spec v1.4.0
 	github.com/stretchr/testify v1.8.0
-	golang.org/x/sys v0.0.0-20220909162455-aba9fc2a8ff2
+	golang.org/x/sys v0.0.0-20220915200043-7b5979e65e41
 )
 
 require (
