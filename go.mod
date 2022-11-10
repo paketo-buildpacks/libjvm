@@ -9,7 +9,7 @@ require (
 	github.com/magiconair/properties v1.8.6
 	github.com/mattn/go-shellwords v1.0.12
 	github.com/miekg/dns v1.1.50
-	github.com/onsi/gomega v1.24.0
+	github.com/onsi/gomega v1.24.1
 	github.com/paketo-buildpacks/libpak v1.63.0
 	github.com/pavlo-v-chernykh/keystore-go/v4 v4.4.0
 	github.com/sclevine/spec v1.4.0
@@ -32,7 +32,7 @@ require (
 	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	golang.org/x/mod v0.6.0 // indirect
-	golang.org/x/net v0.1.0 // indirect
+	golang.org/x/net v0.2.0 // indirect
 	golang.org/x/text v0.4.0 // indirect
 	golang.org/x/tools v0.2.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
