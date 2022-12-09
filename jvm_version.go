@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/buildpacks/libcnb"
 	"github.com/heroku/color"
 	"github.com/paketo-buildpacks/libpak"
 	"github.com/paketo-buildpacks/libpak/bard"
@@ -20,12 +21,38 @@ func NewJVMVersion(logger bard.Logger) JVMVersion {
 	return JVMVersion{Logger: logger}
 }
 
-func (j JVMVersion) GetJVMVersion(appPath string, cr libpak.ConfigurationResolver) (string, error) {
+func (j JVMVersion) ResolveMetadataVersion(planEntries ...libcnb.BuildpackPlanEntry) (string, error) {
+	version := ""
+
+	for _, entry := range planEntries {
+		requiredVersion, exists := entry.Metadata["version"]
+		if exists {
+			v := requiredVersion.(string)
+			j.Logger.Body(faint.Sprintf("Found required Java version %s for %s", v, entry.Name))
+
+			if version == "" {
+				version = v
+			} else if version != v {
+				return "", fmt.Errorf("Buildplan requires conflicting Java versions %s!=%s", version, v)
+			}
+		}
+	}
+
+	return version, nil
+}
+
+var faint = color.New(color.Faint)
+
+func (j JVMVersion) GetJVMVersion(appPath string, cr libpak.ConfigurationResolver, metadataVersion string) (string, error) {
 	version, explicit := cr.Resolve("BP_JVM_VERSION")
 	if explicit {
-		f := color.New(color.Faint)
-		j.Logger.Body(f.Sprintf("Using Java version %s from BP_JVM_VERSION", version))
+		j.Logger.Body(faint.Sprintf("Using Java version %s from BP_JVM_VERSION", version))
 		return version, nil
+	}
+
+	if metadataVersion != "" {
+		j.Logger.Body(faint.Sprintf("Using Java version %s from metadata", metadataVersion))
+		return metadataVersion, nil
 	}
 
 	sdkmanrcJavaVersion, err := readJavaVersionFromSDKMANRCFile(appPath)
@@ -35,8 +62,7 @@ func (j JVMVersion) GetJVMVersion(appPath string, cr libpak.ConfigurationResolve
 
 	if len(sdkmanrcJavaVersion) > 0 {
 		sdkmanrcJavaMajorVersion := extractMajorVersion(sdkmanrcJavaVersion)
-		f := color.New(color.Faint)
-		j.Logger.Body(f.Sprintf("Using Java version %s extracted from .sdkmanrc", sdkmanrcJavaMajorVersion))
+		j.Logger.Body(faint.Sprintf("Using Java version %s extracted from .sdkmanrc", sdkmanrcJavaMajorVersion))
 		return sdkmanrcJavaMajorVersion, nil
 	}
 
@@ -47,13 +73,11 @@ func (j JVMVersion) GetJVMVersion(appPath string, cr libpak.ConfigurationResolve
 
 	if len(mavenJavaVersion) > 0 {
 		mavenJavaMajorVersion := extractMajorVersion(mavenJavaVersion)
-		f := color.New(color.Faint)
-		j.Logger.Body(f.Sprintf("Using Java version %s extracted from MANIFEST.MF", mavenJavaMajorVersion))
+		j.Logger.Body(faint.Sprintf("Using Java version %s extracted from MANIFEST.MF", mavenJavaMajorVersion))
 		return mavenJavaMajorVersion, nil
 	}
 
-	f := color.New(color.Faint)
-	j.Logger.Body(f.Sprintf("Using buildpack default Java version %s", version))
+	j.Logger.Body(faint.Sprintf("Using buildpack default Java version %s", version))
 	return version, nil
 }
 

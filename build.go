@@ -18,9 +18,10 @@ package libjvm
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/mattn/go-shellwords"
 	"github.com/paketo-buildpacks/libpak/effect"
-	"strings"
 
 	"github.com/buildpacks/libcnb"
 	"github.com/heroku/color"
@@ -76,11 +77,11 @@ type NativeImage struct {
 }
 
 func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
-	var jdkRequired, jreRequired, jreMissing, jreSkipped, jLinkEnabled, nativeImage bool
+	var jreMissing, jreSkipped, jLinkEnabled bool
 
 	pr := libpak.PlanEntryResolver{Plan: context.Plan}
 
-	_, jdkRequired, err := pr.Resolve("jdk")
+	jdkPlanEntry, jdkRequired, err := pr.Resolve("jdk")
 	if err != nil {
 		return libcnb.BuildResult{}, fmt.Errorf("unable to resolve jdk plan entry\n%w", err)
 	}
@@ -90,12 +91,12 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 		return libcnb.BuildResult{}, fmt.Errorf("unable to resolve jre plan entry\n%w", err)
 	}
 
-	_, nativeImage, err = pr.Resolve("native-image-builder")
+	nativePlanEntry, nativeImageRequired, err := pr.Resolve("native-image-builder")
 	if err != nil {
 		return libcnb.BuildResult{}, fmt.Errorf("unable to resolve native-image-builder plan entry\n%w", err)
 	}
 
-	if !jdkRequired && !jreRequired && !nativeImage {
+	if !jdkRequired && !jreRequired && !nativeImageRequired {
 		return b.Result, nil
 	}
 	b.Logger.Title(context.Buildpack)
@@ -106,7 +107,12 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 	}
 
 	jvmVersion := NewJVMVersion(b.Logger)
-	v, err := jvmVersion.GetJVMVersion(context.Application.Path, cr)
+
+	metadataV, err := jvmVersion.ResolveMetadataVersion(jdkPlanEntry, jrePlanEntry, nativePlanEntry)
+	if err != nil {
+		return libcnb.BuildResult{}, fmt.Errorf("error while determine jvm version from buildplan\n%w", err)
+	}
+	v, err := jvmVersion.GetJVMVersion(context.Application.Path, cr, metadataV)
 	if err != nil {
 		return libcnb.BuildResult{}, fmt.Errorf("unable to determine jvm version\n%w", err)
 	}
@@ -123,7 +129,7 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 	b.DependencyCache.Logger = b.Logger
 
 	depJDK, err := dr.Resolve("jdk", v)
-	if (jdkRequired && !nativeImage) && err != nil {
+	if (jdkRequired && !nativeImageRequired) && err != nil {
 		return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)
 	}
 
@@ -141,7 +147,7 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 		jLinkEnabled = true
 	}
 
-	if nativeImage {
+	if nativeImageRequired {
 		depNative, err := dr.Resolve("native-image-svm", v)
 		if err != nil {
 			return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)

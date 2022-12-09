@@ -32,12 +32,75 @@ import (
 	"github.com/paketo-buildpacks/libjvm"
 )
 
+func testResolveMetadataVersion(t *testing.T, context spec.G, it spec.S) {
+	var (
+		Expect     = NewWithT(t).Expect
+		logger     bard.Logger
+		jvmVersion libjvm.JVMVersion
+	)
+
+	it.Before(func() {
+		logger = bard.NewLogger(ioutil.Discard)
+		jvmVersion = libjvm.JVMVersion{Logger: logger}
+	})
+
+	it.After(func() {
+	})
+
+	context("resolving required version from buildplan", func() {
+
+		it("version cannot with no entries", func() {
+			version, err := jvmVersion.ResolveMetadataVersion()
+			Expect(err).ToNot(HaveOccurred())
+			Expect(version).To(BeEmpty())
+		})
+
+		it("version cannot be resolved without metadata", func() {
+			plan1 := libcnb.BuildpackPlanEntry{Name: "jdk"}
+			plan2 := libcnb.BuildpackPlanEntry{Name: "jre"}
+
+			version, err := jvmVersion.ResolveMetadataVersion(plan1, plan2)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(version).To(BeEmpty())
+		})
+
+		it("version can be resolved with single metadata", func() {
+			plan1 := libcnb.BuildpackPlanEntry{Name: "jdk"}
+			plan2 := libcnb.BuildpackPlanEntry{Name: "jre", Metadata: map[string]interface{}{"version": "17"}}
+
+			version, err := jvmVersion.ResolveMetadataVersion(plan1, plan2)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(version).To(Equal("17"))
+		})
+
+		it("version can be resolved with multiple metadata requiring the same version", func() {
+			plan1 := libcnb.BuildpackPlanEntry{Name: "jdk", Metadata: map[string]interface{}{"version": "17"}}
+			plan2 := libcnb.BuildpackPlanEntry{Name: "jre", Metadata: map[string]interface{}{"version": "17"}}
+
+			version, err := jvmVersion.ResolveMetadataVersion(plan1, plan2)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(version).To(Equal("17"))
+		})
+
+		it("error with multiple metadata requiring different versions", func() {
+			plan1 := libcnb.BuildpackPlanEntry{Name: "jdk", Metadata: map[string]interface{}{"version": "17"}}
+			plan2 := libcnb.BuildpackPlanEntry{Name: "jre", Metadata: map[string]interface{}{"version": "18"}}
+
+			_, err := jvmVersion.ResolveMetadataVersion(plan1, plan2)
+			Expect(err).To(MatchError(SatisfyAll(ContainSubstring("18"), ContainSubstring("17"))))
+		})
+
+	})
+
+}
+
 func testJVMVersion(t *testing.T, context spec.G, it spec.S) {
 	var (
-		Expect    = NewWithT(t).Expect
-		appPath   string
-		logger    bard.Logger
-		buildpack libcnb.Buildpack
+		Expect     = NewWithT(t).Expect
+		appPath    string
+		logger     bard.Logger
+		buildpack  libcnb.Buildpack
+		jvmVersion libjvm.JVMVersion
 	)
 
 	it.Before(func() {
@@ -57,23 +120,54 @@ func testJVMVersion(t *testing.T, context spec.G, it spec.S) {
 			},
 		}
 		logger = bard.NewLogger(ioutil.Discard)
+		jvmVersion = libjvm.JVMVersion{Logger: logger}
 	})
 
 	it.After(func() {
 		Expect(os.RemoveAll(appPath)).To(Succeed())
 	})
 
-	it("detecting JVM version from default", func() {
-		jvmVersion := libjvm.JVMVersion{Logger: logger}
+	context("no specific version requested by the user", func() {
 
-		cr, err := libpak.NewConfigurationResolver(buildpack, &logger)
-		Expect(err).ToNot(HaveOccurred())
-		version, err := jvmVersion.GetJVMVersion(appPath, cr)
-		Expect(err).ToNot(HaveOccurred())
-		Expect(version).To(Equal("1.1.1"))
+		it("detecting JVM version from default", func() {
+			cr, err := libpak.NewConfigurationResolver(buildpack, &logger)
+			Expect(err).ToNot(HaveOccurred())
+			version, err := jvmVersion.GetJVMVersion(appPath, cr, "")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(version).To(Equal("1.1.1"))
+		})
+
+		it("prefer JVM version requested from metadata", func() {
+			cr, err := libpak.NewConfigurationResolver(buildpack, &logger)
+			Expect(err).ToNot(HaveOccurred())
+			version, err := jvmVersion.GetJVMVersion(appPath, cr, "2")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(version).To(Equal("2"))
+		})
+
+		it("from manifest via Build-Jdk-Spec", func() {
+			Expect(prepareAppWithEntry(appPath, "Build-Jdk: 1.8")).ToNot(HaveOccurred())
+
+			cr, err := libpak.NewConfigurationResolver(buildpack, &logger)
+			Expect(err).ToNot(HaveOccurred())
+			version, err := jvmVersion.GetJVMVersion(appPath, cr, "")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(version).To(Equal("8"))
+		})
+
+		it("prefers required metadata version over manifest", func() {
+			Expect(prepareAppWithEntry(appPath, "Build-Jdk: 1.8")).ToNot(HaveOccurred())
+
+			cr, err := libpak.NewConfigurationResolver(buildpack, &logger)
+			Expect(err).ToNot(HaveOccurred())
+			version, err := jvmVersion.GetJVMVersion(appPath, cr, "18")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(version).To(Equal("18"))
+		})
+
 	})
 
-	context("detecting JVM version", func() {
+	context("BP_JVM_VERSION=17", func() {
 		it.Before(func() {
 			Expect(os.Setenv("BP_JVM_VERSION", "17")).To(Succeed())
 		})
@@ -83,87 +177,69 @@ func testJVMVersion(t *testing.T, context spec.G, it spec.S) {
 		})
 
 		it("from environment variable", func() {
-			jvmVersion := libjvm.JVMVersion{Logger: logger}
-
 			cr, err := libpak.NewConfigurationResolver(buildpack, &logger)
 			Expect(err).ToNot(HaveOccurred())
-			version, err := jvmVersion.GetJVMVersion(appPath, cr)
+			version, err := jvmVersion.GetJVMVersion(appPath, cr, "")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(version).To(Equal("17"))
 		})
-	})
 
-	context("detecting JVM version", func() {
-		it.Before(func() {
-			Expect(prepareAppWithEntry(appPath, "Build-Jdk: 1.8")).ToNot(HaveOccurred())
-		})
-
-		it("from manifest via Build-Jdk-Spec", func() {
-			jvmVersion := libjvm.JVMVersion{Logger: logger}
-
+		it("metadata should be ignored", func() {
 			cr, err := libpak.NewConfigurationResolver(buildpack, &logger)
 			Expect(err).ToNot(HaveOccurred())
-			version, err := jvmVersion.GetJVMVersion(appPath, cr)
+			version, err := jvmVersion.GetJVMVersion(appPath, cr, "11")
 			Expect(err).ToNot(HaveOccurred())
-			Expect(version).To(Equal("8"))
-		})
-	})
-
-	context("detecting JVM version", func() {
-		it.Before(func() {
-			Expect(os.Setenv("BP_JVM_VERSION", "17")).To(Succeed())
-			Expect(prepareAppWithEntry(appPath, "Build-Jdk: 1.8")).ToNot(HaveOccurred())
-		})
-
-		it.After(func() {
-			Expect(os.Unsetenv("BP_JVM_VERSION")).To(Succeed())
+			Expect(version).To(Equal("17"))
 		})
 
 		it("prefers environment variable over manifest", func() {
-			jvmVersion := libjvm.JVMVersion{Logger: logger}
+			Expect(prepareAppWithEntry(appPath, "Build-Jdk: 1.8")).ToNot(HaveOccurred())
 
 			cr, err := libpak.NewConfigurationResolver(buildpack, &logger)
 			Expect(err).ToNot(HaveOccurred())
-			version, err := jvmVersion.GetJVMVersion(appPath, cr)
+			version, err := jvmVersion.GetJVMVersion(appPath, cr, "")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(version).To(Equal("17"))
 		})
+
 	})
 
-	context("detecting JVM version", func() {
+	context("detecting JVM version from .sdkmanrc", func() {
 		var sdkmanrcFile string
 
 		it.Before(func() {
-			sdkmanrcFile = filepath.Join(appPath, ".sdkmanrc")
-			Expect(ioutil.WriteFile(sdkmanrcFile, []byte(`java=17.0.2-tem`), 0644)).To(Succeed())
 		})
 
 		it("from .sdkmanrc file", func() {
-			jvmVersion := libjvm.JVMVersion{Logger: logger}
+			sdkmanrcFile = filepath.Join(appPath, ".sdkmanrc")
+			Expect(ioutil.WriteFile(sdkmanrcFile, []byte(`java=17.0.2-tem`), 0644)).To(Succeed())
 
 			cr, err := libpak.NewConfigurationResolver(buildpack, &logger)
 			Expect(err).ToNot(HaveOccurred())
-			version, err := jvmVersion.GetJVMVersion(appPath, cr)
+			version, err := jvmVersion.GetJVMVersion(appPath, cr, "")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(version).To(Equal("17"))
 		})
-	})
 
-	context("detecting JVM version", func() {
-		var sdkmanrcFile string
-
-		it.Before(func() {
+		it("prefers required metadata version over .sdkmanrc", func() {
 			sdkmanrcFile = filepath.Join(appPath, ".sdkmanrc")
-			Expect(ioutil.WriteFile(sdkmanrcFile, []byte(`java=17.0.2-tem
-java=11.0.2-tem`), 0644)).To(Succeed())
-		})
-
-		it("picks first from .sdkmanrc file if there are multiple", func() {
-			jvmVersion := libjvm.JVMVersion{Logger: logger}
+			Expect(ioutil.WriteFile(sdkmanrcFile, []byte(`java=17.0.2-tem`), 0644)).To(Succeed())
 
 			cr, err := libpak.NewConfigurationResolver(buildpack, &logger)
 			Expect(err).ToNot(HaveOccurred())
-			version, err := jvmVersion.GetJVMVersion(appPath, cr)
+			version, err := jvmVersion.GetJVMVersion(appPath, cr, "18")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(version).To(Equal("18"))
+		})
+
+		it("picks first from .sdkmanrc file if there are multiple", func() {
+			sdkmanrcFile = filepath.Join(appPath, ".sdkmanrc")
+			Expect(ioutil.WriteFile(sdkmanrcFile, []byte(`java=17.0.2-tem
+java=11.0.2-tem`), 0644)).To(Succeed())
+
+			cr, err := libpak.NewConfigurationResolver(buildpack, &logger)
+			Expect(err).ToNot(HaveOccurred())
+			version, err := jvmVersion.GetJVMVersion(appPath, cr, "")
 			Expect(err).ToNot(HaveOccurred())
 			Expect(version).To(Equal("17"))
 		})
