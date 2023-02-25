@@ -84,8 +84,8 @@ func (j JLink) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 		}
 
 		cacertsPath := filepath.Join(layer.Path, "lib", "security", "cacerts")
-		if err := os.Chmod(cacertsPath, 0664); err != nil{
-			return  libcnb.Layer{}, fmt.Errorf("unable to set keystore file permissions\n%w", err)
+		if err := os.Chmod(cacertsPath, 0664); err != nil {
+			return libcnb.Layer{}, fmt.Errorf("unable to set keystore file permissions\n%w", err)
 		}
 
 		if IsBeforeJava18(j.JavaVersion) {
@@ -155,12 +155,12 @@ func (j *JLink) buildCustomJRE(layerPath string) error {
 func (j *JLink) validArgs() bool {
 	jlinkArgs := j.Args[:0]
 	var skipNext, modsFound bool
-	for _, a := range j.Args {
+	for _, original := range j.Args {
 		if skipNext {
 			skipNext = false
 			continue
 		}
-		a = strings.ToLower(a)
+		var a = strings.ToLower(original)
 		if strings.HasPrefix(a, "--output") {
 			j.Logger.Bodyf(color.New(color.Faint, color.Bold).Sprint("WARNING: explicitly specified '--output' option & value will be overridden"))
 			skipNext = true
@@ -169,7 +169,7 @@ func (j *JLink) validArgs() bool {
 		if strings.HasPrefix(a, "--add-modules") {
 			modsFound = true
 		}
-		jlinkArgs = append(jlinkArgs, a)
+		jlinkArgs = append(jlinkArgs, original)
 	}
 	j.Args = jlinkArgs
 	if !modsFound {
