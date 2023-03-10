@@ -160,7 +160,7 @@ func (j *JLink) validArgs() bool {
 			skipNext = false
 			continue
 		}
-		var a = strings.ToLower(original)
+		a := strings.ToLower(original)
 		if strings.HasPrefix(a, "--output") {
 			j.Logger.Bodyf(color.New(color.Faint, color.Bold).Sprint("WARNING: explicitly specified '--output' option & value will be overridden"))
 			skipNext = true
