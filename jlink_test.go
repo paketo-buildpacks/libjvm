@@ -21,7 +21,7 @@ import (
 	"github.com/paketo-buildpacks/libpak/effect"
 	"github.com/paketo-buildpacks/libpak/effect/mocks"
 	"github.com/stretchr/testify/mock"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -42,18 +42,15 @@ func testJLink(t *testing.T, context spec.G, it spec.S) {
 
 		cl = libjvm.CertificateLoader{
 			CertDirs: []string{filepath.Join("testdata", "certificates")},
-			Logger:   ioutil.Discard,
+			Logger:   io.Discard,
 		}
 
 		ctx libcnb.BuildContext
 	)
 
 	it.Before(func() {
-		var err error
 		Expect(os.Setenv("BP_JVM_JLINK_ENABLED", "true")).To(Succeed())
-
-		ctx.Layers.Path, err = ioutil.TempDir("", "jdk")
-		Expect(err).NotTo(HaveOccurred())
+		ctx.Layers.Path = t.TempDir()
 	})
 
 	it.After(func() {
@@ -68,7 +65,7 @@ func testJLink(t *testing.T, context spec.G, it spec.S) {
 		exec := &mocks.Executor{}
 		j, err := libjvm.NewJLink(ctx.Application.Path, exec, args, cl, LaunchContribution, false)
 		Expect(err).NotTo(HaveOccurred())
-		j.Logger = bard.NewLogger(ioutil.Discard)
+		j.Logger = bard.NewLogger(io.Discard)
 
 		Expect(j.LayerContributor.ExpectedMetadata.(map[string]interface{})["cert-dir"]).To(HaveLen(4))
 
@@ -108,7 +105,7 @@ func testJLink(t *testing.T, context spec.G, it spec.S) {
 		exec := &mocks.Executor{}
 		j, err := libjvm.NewJLink(ctx.Application.Path, exec, args, cl, LaunchContribution, true)
 		Expect(err).NotTo(HaveOccurred())
-		j.Logger = bard.NewLogger(ioutil.Discard)
+		j.Logger = bard.NewLogger(io.Discard)
 
 		Expect(j.LayerContributor.ExpectedMetadata.(map[string]interface{})["cert-dir"]).To(HaveLen(4))
 
@@ -132,13 +129,46 @@ func testJLink(t *testing.T, context spec.G, it spec.S) {
 		Expect(e.Args).To(ContainElement("java.se"))
 	})
 
+	it("contributes jlink JRE with user provided all caps --add-modules argument", func() {
+
+		args := []string{"--no-man-pages", "--no-header-files", "--strip-debug", "--add-modules", "ALL-MODULE-PATH"}
+		exec := &mocks.Executor{}
+		j, err := libjvm.NewJLink(ctx.Application.Path, exec, args, cl, LaunchContribution, true)
+		Expect(err).NotTo(HaveOccurred())
+		j.Logger = bard.NewLogger(io.Discard)
+
+		Expect(j.LayerContributor.ExpectedMetadata.(map[string]interface{})["cert-dir"]).To(HaveLen(4))
+
+		layer, err := ctx.Layers.Layer("jlink")
+		Expect(err).NotTo(HaveOccurred())
+
+		exec.On("Execute", mock.Anything).Run(func(args mock.Arguments) {
+			err = os.MkdirAll(filepath.Join(ctx.Layers.Path, "jlink"), os.ModePerm)
+			jre, err := os.Open("testdata/3aa01010c0d3592ea248c8353d60b361231fa9bf9a7479b4f06451fef3e64524/stub-jre-11.tar.gz")
+			Expect(err).NotTo(HaveOccurred())
+			err = crush.Extract(jre, layer.Path, 1)
+			Expect(err).NotTo(HaveOccurred())
+		}).Return(nil)
+
+		layer, err = j.Contribute(layer)
+		Expect(err).NotTo(HaveOccurred())
+
+		e := exec.Calls[0].Arguments[0].(effect.Execution)
+		Expect(e.Args).To(ContainElement("--output"))
+		Expect(e.Args).To(ContainElement("--no-man-pages"))
+		Expect(e.Args).To(ContainElement("--no-header-files"))
+		Expect(e.Args).To(ContainElement("--strip-debug"))
+		Expect(e.Args).To(ContainElement("--add-modules"))
+		Expect(e.Args).To(ContainElement("ALL-MODULE-PATH"))
+	})
+
 	it("contributes jlink JRE with user provided args & missing modules", func() {
 
 		args := []string{"--no-man-pages", "--no-header-files", "--strip-debug"}
 		exec := &mocks.Executor{}
 		j, err := libjvm.NewJLink(ctx.Application.Path, exec, args, cl, LaunchContribution, true)
 		Expect(err).NotTo(HaveOccurred())
-		j.Logger = bard.NewLogger(ioutil.Discard)
+		j.Logger = bard.NewLogger(io.Discard)
 
 		Expect(j.LayerContributor.ExpectedMetadata.(map[string]interface{})["cert-dir"]).To(HaveLen(4))
 
