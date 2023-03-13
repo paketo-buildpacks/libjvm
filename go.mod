@@ -8,8 +8,8 @@ require (
 	github.com/heroku/color v0.0.6
 	github.com/magiconair/properties v1.8.7
 	github.com/mattn/go-shellwords v1.0.12
-	github.com/miekg/dns v1.1.51
-	github.com/onsi/gomega v1.27.2
+	github.com/miekg/dns v1.1.52
+	github.com/onsi/gomega v1.27.3
 	github.com/paketo-buildpacks/libpak v1.63.0
 	github.com/pavlo-v-chernykh/keystore-go/v4 v4.4.1
 	github.com/sclevine/spec v1.4.0
@@ -34,6 +34,6 @@ require (
 	golang.org/x/mod v0.9.0 // indirect
 	golang.org/x/net v0.8.0 // indirect
 	golang.org/x/text v0.8.0 // indirect
-	golang.org/x/tools v0.6.0 // indirect
+	golang.org/x/tools v0.7.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
