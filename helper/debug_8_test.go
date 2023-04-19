@@ -53,6 +53,20 @@ func testDebug8(t *testing.T, context spec.G, it spec.S) {
 			}))
 		})
 
+		context("jdwp agent already configured", func() {
+			it.Before(func() {
+				Expect(os.Setenv("JAVA_TOOL_OPTIONS", "-agentlib:jdwp=something")).To(Succeed())
+			})
+
+			it.After(func() {
+				Expect(os.Unsetenv("JAVA_TOOL_OPTIONS")).To(Succeed())
+			})
+
+			it("does not update JAVA_TOOL_OPTIONS", func() {
+				Expect(d.Execute()).To(BeEmpty())
+			})
+		})
+
 		context("$BPL_DEBUG_PORT", func() {
 			it.Before(func() {
 				Expect(os.Setenv("BPL_DEBUG_PORT", "8001")).To(Succeed())

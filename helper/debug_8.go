@@ -18,6 +18,7 @@ package helper
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/paketo-buildpacks/libpak/bard"
 	"github.com/paketo-buildpacks/libpak/sherpa"
@@ -30,6 +31,14 @@ type Debug8 struct {
 func (d Debug8) Execute() (map[string]string, error) {
 
 	if val := sherpa.ResolveBool("BPL_DEBUG_ENABLED"); !val {
+		return nil, nil
+	}
+
+	opts := sherpa.GetEnvWithDefault("JAVA_TOOL_OPTIONS", "")
+	debugAlreadyExists := strings.Contains(opts, "-agentlib:jdwp=")
+
+	if debugAlreadyExists {
+		d.Logger.Info("Java agent 'jdwp' already configured")
 		return nil, nil
 	}
 
@@ -49,7 +58,7 @@ func (d Debug8) Execute() (map[string]string, error) {
 		s = "n"
 	}
 
-	opts := sherpa.AppendToEnvVar("JAVA_TOOL_OPTIONS", " ", fmt.Sprintf("-agentlib:jdwp=transport=dt_socket,server=y,address=%s,suspend=%s", port, s))
+	opts = sherpa.AppendToEnvVar("JAVA_TOOL_OPTIONS", " ", fmt.Sprintf("-agentlib:jdwp=transport=dt_socket,server=y,address=%s,suspend=%s", port, s))
 
 	return map[string]string{"JAVA_TOOL_OPTIONS": opts}, nil
 }
