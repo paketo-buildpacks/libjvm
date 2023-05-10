@@ -17,6 +17,7 @@
 package helper_test
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -79,6 +80,7 @@ func testOpenSSLCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 
 		it.After(func() {
 			Expect(os.Unsetenv("BPI_JVM_CACERTS")).To(Succeed())
+			_ = os.Remove(helper.TmpTrustStore)
 		})
 
 		it("loads additional certificates", func() {
@@ -100,12 +102,37 @@ func testOpenSSLCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 			return
 		}
 
-		it("does not return error when keystore is read-only", func() {
+		it("does use temp keystore if keystore is read-only", func() {
 			Expect(os.Chmod(path, 0555)).To(Succeed())
 
 			o := helper.OpenSSLCertificateLoader{CertificateLoader: cl, Logger: bard.NewLogger(ioutil.Discard)}
 
-			Expect(o.Execute()).To(BeNil())
+			env, err := o.Execute()
+			Expect(err).NotTo(HaveOccurred())
+
+			in, err := os.Open(helper.TmpTrustStore)
+			Expect(err).NotTo(HaveOccurred())
+			defer in.Close()
+
+			ks := keystore.New()
+			err = ks.Load(in, []byte("changeit"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ks.Aliases()).To(HaveLen(1))
+
+			Expect(env).To(HaveKeyWithValue("JAVA_TOOL_OPTIONS", fmt.Sprintf("-Djavax.net.ssl.trustStore=%s", helper.TmpTrustStore)))
+		})
+
+		it("does not return error when keystore and /tmp/truststore are read-only", func() {
+			Expect(os.Chmod(path, 0555)).To(Succeed())
+			_, err := os.OpenFile(helper.TmpTrustStore, os.O_CREATE, 0)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(os.Chmod(helper.TmpTrustStore, 0555)).To(Succeed())
+
+			o := helper.OpenSSLCertificateLoader{CertificateLoader: cl, Logger: bard.NewLogger(os.Stdout)}
+
+			env, err := o.Execute()
+			Expect(env).To(BeNil())
+			Expect(err).NotTo(HaveOccurred())
 
 			in, err := os.Open(path)
 			Expect(err).NotTo(HaveOccurred())
@@ -116,6 +143,7 @@ func testOpenSSLCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(ks.Aliases()).To(HaveLen(1))
 		})
+
 	})
 
 }
