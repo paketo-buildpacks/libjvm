@@ -13,12 +13,12 @@ require (
 	github.com/paketo-buildpacks/libpak v1.65.0
 	github.com/pavlo-v-chernykh/keystore-go/v4 v4.4.1
 	github.com/sclevine/spec v1.4.0
-	github.com/stretchr/testify v1.8.3
+	github.com/stretchr/testify v1.8.4
 	golang.org/x/sys v0.8.0
 )
 
 require (
-	github.com/BurntSushi/toml v1.2.1 // indirect
+	github.com/BurntSushi/toml v1.3.0 // indirect
 	github.com/creack/pty v1.1.18 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
