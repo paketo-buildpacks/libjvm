@@ -33,6 +33,7 @@ var TmpTrustStore = filepath.Join(os.TempDir(), "truststore")
 type OpenSSLCertificateLoader struct {
 	CertificateLoader libjvm.CertificateLoader
 	Logger            bard.Logger
+	KeystoreOps       libjvm.KeystoreOps
 }
 
 func (o OpenSSLCertificateLoader) prepareTempTrustStore(trustStore, tempTrustStore string) (map[string]string, error) {
@@ -77,8 +78,12 @@ func (o OpenSSLCertificateLoader) Execute() (map[string]string, error) {
 
 	o.CertificateLoader.Logger = o.Logger.InfoWriter()
 
-	if err := o.CertificateLoader.Load(trustStore, "changeit"); err != nil {
-		return nil, fmt.Errorf("unable to load certificates\n%w", err)
+	systemCerts, err := o.CertificateLoader.LoadSystemCerts()
+	if err != nil {
+		return nil, fmt.Errorf("unable to load system certificates\n%w", err)
+	}
+	if err := libjvm.CombineCerts(trustStore, systemCerts, o.CertificateLoader.Logger); err != nil {
+		return nil, fmt.Errorf("unable to read JVM Keystore\n%w", err)
 	}
 
 	return opts, nil

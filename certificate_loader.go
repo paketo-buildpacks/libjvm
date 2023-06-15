@@ -22,7 +22,6 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -55,6 +54,23 @@ func NewCertificateLoader() CertificateLoader {
 	}
 
 	return c
+}
+
+func (c *CertificateLoader) LoadSystemCerts() (map[string][]*pem.Block, error) {
+	certData := map[string][]*pem.Block{}
+	files, err := c.certFiles()
+	if err != nil {
+		return nil, fmt.Errorf("unable to identify cert files in %s and %s\n%w", c.CertFile, c.CertDirs, err)
+	}
+
+	for _, f := range files {
+		blocks, err := c.readBlocks(f)
+		if err != nil {
+			return nil, fmt.Errorf("unable to read certificates from %s\n%w", f, err)
+		}
+		certData[f] = append(certData[f], blocks...)
+	}
+	return certData, nil
 }
 
 func (c *CertificateLoader) Load(path string, password string) error {
@@ -112,7 +128,7 @@ func (c CertificateLoader) certFiles() ([]string, error) {
 
 	re := regexp.MustCompile(`^[[:xdigit:]]{8}\.[\d]$`)
 	for _, d := range c.CertDirs {
-		c, err := ioutil.ReadDir(d)
+		c, err := os.ReadDir(d)
 		if os.IsNotExist(err) {
 			continue
 		} else if err != nil {
@@ -162,7 +178,7 @@ func (c CertificateLoader) readBlocks(path string) ([]*pem.Block, error) {
 		blocks []*pem.Block
 	)
 
-	rest, err := ioutil.ReadFile(path)
+	rest, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read %s\n%w", path, err)
 	}
