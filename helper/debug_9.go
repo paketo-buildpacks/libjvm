@@ -39,7 +39,7 @@ func (d Debug9) Execute() (map[string]string, error) {
 	debugAlreadyExists := strings.Contains(opts, "-agentlib:jdwp=")
 
 	if debugAlreadyExists {
-		d.Logger.Info("Java agent 'jdwp' already configured")
+		d.Logger.Debug("Java agent 'jdwp' already configured")
 		return nil, nil
 	}
 
@@ -51,7 +51,7 @@ func (d Debug9) Execute() (map[string]string, error) {
 	if suspend {
 		s = fmt.Sprintf("%s, suspended on start", s)
 	}
-	d.Logger.Info(s)
+	d.Logger.Debug(s)
 
 	if suspend {
 		s = "y"

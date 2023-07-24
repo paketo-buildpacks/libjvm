@@ -17,11 +17,13 @@
 package helper_test
 
 import (
+	"io"
 	"os"
 	"testing"
 
 	. "github.com/onsi/gomega"
 	"github.com/paketo-buildpacks/libjvm/helper"
+	"github.com/paketo-buildpacks/libpak/bard"
 	"github.com/sclevine/spec"
 )
 
@@ -29,7 +31,7 @@ func testJMX(t *testing.T, context spec.G, it spec.S) {
 	var (
 		Expect = NewWithT(t).Expect
 
-		j = helper.JMX{}
+		j = helper.JMX{Logger: bard.NewLogger(io.Discard)}
 	)
 
 	it("returns if $BPL_JMX_ENABLED is not set", func() {

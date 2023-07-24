@@ -18,6 +18,7 @@ package helper_test
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -29,6 +30,7 @@ import (
 
 	"github.com/paketo-buildpacks/libjvm/calc"
 	"github.com/paketo-buildpacks/libjvm/helper"
+	"github.com/paketo-buildpacks/libpak/bard"
 )
 
 func testMemoryCalculator(t *testing.T, context spec.G, it spec.S) {
@@ -70,6 +72,7 @@ func testMemoryCalculator(t *testing.T, context spec.G, it spec.S) {
 			MemoryLimitPathV1: memoryLimitPathV1,
 			MemoryLimitPathV2: memoryLimitPathV2,
 			MemoryInfoPath:    memoryInfoPath,
+			Logger:            bard.NewLogger(io.Discard),
 		}
 	})
 

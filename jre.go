@@ -43,18 +43,18 @@ type JRE struct {
 	Metadata          map[string]interface{}
 }
 
-func NewJRE(applicationPath string, dependency libpak.BuildpackDependency, cache libpak.DependencyCache, distributionType DistributionType, certificateLoader CertificateLoader, metadata map[string]interface{}) (JRE, libcnb.BOMEntry, error) {
+func NewJRE(applicationPath string, dependency libpak.BuildModuleDependency, cache libpak.DependencyCache, distributionType DistributionType, certificateLoader CertificateLoader, metadata map[string]interface{}) (JRE, error) {
 	expected := map[string]interface{}{"dependency": dependency}
 
 	if md, err := certificateLoader.Metadata(); err != nil {
-		return JRE{}, libcnb.BOMEntry{}, fmt.Errorf("unable to generate certificate loader metadata\n%w", err)
+		return JRE{}, fmt.Errorf("unable to generate certificate loader metadata\n%w", err)
 	} else {
 		for k, v := range md {
 			expected[k] = v
 		}
 	}
 
-	contributor, be := libpak.NewDependencyLayer(dependency, cache, libcnb.LayerTypes{
+	contributor := libpak.NewDependencyLayerContributor(dependency, cache, libcnb.LayerTypes{
 		Build:  IsBuildContribution(metadata),
 		Cache:  IsBuildContribution(metadata),
 		Launch: IsLaunchContribution(metadata),
@@ -67,7 +67,7 @@ func NewJRE(applicationPath string, dependency libpak.BuildpackDependency, cache
 		DistributionType:  distributionType,
 		LayerContributor:  contributor,
 		Metadata:          metadata,
-	}, be, nil
+	}, nil
 }
 
 func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
@@ -85,8 +85,8 @@ func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 		} else {
 			cacertsPath = filepath.Join(layer.Path, "lib", "security", "cacerts")
 		}
-		if err := os.Chmod(cacertsPath, 0664); err != nil{
-			return  libcnb.Layer{}, fmt.Errorf("unable to set keystore file permissions\n%w", err)
+		if err := os.Chmod(cacertsPath, 0664); err != nil {
+			return libcnb.Layer{}, fmt.Errorf("unable to set keystore file permissions\n%w", err)
 		}
 
 		if IsBeforeJava18(j.LayerContributor.Dependency.Version) {

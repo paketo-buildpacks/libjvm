@@ -17,6 +17,7 @@
 package helper_test
 
 import (
+	"io"
 	"os"
 	"testing"
 
@@ -24,6 +25,7 @@ import (
 	"github.com/sclevine/spec"
 
 	"github.com/paketo-buildpacks/libjvm/helper"
+	"github.com/paketo-buildpacks/libpak/bard"
 )
 
 func testJavaOpts(t *testing.T, context spec.G, it spec.S) {
@@ -42,7 +44,7 @@ func testJavaOpts(t *testing.T, context spec.G, it spec.S) {
 		})
 
 		it("return nil if JAVA_OPTS is not set", func() {
-			Expect(helper.JavaOpts{}.Execute()).To(BeNil())
+			Expect(helper.JavaOpts{Logger: bard.NewLogger(io.Discard)}.Execute()).To(BeNil())
 		})
 
 		context("$JAVA_OPTS", func() {
@@ -55,7 +57,7 @@ func testJavaOpts(t *testing.T, context spec.G, it spec.S) {
 			})
 
 			it("return $JAVA_TOOL_OPTIONS with $JAVA_OPTS included", func() {
-				Expect(helper.JavaOpts{}.Execute()).To(Equal(map[string]string{
+				Expect(helper.JavaOpts{Logger: bard.NewLogger(io.Discard)}.Execute()).To(Equal(map[string]string{
 					"JAVA_TOOL_OPTIONS": "test-java-tool-options test-java-opts",
 				}))
 			})
@@ -73,7 +75,7 @@ func testJavaOpts(t *testing.T, context spec.G, it spec.S) {
 		})
 
 		it("return $JAVA_TOOL_OPTIONS with $JAVA_OPTS only", func() {
-			Expect(helper.JavaOpts{}.Execute()).To(Equal(map[string]string{
+			Expect(helper.JavaOpts{Logger: bard.NewLogger(io.Discard)}.Execute()).To(Equal(map[string]string{
 				"JAVA_TOOL_OPTIONS": "test-java-opts",
 			}))
 		})

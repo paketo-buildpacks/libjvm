@@ -18,30 +18,31 @@ package libjvm
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/buildpacks/libcnb"
 	"github.com/heroku/color"
 	"github.com/paketo-buildpacks/libpak"
 	"github.com/paketo-buildpacks/libpak/bard"
 	"github.com/paketo-buildpacks/libpak/crush"
 	"github.com/paketo-buildpacks/libpak/effect"
-	"os"
-	"path/filepath"
 )
 
 type NIK struct {
 	CertificateLoader CertificateLoader
 	DependencyCache   libpak.DependencyCache
 	Executor          effect.Executor
-	JDKDependency     libpak.BuildpackDependency
+	JDKDependency     libpak.BuildModuleDependency
 	LayerContributor  libpak.LayerContributor
 	Logger            bard.Logger
-	NativeDependency  *libpak.BuildpackDependency
+	NativeDependency  *libpak.BuildModuleDependency
 	CustomCommand     string
 	CustomArgs        []string
 }
 
-func NewNIK(jdkDependency libpak.BuildpackDependency, nativeDependency *libpak.BuildpackDependency, cache libpak.DependencyCache, certificateLoader CertificateLoader, customCommand string, customArgs []string) (NIK, []libcnb.BOMEntry, error) {
-	dependencies := []libpak.BuildpackDependency{jdkDependency}
+func NewNIK(jdkDependency libpak.BuildModuleDependency, nativeDependency *libpak.BuildModuleDependency, cache libpak.DependencyCache, certificateLoader CertificateLoader, customCommand string, customArgs []string) (NIK, error) {
+	dependencies := []libpak.BuildModuleDependency{jdkDependency}
 
 	if nativeDependency != nil {
 		dependencies = append(dependencies, *nativeDependency)
@@ -50,7 +51,7 @@ func NewNIK(jdkDependency libpak.BuildpackDependency, nativeDependency *libpak.B
 	expected := map[string]interface{}{"dependencies": dependencies}
 
 	if md, err := certificateLoader.Metadata(); err != nil {
-		return NIK{}, nil, fmt.Errorf("unable to generate certificate loader metadata")
+		return NIK{}, fmt.Errorf("unable to generate certificate loader metadata")
 	} else {
 		for k, v := range md {
 			expected[k] = v
@@ -76,23 +77,7 @@ func NewNIK(jdkDependency libpak.BuildpackDependency, nativeDependency *libpak.B
 		CustomArgs:        customArgs,
 	}
 
-	var bomEntries []libcnb.BOMEntry
-	entry := jdkDependency.AsBOMEntry()
-	entry.Metadata["layer"] = n.Name()
-	entry.Build = true
-	bomEntries = append(bomEntries, entry)
-
-	if nativeDependency != nil {
-		entry := nativeDependency.AsBOMEntry()
-		if entry.Name != "" {
-			entry.Metadata["layer"] = n.Name()
-			entry.Launch = true
-			entry.Build = true
-			bomEntries = append(bomEntries, entry)
-		}
-	}
-
-	return n, bomEntries, nil
+	return n, nil
 }
 
 func (n NIK) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
@@ -119,8 +104,8 @@ func (n NIK) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 		} else {
 			keyStorePath = filepath.Join(layer.Path, "lib", "security", "cacerts")
 		}
-		if err := os.Chmod(keyStorePath, 0664); err != nil{
-			return  libcnb.Layer{}, fmt.Errorf("unable to set keystore file permissions\n%w", err)
+		if err := os.Chmod(keyStorePath, 0664); err != nil {
+			return libcnb.Layer{}, fmt.Errorf("unable to set keystore file permissions\n%w", err)
 		}
 
 		if IsBeforeJava18(n.JDKDependency.Version) {
@@ -148,8 +133,8 @@ func (n NIK) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 				Command: filepath.Join(layer.Path, n.CustomCommand),
 				Args:    n.CustomArgs,
 				Dir:     layer.Path,
-				Stdout:  n.Logger.InfoWriter(),
-				Stderr:  n.Logger.InfoWriter(),
+				Stdout:  n.Logger.DebugWriter(),
+				Stderr:  n.Logger.DebugWriter(),
 			}); err != nil {
 				return libcnb.Layer{}, fmt.Errorf("unable to run custom NIK command\n%w", err)
 			}

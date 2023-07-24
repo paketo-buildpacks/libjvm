@@ -18,6 +18,7 @@ package libjvm_test
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -28,6 +29,7 @@ import (
 	"github.com/sclevine/spec"
 
 	"github.com/paketo-buildpacks/libjvm"
+	"github.com/paketo-buildpacks/libpak/bard"
 )
 
 func testJavaSecurityProperties(t *testing.T, context spec.G, it spec.S) {
@@ -52,6 +54,8 @@ func testJavaSecurityProperties(t *testing.T, context spec.G, it spec.S) {
 
 	it("contributes Java Security Properties", func() {
 		l := libjvm.NewJavaSecurityProperties(ctx.Buildpack.Info)
+		l.Logger = bard.NewLogger(io.Discard)
+
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
 

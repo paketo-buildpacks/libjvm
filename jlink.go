@@ -3,6 +3,11 @@ package libjvm
 import (
 	"bytes"
 	"fmt"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+
 	"github.com/buildpacks/libcnb"
 	"github.com/heroku/color"
 	"github.com/magiconair/properties"
@@ -10,10 +15,6 @@ import (
 	"github.com/paketo-buildpacks/libpak"
 	"github.com/paketo-buildpacks/libpak/bard"
 	"github.com/paketo-buildpacks/libpak/effect"
-	"os"
-	"path/filepath"
-	"sort"
-	"strings"
 )
 
 type JLink struct {
@@ -144,8 +145,8 @@ func (j *JLink) buildCustomJRE(layerPath string) error {
 	if err := j.Executor.Execute(effect.Execution{
 		Command: filepath.Join(filepath.Dir(layerPath), "jdk", "bin", "jlink"),
 		Args:    j.Args,
-		Stdout:  j.Logger.Logger.InfoWriter(),
-		Stderr:  j.Logger.Logger.InfoWriter(),
+		Stdout:  j.Logger.Logger.DebugWriter(),
+		Stderr:  j.Logger.Logger.DebugWriter(),
 	}); err != nil {
 		return fmt.Errorf("unable to run jlink\n%w", err)
 	}
@@ -185,7 +186,7 @@ func (j *JLink) listJVMModules(layerPath string) (string, error) {
 		Command: filepath.Join(filepath.Dir(layerPath), "jdk", "bin", "java"),
 		Args:    []string{"--list-modules"},
 		Stdout:  buf,
-		Stderr:  j.Logger.Logger.InfoWriter(),
+		Stderr:  j.Logger.Logger.DebugWriter(),
 	}); err != nil {
 		return "", fmt.Errorf("unable to list modules\n%w", err)
 	}

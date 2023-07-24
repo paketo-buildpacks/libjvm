@@ -47,7 +47,7 @@ func (a ActiveProcessorCount) Execute() (map[string]string, error) {
 		}
 	}
 
-	a.Logger.Infof("Setting Active Processor Count to %d", runtime.NumCPU())
+	a.Logger.Debugf("Setting Active Processor Count to %d", runtime.NumCPU())
 
 	values = append(values, fmt.Sprintf("-XX:ActiveProcessorCount=%d", runtime.NumCPU()))
 

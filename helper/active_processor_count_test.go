@@ -18,6 +18,7 @@ package helper_test
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"runtime"
 	"testing"
@@ -26,6 +27,7 @@ import (
 	"github.com/sclevine/spec"
 
 	"github.com/paketo-buildpacks/libjvm/helper"
+	"github.com/paketo-buildpacks/libpak/bard"
 )
 
 func testActiveProcessorCount(t *testing.T, context spec.G, it spec.S) {
@@ -34,7 +36,7 @@ func testActiveProcessorCount(t *testing.T, context spec.G, it spec.S) {
 	)
 
 	it("configures active processor count", func() {
-		Expect(helper.ActiveProcessorCount{}.Execute()).
+		Expect(helper.ActiveProcessorCount{Logger: bard.NewLogger(io.Discard)}.Execute()).
 			To(Equal(map[string]string{"JAVA_TOOL_OPTIONS": fmt.Sprintf("-XX:ActiveProcessorCount=%d", runtime.NumCPU())}))
 	})
 
@@ -49,7 +51,7 @@ func testActiveProcessorCount(t *testing.T, context spec.G, it spec.S) {
 		})
 
 		it("configures active processor count", func() {
-			Expect(helper.ActiveProcessorCount{}.Execute()).
+			Expect(helper.ActiveProcessorCount{Logger: bard.NewLogger(io.Discard)}.Execute()).
 				To(Equal(map[string]string{"JAVA_TOOL_OPTIONS": fmt.Sprintf("test-java-tool-options -XX:ActiveProcessorCount=%d", runtime.NumCPU())}))
 		})
 
@@ -65,7 +67,7 @@ func testActiveProcessorCount(t *testing.T, context spec.G, it spec.S) {
 		})
 
 		it("does not override active processor count", func() {
-			Expect(helper.ActiveProcessorCount{}.Execute()).To(BeNil())
+			Expect(helper.ActiveProcessorCount{Logger: bard.NewLogger(io.Discard)}.Execute()).To(BeNil())
 		})
 	})
 }

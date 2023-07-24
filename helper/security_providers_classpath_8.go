@@ -40,7 +40,7 @@ func (s SecurityProvidersClasspath8) Execute() (map[string]string, error) {
 		return nil, fmt.Errorf("$BPI_JVM_EXT_DIR must be set")
 	}
 
-	s.Logger.Info("Adding $SECURITY_PROVIDERS_CLASSPATH to java.ext.dirs")
+	s.Logger.Debug("Adding $SECURITY_PROVIDERS_CLASSPATH to java.ext.dirs")
 
 	var values []string
 	if s, ok := os.LookupEnv("JAVA_TOOL_OPTIONS"); ok {

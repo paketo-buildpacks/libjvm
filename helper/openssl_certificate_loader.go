@@ -36,7 +36,7 @@ type OpenSSLCertificateLoader struct {
 }
 
 func (o OpenSSLCertificateLoader) prepareTempTrustStore(trustStore, tempTrustStore string) (map[string]string, error) {
-	o.Logger.Infof("Using readonly truststore: %s", tempTrustStore)
+	o.Logger.Debugf("Using readonly truststore: %s", tempTrustStore)
 
 	trustStoreFile, err := os.Open(trustStore)
 	if err != nil {
@@ -75,7 +75,7 @@ func (o OpenSSLCertificateLoader) Execute() (map[string]string, error) {
 		}
 	}
 
-	o.CertificateLoader.Logger = o.Logger.InfoWriter()
+	o.CertificateLoader.Logger = o.Logger.DebugWriter()
 
 	if err := o.CertificateLoader.Load(trustStore, "changeit"); err != nil {
 		return nil, fmt.Errorf("unable to load certificates\n%w", err)

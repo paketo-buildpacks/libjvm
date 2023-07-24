@@ -25,13 +25,16 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"github.com/paketo-buildpacks/libpak/bard"
 	"github.com/pavlo-v-chernykh/keystore-go/v4"
 	"github.com/sclevine/spec"
+
+	"github.com/buildpacks/libcnb/log"
 
 	"github.com/paketo-buildpacks/libjvm"
 	"github.com/paketo-buildpacks/libjvm/helper"
 	"github.com/paketo-buildpacks/libjvm/internal"
+
+	"github.com/paketo-buildpacks/libpak/bard"
 )
 
 func testOpenSSLCertificateLoader(t *testing.T, context spec.G, it spec.S) {
@@ -40,6 +43,7 @@ func testOpenSSLCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 
 		cl = libjvm.CertificateLoader{
 			CertDirs: []string{filepath.Join("testdata", "certificates")},
+			Logger:   io.Discard,
 		}
 
 		path string
@@ -66,6 +70,7 @@ func testOpenSSLCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 
 	it("returns error if BPI_JVM_CACERTS is not set", func() {
 		o := helper.OpenSSLCertificateLoader{CertificateLoader: cl, Logger: bard.NewLogger(ioutil.Discard)}
+		o.Logger.Logger = log.NewDiscard()
 
 		_, err := o.Execute()
 
@@ -85,6 +90,7 @@ func testOpenSSLCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 
 		it("loads additional certificates", func() {
 			o := helper.OpenSSLCertificateLoader{CertificateLoader: cl, Logger: bard.NewLogger(ioutil.Discard)}
+			o.Logger.Logger = log.NewDiscard()
 
 			Expect(o.Execute()).To(BeNil())
 
@@ -106,6 +112,7 @@ func testOpenSSLCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 			Expect(os.Chmod(path, 0555)).To(Succeed())
 
 			o := helper.OpenSSLCertificateLoader{CertificateLoader: cl, Logger: bard.NewLogger(ioutil.Discard)}
+			o.Logger.Logger = log.NewDiscard()
 
 			env, err := o.Execute()
 			Expect(err).NotTo(HaveOccurred())
@@ -129,6 +136,7 @@ func testOpenSSLCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 			Expect(os.Chmod(helper.TmpTrustStore, 0555)).To(Succeed())
 
 			o := helper.OpenSSLCertificateLoader{CertificateLoader: cl, Logger: bard.NewLogger(os.Stdout)}
+			o.Logger.Logger = log.NewDiscard()
 
 			env, err := o.Execute()
 			Expect(env).To(BeNil())

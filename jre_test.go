@@ -47,7 +47,7 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 	it.Before(func() {
 		var err error
 
-		ctx.Application.Path, err = ioutil.TempDir("", "jre-application")
+		ctx.ApplicationPath, err = ioutil.TempDir("", "jre-application")
 		Expect(err).NotTo(HaveOccurred())
 
 		ctx.Layers.Path, err = ioutil.TempDir("", "jre-layers")
@@ -55,19 +55,19 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	it.After(func() {
-		Expect(os.RemoveAll(ctx.Application.Path)).To(Succeed())
+		Expect(os.RemoveAll(ctx.ApplicationPath)).To(Succeed())
 		Expect(os.RemoveAll(ctx.Layers.Path)).To(Succeed())
 	})
 
 	it("contributes JRE", func() {
-		dep := libpak.BuildpackDependency{
+		dep := libpak.BuildModuleDependency{
 			Version: "11.0.0",
 			URI:     "https://localhost/stub-jre-11.tar.gz",
 			SHA256:  "3aa01010c0d3592ea248c8353d60b361231fa9bf9a7479b4f06451fef3e64524",
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, _, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, cl, NoContribution)
+		j, err := libjvm.NewJRE(ctx.ApplicationPath, dep, dc, libjvm.JREType, cl, NoContribution)
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
@@ -83,14 +83,14 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	it("contributes JRE from a zip file", func() {
-		dep := libpak.BuildpackDependency{
+		dep := libpak.BuildModuleDependency{
 			Version: "11.0.0",
 			URI:     "https://localhost/stub-jre-11.zip",
 			SHA256:  "e3b22e738f6e956ef576215b39d79d321157f1d3de3bddf9c4120ae0444bdba8",
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, _, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, cl, NoContribution)
+		j, err := libjvm.NewJRE(ctx.ApplicationPath, dep, dc, libjvm.JREType, cl, NoContribution)
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
@@ -106,14 +106,14 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	it("updates JRE certificates", func() {
-		dep := libpak.BuildpackDependency{
+		dep := libpak.BuildModuleDependency{
 			Version: "11.0.0",
 			URI:     "https://localhost/stub-jre-11.tar.gz",
 			SHA256:  "3aa01010c0d3592ea248c8353d60b361231fa9bf9a7479b4f06451fef3e64524",
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, _, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, cl, NoContribution)
+		j, err := libjvm.NewJRE(ctx.ApplicationPath, dep, dc, libjvm.JREType, cl, NoContribution)
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
@@ -134,14 +134,14 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	it("updates before Java 9 JDK certificates", func() {
-		dep := libpak.BuildpackDependency{
+		dep := libpak.BuildModuleDependency{
 			Version: "8.0.0",
 			URI:     "https://localhost/stub-jdk-8.tar.gz",
 			SHA256:  "6860fb9a9a66817ec285fac64c342b678b0810656b1f2413f063911a8bde6447",
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, _, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JDKType, cl, NoContribution)
+		j, err := libjvm.NewJRE(ctx.ApplicationPath, dep, dc, libjvm.JDKType, cl, NoContribution)
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
@@ -162,14 +162,14 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	it("updates after Java 9 JDK certificates", func() {
-		dep := libpak.BuildpackDependency{
+		dep := libpak.BuildModuleDependency{
 			Version: "11.0.0",
 			URI:     "https://localhost/stub-jdk-11.tar.gz",
 			SHA256:  "e40a6ddb7d74d78a6d5557380160a174b1273813db1caf9b1f7bcbfe1578e818",
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, _, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JDKType, cl, NoContribution)
+		j, err := libjvm.NewJRE(ctx.ApplicationPath, dep, dc, libjvm.JDKType, cl, NoContribution)
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
@@ -190,14 +190,14 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	it("marks layer for build", func() {
-		dep := libpak.BuildpackDependency{
+		dep := libpak.BuildModuleDependency{
 			Version: "11.0.0",
 			URI:     "https://localhost/stub-jre-11.tar.gz",
 			SHA256:  "3aa01010c0d3592ea248c8353d60b361231fa9bf9a7479b4f06451fef3e64524",
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, _, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, cl, BuildContribution)
+		j, err := libjvm.NewJRE(ctx.ApplicationPath, dep, dc, libjvm.JREType, cl, BuildContribution)
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
@@ -215,14 +215,14 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	it("marks before Java 9 JRE layer for launch", func() {
-		dep := libpak.BuildpackDependency{
+		dep := libpak.BuildModuleDependency{
 			Version: "8.0.0",
 			URI:     "https://localhost/stub-jre-8.tar.gz",
 			SHA256:  "bb4f0e8cbeec6802ab8e599c83c2fb835f0da9b9213c463102f9092e4f8afdda",
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, _, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, cl, LaunchContribution)
+		j, err := libjvm.NewJRE(ctx.ApplicationPath, dep, dc, libjvm.JREType, cl, LaunchContribution)
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
@@ -235,7 +235,7 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(layer.LayerTypes.Launch).To(BeTrue())
-		Expect(layer.LaunchEnvironment["BPI_APPLICATION_PATH.default"]).To(Equal(ctx.Application.Path))
+		Expect(layer.LaunchEnvironment["BPI_APPLICATION_PATH.default"]).To(Equal(ctx.ApplicationPath))
 		Expect(layer.LaunchEnvironment["BPI_JVM_CACERTS.default"]).To(Equal(filepath.Join(layer.Path, "lib", "security", "cacerts")))
 		Expect(layer.LaunchEnvironment["BPI_JVM_CLASS_COUNT.default"]).To(Equal("0"))
 		Expect(layer.LaunchEnvironment["BPI_JVM_EXT_DIR.default"]).To(Equal(filepath.Join(layer.Path, "lib", "ext")))
@@ -247,14 +247,14 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	it("marks after Java 9 JRE layer for launch", func() {
-		dep := libpak.BuildpackDependency{
+		dep := libpak.BuildModuleDependency{
 			Version: "11.0.0",
 			URI:     "https://localhost/stub-jre-11.tar.gz",
 			SHA256:  "3aa01010c0d3592ea248c8353d60b361231fa9bf9a7479b4f06451fef3e64524",
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, _, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JREType, cl, LaunchContribution)
+		j, err := libjvm.NewJRE(ctx.ApplicationPath, dep, dc, libjvm.JREType, cl, LaunchContribution)
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
@@ -267,7 +267,7 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(layer.LayerTypes.Launch).To(BeTrue())
-		Expect(layer.LaunchEnvironment["BPI_APPLICATION_PATH.default"]).To(Equal(ctx.Application.Path))
+		Expect(layer.LaunchEnvironment["BPI_APPLICATION_PATH.default"]).To(Equal(ctx.ApplicationPath))
 		Expect(layer.LaunchEnvironment["BPI_JVM_CACERTS.default"]).To(Equal(filepath.Join(layer.Path, "lib", "security", "cacerts")))
 		Expect(layer.LaunchEnvironment["BPI_JVM_CLASS_COUNT.default"]).To(Equal("0"))
 		Expect(layer.LaunchEnvironment["BPI_JVM_SECURITY_PROVIDERS.default"]).To(Equal("1|ALPHA"))
@@ -278,14 +278,14 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	it("marks before Java 9 JDK layer for launch", func() {
-		dep := libpak.BuildpackDependency{
+		dep := libpak.BuildModuleDependency{
 			Version: "8.0.0",
 			URI:     "https://localhost/stub-jdk-8.tar.gz",
 			SHA256:  "6860fb9a9a66817ec285fac64c342b678b0810656b1f2413f063911a8bde6447",
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, _, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JDKType, cl, LaunchContribution)
+		j, err := libjvm.NewJRE(ctx.ApplicationPath, dep, dc, libjvm.JDKType, cl, LaunchContribution)
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
@@ -298,7 +298,7 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(layer.LayerTypes.Launch).To(BeTrue())
-		Expect(layer.LaunchEnvironment["BPI_APPLICATION_PATH.default"]).To(Equal(ctx.Application.Path))
+		Expect(layer.LaunchEnvironment["BPI_APPLICATION_PATH.default"]).To(Equal(ctx.ApplicationPath))
 		Expect(layer.LaunchEnvironment["BPI_JVM_CACERTS.default"]).To(Equal(filepath.Join(layer.Path, "jre", "lib", "security", "cacerts")))
 		Expect(layer.LaunchEnvironment["BPI_JVM_CLASS_COUNT.default"]).To(Equal("0"))
 		Expect(layer.LaunchEnvironment["BPI_JVM_EXT_DIR.default"]).To(Equal(filepath.Join(layer.Path, "jre", "lib", "ext")))
@@ -310,14 +310,14 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	it("marks after Java 9 JDK layer for launch", func() {
-		dep := libpak.BuildpackDependency{
+		dep := libpak.BuildModuleDependency{
 			Version: "11.0.0",
 			URI:     "https://localhost/stub-jdk-11.tar.gz",
 			SHA256:  "e40a6ddb7d74d78a6d5557380160a174b1273813db1caf9b1f7bcbfe1578e818",
 		}
 		dc := libpak.DependencyCache{CachePath: "testdata"}
 
-		j, _, err := libjvm.NewJRE(ctx.Application.Path, dep, dc, libjvm.JDKType, cl, LaunchContribution)
+		j, err := libjvm.NewJRE(ctx.ApplicationPath, dep, dc, libjvm.JDKType, cl, LaunchContribution)
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(ioutil.Discard)
 
@@ -330,7 +330,7 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(layer.LayerTypes.Launch).To(BeTrue())
-		Expect(layer.LaunchEnvironment["BPI_APPLICATION_PATH.default"]).To(Equal(ctx.Application.Path))
+		Expect(layer.LaunchEnvironment["BPI_APPLICATION_PATH.default"]).To(Equal(ctx.ApplicationPath))
 		Expect(layer.LaunchEnvironment["BPI_JVM_CACERTS.default"]).To(Equal(filepath.Join(layer.Path, "lib", "security", "cacerts")))
 		Expect(layer.LaunchEnvironment["BPI_JVM_CLASS_COUNT.default"]).To(Equal("0"))
 		Expect(layer.LaunchEnvironment["BPI_JVM_SECURITY_PROVIDERS.default"]).To(Equal("1|ALPHA"))

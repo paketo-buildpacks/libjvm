@@ -33,7 +33,7 @@ func (s SecurityProvidersClasspath9) Execute() (map[string]string, error) {
 		return nil, nil
 	}
 
-	s.Logger.Info("Adding $SECURITY_PROVIDERS_CLASSPATH to $CLASSPATH")
+	s.Logger.Debug("Adding $SECURITY_PROVIDERS_CLASSPATH to $CLASSPATH")
 
 	var values []string
 	if s, ok := os.LookupEnv("CLASSPATH"); ok {

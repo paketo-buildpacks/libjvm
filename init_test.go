@@ -35,6 +35,7 @@ func TestUnit(t *testing.T) {
 	suite("CertificateLoader", testCertificateLoader)
 	suite("Contributions", testContributions)
 	suite("Detect", testDetect)
+	suite("Generate", testGenerate)
 	suite("JavaSecurityProperties", testJavaSecurityProperties)
 	suite("JDK", testJDK)
 	suite("JRE", testJRE)

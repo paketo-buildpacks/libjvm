@@ -17,14 +17,16 @@
 package libjvm_test
 
 import (
-	"github.com/paketo-buildpacks/libpak/bard"
+	"fmt"
 	"io"
 	"os"
 	"testing"
 
+	"github.com/paketo-buildpacks/libpak"
+	"github.com/paketo-buildpacks/libpak/bard"
+
 	"github.com/buildpacks/libcnb"
 	. "github.com/onsi/gomega"
-	"github.com/paketo-buildpacks/libpak"
 	"github.com/sclevine/spec"
 
 	"github.com/paketo-buildpacks/libjvm"
@@ -64,16 +66,19 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		}
 		ctx.StackID = "test-stack-id"
 
-		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard)).Build(ctx)
+		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), libjvm.WithCustomFlattenContributorFn(func(creator libjvm.LayerContributor, ctx libcnb.BuildContext) (libcnb.Layer, error) {
+			name := creator.Name()
+			layer, err := ctx.Layers.Layer(name)
+			if err != nil {
+				return libcnb.Layer{}, fmt.Errorf("unable to create layer %s\n%w", name, err)
+			}
+			return layer, nil
+		})).Build(ctx)
+
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(result.Layers).To(HaveLen(1))
-		Expect(result.Layers[0].Name()).To(Equal("jdk"))
-
-		Expect(result.BOM.Entries).To(HaveLen(1))
-		Expect(result.BOM.Entries[0].Name).To(Equal("jdk"))
-		Expect(result.BOM.Entries[0].Launch).To(BeFalse())
-		Expect(result.BOM.Entries[0].Build).To(BeTrue())
+		Expect(result.Layers[0].Name).To(Equal("jdk"))
 	})
 
 	it("contributes JRE", func() {
@@ -90,19 +95,20 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		}
 		ctx.StackID = "test-stack-id"
 
-		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard)).Build(ctx)
+		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), libjvm.WithCustomFlattenContributorFn(func(creator libjvm.LayerContributor, ctx libcnb.BuildContext) (libcnb.Layer, error) {
+			name := creator.Name()
+			layer, err := ctx.Layers.Layer(name)
+			if err != nil {
+				return libcnb.Layer{}, fmt.Errorf("unable to create layer %s\n%w", name, err)
+			}
+			return layer, nil
+		})).Build(ctx)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(result.Layers).To(HaveLen(3))
-		Expect(result.Layers[0].Name()).To(Equal("jre"))
-		Expect(result.Layers[1].Name()).To(Equal("helper"))
-		Expect(result.Layers[2].Name()).To(Equal("java-security-properties"))
-
-		Expect(result.BOM.Entries).To(HaveLen(2))
-		Expect(result.BOM.Entries[0].Name).To(Equal("jre"))
-		Expect(result.BOM.Entries[0].Launch).To(BeTrue())
-		Expect(result.BOM.Entries[1].Name).To(Equal("helper"))
-		Expect(result.BOM.Entries[1].Launch).To(BeTrue())
+		Expect(result.Layers[0].Name).To(Equal("jre"))
+		Expect(result.Layers[1].Name).To(Equal("helper"))
+		Expect(result.Layers[2].Name).To(Equal("java-security-properties"))
 	})
 
 	it("contributes security-providers-classpath-8 before Java 9", func() {
@@ -118,10 +124,24 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		}
 		ctx.StackID = "test-stack-id"
 
-		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard)).Build(ctx)
+		var names []string
+		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), libjvm.WithCustomFlattenContributorFn(func(creator libjvm.LayerContributor, ctx libcnb.BuildContext) (libcnb.Layer, error) {
+			name := creator.Name()
+			layer, err := ctx.Layers.Layer(name)
+			if name == "helper" {
+				names = creator.(libpak.HelperLayerContributor).Names
+			}
+			if err != nil {
+				return libcnb.Layer{}, fmt.Errorf("unable to create layer %s\n%w", name, err)
+			}
+			return layer, nil
+		})).Build(ctx)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(result.Layers[1].(libpak.HelperLayerContributor).Names).To(Equal([]string{
+		Expect(result.Layers[0].Name).To(Equal("jre"))
+		Expect(result.Layers[1].Name).To(Equal("helper"))
+
+		Expect(names).To(Equal([]string{
 			"active-processor-count",
 			"java-opts",
 			"jvm-heap",
@@ -149,10 +169,23 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		}
 		ctx.StackID = "test-stack-id"
 
-		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard)).Build(ctx)
+		var names []string
+		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), libjvm.WithCustomFlattenContributorFn(func(creator libjvm.LayerContributor, ctx libcnb.BuildContext) (libcnb.Layer, error) {
+			name := creator.Name()
+			layer, err := ctx.Layers.Layer(name)
+			if name == "helper" {
+				names = creator.(libpak.HelperLayerContributor).Names
+			}
+			if err != nil {
+				return libcnb.Layer{}, fmt.Errorf("unable to create layer %s\n%w", name, err)
+			}
+			return layer, nil
+		})).Build(ctx)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(result.Layers[1].(libpak.HelperLayerContributor).Names).To(Equal([]string{
+		Expect(result.Layers[0].Name).To(Equal("jre"))
+
+		Expect(names).To(Equal([]string{
 			"active-processor-count",
 			"java-opts",
 			"jvm-heap",
@@ -182,18 +215,22 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		}
 		ctx.StackID = "test-stack-id"
 
-		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard)).Build(ctx)
+		var id string
+		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), libjvm.WithCustomFlattenContributorFn(func(creator libjvm.LayerContributor, ctx libcnb.BuildContext) (libcnb.Layer, error) {
+			name := creator.Name()
+			layer, err := ctx.Layers.Layer(name)
+			if name == "jdk" {
+				id = creator.(libjvm.JRE).LayerContributor.Dependency.ID
+			}
+			if err != nil {
+				return libcnb.Layer{}, fmt.Errorf("unable to create layer %s\n%w", name, err)
+			}
+			return layer, nil
+		})).Build(ctx)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(result.Layers[0].Name()).To(Equal("jdk"))
-		Expect(result.Layers[0].(libjvm.JRE).LayerContributor.Dependency.ID).To(Equal("jdk"))
-
-		Expect(result.BOM.Entries).To(HaveLen(2))
-		Expect(result.BOM.Entries[0].Name).To(Equal("jdk"))
-		Expect(result.BOM.Entries[0].Launch).To(BeTrue())
-		Expect(result.BOM.Entries[0].Build).To(BeTrue())
-		Expect(result.BOM.Entries[1].Name).To(Equal("helper"))
-		Expect(result.BOM.Entries[1].Launch).To(BeTrue())
+		Expect(result.Layers[0].Name).To(Equal("jdk"))
+		Expect(id).To(Equal("jdk"))
 	})
 
 	it("contributes JDK when no JRE and both a JDK and JRE are wanted", func() {
@@ -211,18 +248,23 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		}
 		ctx.StackID = "test-stack-id"
 
-		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard)).Build(ctx)
+		var id string
+		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), libjvm.WithCustomFlattenContributorFn(func(creator libjvm.LayerContributor, ctx libcnb.BuildContext) (libcnb.Layer, error) {
+			name := creator.Name()
+			layer, err := ctx.Layers.Layer(name)
+			if name == "jdk" {
+				id = creator.(libjvm.JRE).LayerContributor.Dependency.ID
+			}
+			if err != nil {
+				return libcnb.Layer{}, fmt.Errorf("unable to create layer %s\n%w", name, err)
+			}
+			return layer, nil
+		})).Build(ctx)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(result.Layers[0].Name()).To(Equal("jdk"))
-		Expect(result.Layers[0].(libjvm.JRE).LayerContributor.Dependency.ID).To(Equal("jdk"))
+		Expect(result.Layers[0].Name).To(Equal("jdk"))
+		Expect(id).To(Equal("jdk"))
 
-		Expect(result.BOM.Entries).To(HaveLen(2))
-		Expect(result.BOM.Entries[0].Name).To(Equal("jdk"))
-		Expect(result.BOM.Entries[0].Launch).To(BeTrue())
-		Expect(result.BOM.Entries[0].Build).To(BeTrue())
-		Expect(result.BOM.Entries[1].Name).To(Equal("helper"))
-		Expect(result.BOM.Entries[1].Launch).To(BeTrue())
 	})
 
 	it("contributes NIK API <= 0.6", func() {
@@ -244,16 +286,18 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		ctx.Buildpack.API = "0.6"
 		ctx.StackID = "test-stack-id"
 
-		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), nativeOptionBundledWithJDK).Build(ctx)
+		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), nativeOptionBundledWithJDK, libjvm.WithCustomFlattenContributorFn(func(creator libjvm.LayerContributor, ctx libcnb.BuildContext) (libcnb.Layer, error) {
+			name := creator.Name()
+			layer, err := ctx.Layers.Layer(name)
+			if err != nil {
+				return libcnb.Layer{}, fmt.Errorf("unable to create layer %s\n%w", name, err)
+			}
+			return layer, nil
+		})).Build(ctx)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(result.Layers).To(HaveLen(1))
-		Expect(result.Layers[0].Name()).To(Equal("native-image-svm"))
-
-		Expect(result.BOM.Entries).To(HaveLen(1))
-		Expect(result.BOM.Entries[0].Name).To(Equal("native-image-svm"))
-		Expect(result.BOM.Entries[0].Launch).To(BeFalse())
-		Expect(result.BOM.Entries[0].Build).To(BeTrue())
+		Expect(result.Layers[0].Name).To(Equal("native-image-svm"))
 	})
 
 	it("contributes NIK API >= 0.7", func() {
@@ -276,16 +320,18 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		ctx.Buildpack.API = "0.7"
 		ctx.StackID = "test-stack-id"
 
-		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), nativeOptionBundledWithJDK).Build(ctx)
+		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), nativeOptionBundledWithJDK, libjvm.WithCustomFlattenContributorFn(func(creator libjvm.LayerContributor, ctx libcnb.BuildContext) (libcnb.Layer, error) {
+			name := creator.Name()
+			layer, err := ctx.Layers.Layer(name)
+			if err != nil {
+				return libcnb.Layer{}, fmt.Errorf("unable to create layer %s\n%w", name, err)
+			}
+			return layer, nil
+		})).Build(ctx)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(result.Layers).To(HaveLen(1))
-		Expect(result.Layers[0].Name()).To(Equal("native-image-svm"))
-
-		Expect(result.BOM.Entries).To(HaveLen(1))
-		Expect(result.BOM.Entries[0].Name).To(Equal("native-image-svm"))
-		Expect(result.BOM.Entries[0].Launch).To(BeFalse())
-		Expect(result.BOM.Entries[0].Build).To(BeTrue())
+		Expect(result.Layers[0].Name).To(Equal("native-image-svm"))
 	})
 
 	context("native image enabled for API 0.7+ (not bundled with JDK)", func() {
@@ -319,20 +365,23 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			ctx.StackID = "test-stack-id"
 			ctx.Buildpack.API = "0.7"
 
-			result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), nativeOptionSeparateFromJDK).Build(ctx)
+			var dep *libpak.BuildModuleDependency
+			result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), nativeOptionSeparateFromJDK, libjvm.WithCustomFlattenContributorFn(func(creator libjvm.LayerContributor, ctx libcnb.BuildContext) (libcnb.Layer, error) {
+				name := creator.Name()
+				layer, err := ctx.Layers.Layer(name)
+				if name == "nik" {
+					dep = creator.(libjvm.NIK).NativeDependency
+				}
+				if err != nil {
+					return libcnb.Layer{}, fmt.Errorf("unable to create layer %s\n%w", name, err)
+				}
+				return layer, nil
+			})).Build(ctx)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(result.Layers).To(HaveLen(1))
-			Expect(result.Layers[0].Name()).To(Equal("nik"))
-			Expect(result.Layers[0].(libjvm.NIK).NativeDependency).NotTo(BeNil())
-
-			Expect(result.BOM.Entries).To(HaveLen(2))
-			Expect(result.BOM.Entries[0].Name).To(Equal("jdk"))
-			Expect(result.BOM.Entries[0].Launch).To(BeFalse())
-			Expect(result.BOM.Entries[0].Build).To(BeTrue())
-			Expect(result.BOM.Entries[1].Name).To(Equal("native-image-svm"))
-			Expect(result.BOM.Entries[1].Launch).To(BeTrue())
-			Expect(result.BOM.Entries[1].Build).To(BeTrue())
+			Expect(result.Layers[0].Name).To(Equal("nik"))
+			Expect(dep).NotTo(BeNil())
 		})
 	})
 
@@ -367,7 +416,14 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			ctx.StackID = "test-stack-id"
 			ctx.Buildpack.API = "0.7"
 
-			_, err := libjvm.NewBuild(bard.NewLogger(io.Discard), nativeOptionMissingCommand).Build(ctx)
+			_, err := libjvm.NewBuild(bard.NewLogger(io.Discard), nativeOptionMissingCommand, libjvm.WithCustomFlattenContributorFn(func(creator libjvm.LayerContributor, ctx libcnb.BuildContext) (libcnb.Layer, error) {
+				name := creator.Name()
+				layer, err := ctx.Layers.Layer(name)
+				if err != nil {
+					return libcnb.Layer{}, fmt.Errorf("unable to create layer %s\n%w", name, err)
+				}
+				return layer, nil
+			})).Build(ctx)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("unable to create NIK, custom command has not been supplied by buildpack"))
 		})
@@ -392,16 +448,18 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		ctx.Buildpack.API = "0.6"
 		ctx.StackID = "test-stack-id"
 
-		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), nativeOptionBundledWithJDK).Build(ctx)
+		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), nativeOptionBundledWithJDK, libjvm.WithCustomFlattenContributorFn(func(creator libjvm.LayerContributor, ctx libcnb.BuildContext) (libcnb.Layer, error) {
+			name := creator.Name()
+			layer, err := ctx.Layers.Layer(name)
+			if err != nil {
+				return libcnb.Layer{}, fmt.Errorf("unable to create layer %s\n%w", name, err)
+			}
+			return layer, nil
+		})).Build(ctx)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(result.Layers).To(HaveLen(1))
-		Expect(result.Layers[0].Name()).To(Equal("native-image-svm"))
-
-		Expect(result.BOM.Entries).To(HaveLen(1))
-		Expect(result.BOM.Entries[0].Name).To(Equal("native-image-svm"))
-		Expect(result.BOM.Entries[0].Launch).To(BeFalse())
-		Expect(result.BOM.Entries[0].Build).To(BeTrue())
+		Expect(result.Layers[0].Name).To(Equal("native-image-svm"))
 	})
 
 	context("$BP_JVM_VERSION", func() {
@@ -444,11 +502,27 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			}
 			ctx.StackID = "test-stack-id"
 
-			result, err := libjvm.NewBuild(bard.NewLogger(io.Discard)).Build(ctx)
+			var jdkver string
+			var jrever string
+			result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), libjvm.WithCustomFlattenContributorFn(func(creator libjvm.LayerContributor, ctx libcnb.BuildContext) (libcnb.Layer, error) {
+				name := creator.Name()
+				layer, err := ctx.Layers.Layer(name)
+				if name == "jdk" {
+					jdkver = creator.(libjvm.JDK).LayerContributor.Dependency.Version
+				}
+				if name == "jre" {
+					jrever = creator.(libjvm.JRE).LayerContributor.Dependency.Version
+				}
+				if err != nil {
+					return libcnb.Layer{}, fmt.Errorf("unable to create layer %s\n%w", name, err)
+				}
+				return layer, nil
+			})).Build(ctx)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(result.Layers[0].(libjvm.JDK).LayerContributor.Dependency.Version).To(Equal("1.1.1"))
-			Expect(result.Layers[1].(libjvm.JRE).LayerContributor.Dependency.Version).To(Equal("1.1.1"))
+			Expect(result.Layers[0].Name).To(Equal("jdk"))
+			Expect(jdkver).To(Equal("1.1.1"))
+			Expect(jrever).To(Equal("1.1.1"))
 		})
 	})
 
@@ -479,13 +553,22 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			}
 			ctx.StackID = "test-stack-id"
 
-			result, err := libjvm.NewBuild(bard.NewLogger(io.Discard)).Build(ctx)
+			var jdkid string
+			result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), libjvm.WithCustomFlattenContributorFn(func(creator libjvm.LayerContributor, ctx libcnb.BuildContext) (libcnb.Layer, error) {
+				name := creator.Name()
+				layer, err := ctx.Layers.Layer(name)
+				if name == "jdk" {
+					jdkid = creator.(libjvm.JRE).LayerContributor.Dependency.ID
+				}
+				if err != nil {
+					return libcnb.Layer{}, fmt.Errorf("unable to create layer %s\n%w", name, err)
+				}
+				return layer, nil
+			})).Build(ctx)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result.Layers[0].Name()).To(Equal("jdk"))
-			Expect(result.Layers[0].(libjvm.JRE).LayerContributor.Dependency.ID).To(Equal("jdk"))
+			Expect(result.Layers[0].Name).To(Equal("jdk"))
+			Expect(jdkid).To(Equal("jdk"))
 
-			Expect(result.BOM.Entries[0].Name).To(Equal("jdk"))
-			Expect(result.BOM.Entries[0].Launch).To(BeTrue())
 		})
 
 		it("contributes JRE when specified explicitly in $BP_JVM_TYPE", func() {
@@ -509,20 +592,26 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			}
 			ctx.StackID = "test-stack-id"
 
-			result, err := libjvm.NewBuild(bard.NewLogger(io.Discard)).Build(ctx)
+			var jdkid string
+			var jreid string
+			result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), libjvm.WithCustomFlattenContributorFn(func(creator libjvm.LayerContributor, ctx libcnb.BuildContext) (libcnb.Layer, error) {
+				name := creator.Name()
+				layer, err := ctx.Layers.Layer(name)
+				if name == "jdk" {
+					jdkid = creator.(libjvm.JDK).LayerContributor.Dependency.ID
+				}
+				if name == "jre" {
+					jreid = creator.(libjvm.JRE).LayerContributor.Dependency.ID
+				}
+				if err != nil {
+					return libcnb.Layer{}, fmt.Errorf("unable to create layer %s\n%w", name, err)
+				}
+				return layer, nil
+			})).Build(ctx)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result.Layers[0].Name()).To(Equal("jdk"))
-			Expect(result.Layers[0].(libjvm.JDK).LayerContributor.Dependency.ID).To(Equal("jdk"))
-			Expect(result.Layers[1].(libjvm.JRE).LayerContributor.Dependency.ID).To(Equal("jre"))
-
-			Expect(result.BOM.Entries).To(HaveLen(3))
-			Expect(result.BOM.Entries[0].Name).To(Equal("jdk"))
-			Expect(result.BOM.Entries[0].Launch).To(BeFalse())
-			Expect(result.BOM.Entries[0].Build).To(BeTrue())
-
-			Expect(result.BOM.Entries[1].Name).To(Equal("jre"))
-			Expect(result.BOM.Entries[1].Launch).To(BeTrue())
-			Expect(result.BOM.Entries[1].Build).To(BeTrue())
+			Expect(result.Layers[0].Name).To(Equal("jdk"))
+			Expect(jdkid).To(Equal("jdk"))
+			Expect(jreid).To(Equal("jre"))
 
 		})
 	})

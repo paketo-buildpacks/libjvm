@@ -64,7 +64,7 @@ func (a JVMHeapDump) Execute() (map[string]string, error) {
 		}
 
 		if !found {
-			a.Logger.Info("Enabling HeapDumpOnOutOfMemoryError")
+			a.Logger.Debug("Enabling HeapDumpOnOutOfMemoryError")
 			values = append(values, "-XX:+HeapDumpOnOutOfMemoryError")
 		}
 
@@ -77,7 +77,7 @@ func (a JVMHeapDump) Execute() (map[string]string, error) {
 		}
 
 		if !found {
-			a.Logger.Infof("Setting HeapDumpPath to %s", heapDumpPath)
+			a.Logger.Debug("Setting HeapDumpPath to %s", heapDumpPath)
 			values = append(values, fmt.Sprintf("-XX:HeapDumpPath=%s", heapDumpPath))
 		}
 	}

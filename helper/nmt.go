@@ -33,13 +33,13 @@ type NMT struct {
 func (n NMT) Execute() (map[string]string, error) {
 
 	if !ResolveBoolWithDefault("BPL_JAVA_NMT_ENABLED", true) {
-		n.Logger.Info("Disabling Java Native Memory Tracking")
+		n.Logger.Debug("Disabling Java Native Memory Tracking")
 		return nil, nil
 	}
 
 	level := sherpa.GetEnvWithDefault("BPL_JAVA_NMT_LEVEL", "summary")
 
-	n.Logger.Info("Enabling Java Native Memory Tracking")
+	n.Logger.Debug("Enabling Java Native Memory Tracking")
 
 	opts := sherpa.AppendToEnvVar("JAVA_TOOL_OPTIONS", " ", fmt.Sprintf("-XX:+UnlockDiagnosticVMOptions -XX:NativeMemoryTracking=%s -XX:+PrintNMTStatistics", level))
 

@@ -34,7 +34,7 @@ func (j JMX) Execute() (map[string]string, error) {
 
 	port := sherpa.GetEnvWithDefault("BPL_JMX_PORT", "5000")
 
-	j.Logger.Infof("JMX enabled on port %s", port)
+	j.Logger.Debug("JMX enabled on port %s", port)
 
 	opts := sherpa.AppendToEnvVar("JAVA_TOOL_OPTIONS", " ", "-Djava.rmi.server.hostname=127.0.0.1",
 		"-Dcom.sun.management.jmxremote.authenticate=false",

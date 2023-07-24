@@ -35,18 +35,18 @@ type JDK struct {
 	Logger            bard.Logger
 }
 
-func NewJDK(dependency libpak.BuildpackDependency, cache libpak.DependencyCache, certificateLoader CertificateLoader) (JDK, libcnb.BOMEntry, error) {
+func NewJDK(dependency libpak.BuildModuleDependency, cache libpak.DependencyCache, certificateLoader CertificateLoader) (JDK, error) {
 	expected := map[string]interface{}{"dependency": dependency}
 
 	if md, err := certificateLoader.Metadata(); err != nil {
-		return JDK{}, libcnb.BOMEntry{}, fmt.Errorf("unable to generate certificate loader metadata")
+		return JDK{}, fmt.Errorf("unable to generate certificate loader metadata")
 	} else {
 		for k, v := range md {
 			expected[k] = v
 		}
 	}
 
-	contributor, be := libpak.NewDependencyLayer(
+	contributor := libpak.NewDependencyLayerContributor(
 		dependency,
 		cache,
 		libcnb.LayerTypes{
@@ -58,7 +58,7 @@ func NewJDK(dependency libpak.BuildpackDependency, cache libpak.DependencyCache,
 	return JDK{
 		CertificateLoader: certificateLoader,
 		LayerContributor:  contributor,
-	}, be, nil
+	}, nil
 }
 
 func (j JDK) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
@@ -79,8 +79,8 @@ func (j JDK) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 		} else {
 			keyStorePath = filepath.Join(layer.Path, "lib", "security", "cacerts")
 		}
-		if err := os.Chmod(keyStorePath, 0664); err != nil{
-			return  libcnb.Layer{}, fmt.Errorf("unable to set keystore file permissions\n%w", err)
+		if err := os.Chmod(keyStorePath, 0664); err != nil {
+			return libcnb.Layer{}, fmt.Errorf("unable to set keystore file permissions\n%w", err)
 		}
 
 		if IsBeforeJava18(j.LayerContributor.Dependency.Version) {

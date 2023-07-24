@@ -33,7 +33,7 @@ func (j JavaOpts) Execute() (map[string]string, error) {
 		return nil, nil
 	}
 
-	j.Logger.Info("Adding $JAVA_OPTS to $JAVA_TOOL_OPTIONS")
+	j.Logger.Debug("Adding $JAVA_OPTS to $JAVA_TOOL_OPTIONS")
 
 	var values []string
 	if s, ok := os.LookupEnv("JAVA_TOOL_OPTIONS"); ok {

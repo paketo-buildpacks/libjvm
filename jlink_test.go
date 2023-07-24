@@ -17,16 +17,17 @@
 package libjvm_test
 
 import (
-	"github.com/paketo-buildpacks/libpak/crush"
-	"github.com/paketo-buildpacks/libpak/effect"
-	"github.com/paketo-buildpacks/libpak/effect/mocks"
-	"github.com/stretchr/testify/mock"
 	"io"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/paketo-buildpacks/libpak/crush"
+	"github.com/paketo-buildpacks/libpak/effect"
+	"github.com/paketo-buildpacks/libpak/effect/mocks"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/buildpacks/libcnb"
 	. "github.com/onsi/gomega"
@@ -63,7 +64,7 @@ func testJLink(t *testing.T, context spec.G, it spec.S) {
 
 		args := []string{"--no-man-pages", "--no-header-files", "--strip-debug"}
 		exec := &mocks.Executor{}
-		j, err := libjvm.NewJLink(ctx.Application.Path, exec, args, cl, LaunchContribution, false)
+		j, err := libjvm.NewJLink(ctx.ApplicationPath, exec, args, cl, LaunchContribution, false)
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(io.Discard)
 
@@ -103,7 +104,7 @@ func testJLink(t *testing.T, context spec.G, it spec.S) {
 
 		args := []string{"--no-man-pages", "--no-header-files", "--strip-debug", "--add-modules", "java.se"}
 		exec := &mocks.Executor{}
-		j, err := libjvm.NewJLink(ctx.Application.Path, exec, args, cl, LaunchContribution, true)
+		j, err := libjvm.NewJLink(ctx.ApplicationPath, exec, args, cl, LaunchContribution, true)
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(io.Discard)
 
@@ -133,7 +134,7 @@ func testJLink(t *testing.T, context spec.G, it spec.S) {
 
 		args := []string{"--no-man-pages", "--no-header-files", "--strip-debug", "--add-modules", "ALL-MODULE-PATH"}
 		exec := &mocks.Executor{}
-		j, err := libjvm.NewJLink(ctx.Application.Path, exec, args, cl, LaunchContribution, true)
+		j, err := libjvm.NewJLink(ctx.ApplicationPath, exec, args, cl, LaunchContribution, true)
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(io.Discard)
 
@@ -166,7 +167,7 @@ func testJLink(t *testing.T, context spec.G, it spec.S) {
 
 		args := []string{"--no-man-pages", "--no-header-files", "--strip-debug"}
 		exec := &mocks.Executor{}
-		j, err := libjvm.NewJLink(ctx.Application.Path, exec, args, cl, LaunchContribution, true)
+		j, err := libjvm.NewJLink(ctx.ApplicationPath, exec, args, cl, LaunchContribution, true)
 		Expect(err).NotTo(HaveOccurred())
 		j.Logger = bard.NewLogger(io.Discard)
 
