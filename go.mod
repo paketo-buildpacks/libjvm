@@ -9,8 +9,8 @@ require (
 	github.com/magiconair/properties v1.8.7
 	github.com/mattn/go-shellwords v1.0.12
 	github.com/miekg/dns v1.1.55
-	github.com/onsi/gomega v1.27.9
-	github.com/paketo-buildpacks/libpak v1.66.1
+	github.com/onsi/gomega v1.27.10
+	github.com/paketo-buildpacks/libpak v1.66.2
 	github.com/pavlo-v-chernykh/keystore-go/v4 v4.4.1
 	github.com/sclevine/spec v1.4.0
 	github.com/stretchr/testify v1.8.4
