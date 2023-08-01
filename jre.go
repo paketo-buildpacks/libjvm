@@ -44,7 +44,7 @@ type JRE struct {
 }
 
 func NewJRE(applicationPath string, dependency libpak.BuildModuleDependency, cache libpak.DependencyCache, distributionType DistributionType, certificateLoader CertificateLoader, metadata map[string]interface{}) (JRE, error) {
-	expected := map[string]interface{}{"dependency": dependency}
+	expected := map[string]interface{}{"dependency": dependency.GetMetadata()}
 
 	if md, err := certificateLoader.Metadata(); err != nil {
 		return JRE{}, fmt.Errorf("unable to generate certificate loader metadata\n%w", err)
