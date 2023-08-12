@@ -22,7 +22,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/buildpacks/libcnb"
+	"github.com/buildpacks/libcnb/v2"
 	. "github.com/onsi/gomega"
 	"github.com/paketo-buildpacks/libjvm"
 	"github.com/paketo-buildpacks/libpak"

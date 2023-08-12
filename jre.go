@@ -25,7 +25,7 @@ import (
 
 	"github.com/heroku/color"
 
-	"github.com/buildpacks/libcnb"
+	"github.com/buildpacks/libcnb/v2"
 	"github.com/magiconair/properties"
 	"github.com/paketo-buildpacks/libpak"
 	"github.com/paketo-buildpacks/libpak/bard"

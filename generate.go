@@ -24,7 +24,7 @@ import (
 	"path/filepath"
 
 	"github.com/BurntSushi/toml"
-	"github.com/buildpacks/libcnb"
+	"github.com/buildpacks/libcnb/v2"
 	"github.com/paketo-buildpacks/libpak"
 	"github.com/paketo-buildpacks/libpak/bard"
 )
@@ -68,7 +68,7 @@ type ExtendImageConfigArg struct {
 
 func NewGenerate(logger bard.Logger, contentBuilder GenerateContentBuilder) Generate {
 	return Generate{
-		Logger: logger,
+		Logger:                 logger,
 		GenerateContentBuilder: contentBuilder,
 	}
 }

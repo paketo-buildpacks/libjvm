@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/buildpacks/libcnb"
+	"github.com/buildpacks/libcnb/v2"
 	"github.com/heroku/color"
 	"github.com/magiconair/properties"
 	"github.com/paketo-buildpacks/libjvm/count"

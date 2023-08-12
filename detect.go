@@ -17,7 +17,7 @@
 package libjvm
 
 import (
-	"github.com/buildpacks/libcnb"
+	"github.com/buildpacks/libcnb/v2"
 )
 
 const (
