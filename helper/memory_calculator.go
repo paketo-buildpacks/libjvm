@@ -26,7 +26,7 @@ import (
 
 	"github.com/mattn/go-shellwords"
 
-	"github.com/paketo-buildpacks/libpak/bard"
+	"github.com/paketo-buildpacks/libpak/v2/bard"
 
 	"github.com/paketo-buildpacks/libjvm/calc"
 	"github.com/paketo-buildpacks/libjvm/count"

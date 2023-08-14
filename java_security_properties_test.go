@@ -29,7 +29,7 @@ import (
 	"github.com/sclevine/spec"
 
 	"github.com/paketo-buildpacks/libjvm"
-	"github.com/paketo-buildpacks/libpak/bard"
+	"github.com/paketo-buildpacks/libpak/v2/bard"
 )
 
 func testJavaSecurityProperties(t *testing.T, context spec.G, it spec.S) {

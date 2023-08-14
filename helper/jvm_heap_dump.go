@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"github.com/mattn/go-shellwords"
-	"github.com/paketo-buildpacks/libpak/bard"
+	"github.com/paketo-buildpacks/libpak/v2/bard"
 )
 
 type JVMHeapDump struct {

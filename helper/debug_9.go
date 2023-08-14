@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/paketo-buildpacks/libpak/sherpa"
+	"github.com/paketo-buildpacks/libpak/v2/sherpa"
 
-	"github.com/paketo-buildpacks/libpak/bard"
+	"github.com/paketo-buildpacks/libpak/v2/bard"
 )
 
 type Debug9 struct {

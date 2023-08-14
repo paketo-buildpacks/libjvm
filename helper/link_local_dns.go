@@ -22,7 +22,7 @@ import (
 	"os"
 
 	"github.com/miekg/dns"
-	"github.com/paketo-buildpacks/libpak/bard"
+	"github.com/paketo-buildpacks/libpak/v2/bard"
 	"golang.org/x/sys/unix"
 )
 

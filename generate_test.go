@@ -23,7 +23,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/paketo-buildpacks/libpak/bard"
+	"github.com/paketo-buildpacks/libpak/v2/bard"
 
 	"github.com/buildpacks/libcnb/v2"
 	. "github.com/onsi/gomega"

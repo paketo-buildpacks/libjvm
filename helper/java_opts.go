@@ -20,7 +20,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/paketo-buildpacks/libpak/bard"
+	"github.com/paketo-buildpacks/libpak/v2/bard"
 )
 
 type JavaOpts struct {

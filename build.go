@@ -21,12 +21,12 @@ import (
 	"strings"
 
 	"github.com/mattn/go-shellwords"
-	"github.com/paketo-buildpacks/libpak/effect"
 
 	"github.com/buildpacks/libcnb/v2"
 	"github.com/heroku/color"
-	"github.com/paketo-buildpacks/libpak"
-	"github.com/paketo-buildpacks/libpak/bard"
+	"github.com/paketo-buildpacks/libpak/v2"
+	"github.com/paketo-buildpacks/libpak/v2/bard"
+	"github.com/paketo-buildpacks/libpak/v2/effect"
 )
 
 // layer contributor was removed as concept in libcnb 2.x

@@ -12,9 +12,9 @@ import (
 	"github.com/heroku/color"
 	"github.com/magiconair/properties"
 	"github.com/paketo-buildpacks/libjvm/count"
-	"github.com/paketo-buildpacks/libpak"
-	"github.com/paketo-buildpacks/libpak/bard"
-	"github.com/paketo-buildpacks/libpak/effect"
+	"github.com/paketo-buildpacks/libpak/v2"
+	"github.com/paketo-buildpacks/libpak/v2/bard"
+	"github.com/paketo-buildpacks/libpak/v2/effect"
 )
 
 type JLink struct {

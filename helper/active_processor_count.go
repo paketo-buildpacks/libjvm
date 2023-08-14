@@ -23,7 +23,7 @@ import (
 	"strings"
 
 	"github.com/mattn/go-shellwords"
-	"github.com/paketo-buildpacks/libpak/bard"
+	"github.com/paketo-buildpacks/libpak/v2/bard"
 )
 
 type ActiveProcessorCount struct {

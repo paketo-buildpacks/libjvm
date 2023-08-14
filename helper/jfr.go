@@ -21,9 +21,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/paketo-buildpacks/libpak/sherpa"
-
-	"github.com/paketo-buildpacks/libpak/bard"
+	"github.com/paketo-buildpacks/libpak/v2/bard"
+	"github.com/paketo-buildpacks/libpak/v2/sherpa"
 )
 
 type JFR struct {

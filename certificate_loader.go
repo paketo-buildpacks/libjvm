@@ -28,7 +28,7 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/paketo-buildpacks/libpak/sherpa"
+	"github.com/paketo-buildpacks/libpak/v2/sherpa"
 	"github.com/pavlo-v-chernykh/keystore-go/v4"
 	"golang.org/x/sys/unix"
 )
