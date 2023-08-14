@@ -31,7 +31,7 @@ import (
 	"github.com/paketo-buildpacks/libpak/v2/bard"
 	"github.com/paketo-buildpacks/libpak/v2/crush"
 
-	"github.com/paketo-buildpacks/libjvm/count"
+	"github.com/paketo-buildpacks/libjvm/v2/count"
 )
 
 type JRE struct {

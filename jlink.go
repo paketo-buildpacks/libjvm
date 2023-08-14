@@ -11,7 +11,7 @@ import (
 	"github.com/buildpacks/libcnb/v2"
 	"github.com/heroku/color"
 	"github.com/magiconair/properties"
-	"github.com/paketo-buildpacks/libjvm/count"
+	"github.com/paketo-buildpacks/libjvm/v2/count"
 	"github.com/paketo-buildpacks/libpak/v2"
 	"github.com/paketo-buildpacks/libpak/v2/bard"
 	"github.com/paketo-buildpacks/libpak/v2/effect"

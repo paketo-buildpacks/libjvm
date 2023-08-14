@@ -28,7 +28,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/sclevine/spec"
 
-	"github.com/paketo-buildpacks/libjvm"
+	"github.com/paketo-buildpacks/libjvm/v2"
 	"github.com/paketo-buildpacks/libpak/v2/bard"
 )
 

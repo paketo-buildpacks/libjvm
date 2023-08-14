@@ -22,7 +22,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/sclevine/spec"
 
-	"github.com/paketo-buildpacks/libjvm/calc"
+	"github.com/paketo-buildpacks/libjvm/v2/calc"
 )
 
 func testReservedCodeCache(t *testing.T, context spec.G, it spec.S) {

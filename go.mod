@@ -1,4 +1,4 @@
-module github.com/paketo-buildpacks/libjvm
+module github.com/paketo-buildpacks/libjvm/v2
 
 go 1.20
 
@@ -11,7 +11,7 @@ require (
 	github.com/mattn/go-shellwords v1.0.12
 	github.com/miekg/dns v1.1.55
 	github.com/onsi/gomega v1.27.10
-	github.com/paketo-buildpacks/libpak/v2 v2.0.0-20230814130800-d2aac91e2edf
+	github.com/paketo-buildpacks/libpak/v2 v2.0.0-alpha.1
 	github.com/pavlo-v-chernykh/keystore-go/v4 v4.4.1
 	github.com/sclevine/spec v1.4.0
 	github.com/stretchr/testify v1.8.4

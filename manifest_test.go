@@ -27,7 +27,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/sclevine/spec"
 
-	"github.com/paketo-buildpacks/libjvm"
+	"github.com/paketo-buildpacks/libjvm/v2"
 )
 
 func testNewManifest(t *testing.T, context spec.G, it spec.S) {

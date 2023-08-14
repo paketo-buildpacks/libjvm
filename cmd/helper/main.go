@@ -24,8 +24,8 @@ import (
 	"github.com/paketo-buildpacks/libpak/v2/bard"
 	"github.com/paketo-buildpacks/libpak/v2/sherpa"
 
-	"github.com/paketo-buildpacks/libjvm"
-	"github.com/paketo-buildpacks/libjvm/helper"
+	"github.com/paketo-buildpacks/libjvm/v2"
+	"github.com/paketo-buildpacks/libjvm/v2/helper"
 )
 
 func main() {
