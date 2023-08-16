@@ -23,7 +23,7 @@ jobs:
 
                 set -euo pipefail
 
-                go install -ldflags="-s -w" github.com/paketo-buildpacks/pipeline-builder/cmd/octo@latest
+                go install -ldflags="-s -w" github.com/paketo-buildpacks/pipeline-builder/v2/cmd/octo@v2.0.0-alpha.1
             - uses: actions/checkout@v3
             - name: Update Pipeline
               id: pipeline

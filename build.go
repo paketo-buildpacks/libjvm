@@ -29,35 +29,14 @@ import (
 	"github.com/paketo-buildpacks/libpak/v2/effect"
 )
 
-// layer contributor was removed as concept in libcnb 2.x
-type LayerContributor interface {
-	// Contribute accepts a layer and transforms it, returning a layer.
-	Contribute(layer libcnb.Layer) (libcnb.Layer, error)
-	// Name is the name of the layer.
-	Name() string
-}
-
 type Build struct {
 	Logger               bard.Logger
-	Result               libcnb.BuildResult
 	CertLoader           CertificateLoader
 	DependencyCache      libpak.DependencyCache
 	Native               NativeImage
 	CustomHelpers        []string
-	FlattenContributorFn func(creator LayerContributor, ctx libcnb.BuildContext) (libcnb.Layer, error)
-}
-
-func DefaultFlattenContributorFn(creator LayerContributor, ctx libcnb.BuildContext) (libcnb.Layer, error) {
-	name := creator.Name()
-	layer, err := ctx.Layers.Layer(name)
-	if err != nil {
-		return libcnb.Layer{}, fmt.Errorf("unable to create layer %s\n%w", name, err)
-	}
-	layer, err = creator.Contribute(layer)
-	if err != nil {
-		return libcnb.Layer{}, fmt.Errorf("unable to invoke layer creator\n%w", err)
-	}
-	return layer, nil
+	Contributable        []libpak.Contributable
+	FlattenContributorFn libpak.FlattenContributableFn
 }
 
 type BuildOption func(build Build) Build
@@ -76,7 +55,7 @@ func WithCustomHelpers(customHelpers []string) BuildOption {
 	}
 }
 
-func WithCustomFlattenContributorFn(fn func(creator LayerContributor, ctx libcnb.BuildContext) (libcnb.Layer, error)) BuildOption {
+func WithCustomFlattenContributorFn(fn libpak.FlattenContributableFn) BuildOption {
 	return func(build Build) Build {
 		build.FlattenContributorFn = fn
 		return build
@@ -89,9 +68,9 @@ func NewBuild(logger bard.Logger, buildOpts ...BuildOption) Build {
 
 	build := Build{
 		Logger:               logger,
-		Result:               libcnb.NewBuildResult(),
 		CertLoader:           cl,
-		FlattenContributorFn: DefaultFlattenContributorFn,
+		Contributable:        []libpak.Contributable{},
+		FlattenContributorFn: libpak.DefaultFlattenContributableFn,
 	}
 
 	for _, option := range buildOpts {
@@ -127,7 +106,7 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 	}
 
 	if !jdkRequired && !jreRequired && !nativeImage {
-		return b.Result, nil
+		return libcnb.BuildResult{}, nil
 	}
 	b.Logger.Title(context.Buildpack.Info.Name, context.Buildpack.Info.Version, context.Buildpack.Info.Homepage)
 
@@ -183,15 +162,15 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 			return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)
 		}
 		if b.Native.BundledWithJDK {
-			if err = b.contributeJDK(depNative, context); err != nil {
+			if err = b.contributeJDK(depNative); err != nil {
 				return libcnb.BuildResult{}, fmt.Errorf("unable to contribute Native Image bundled with JDK\n%w", err)
 			}
-			return b.Result, nil
+			return b.createResult(context)
 		}
-		if err = b.contributeNIK(depJDK, depNative, context); err != nil {
+		if err = b.contributeNIK(depJDK, depNative); err != nil {
 			return libcnb.BuildResult{}, fmt.Errorf("unable to contribute Native Image\n%w", err)
 		}
-		return b.Result, nil
+		return b.createResult(context)
 	}
 
 	// jLink
@@ -199,17 +178,17 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 		if IsBeforeJava9(v) {
 			return libcnb.BuildResult{}, fmt.Errorf("unable to build, jlink is compatible with Java 9+ only\n")
 		}
-		if err = b.contributeJDK(depJDK, context); err != nil {
+		if err = b.contributeJDK(depJDK); err != nil {
 			return libcnb.BuildResult{}, fmt.Errorf("unable to contribute JDK for Jlink\n%w", err)
 		}
-		if err = b.contributeJLink(cr, jrePlanEntry.Metadata, context.ApplicationPath, depJDK, context); err != nil {
+		if err = b.contributeJLink(cr, jrePlanEntry.Metadata, context.ApplicationPath, depJDK); err != nil {
 			return libcnb.BuildResult{}, fmt.Errorf("unable to contribute Jlink\n%w", err)
 		}
 		err := b.contributeHelpers(context, depJDK)
 		if err != nil {
 			return libcnb.BuildResult{}, fmt.Errorf("unable to contribute helpers\n%w", err)
 		}
-		return b.Result, nil
+		return b.createResult(context)
 	}
 
 	// use JDK as JRE
@@ -222,12 +201,12 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 		if err != nil {
 			return libcnb.BuildResult{}, fmt.Errorf("unable to contribute helpers\n%w", err)
 		}
-		return b.Result, nil
+		return b.createResult(context)
 	}
 
 	// contribute a JDK
 	if jdkRequired {
-		if err = b.contributeJDK(depJDK, context); err != nil {
+		if err = b.contributeJDK(depJDK); err != nil {
 			return libcnb.BuildResult{}, fmt.Errorf("unable to contribute JDK \n%w", err)
 		}
 	}
@@ -235,7 +214,7 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 	// contribute a JRE
 	if jreRequired {
 		dt := JREType
-		if err = b.contributeJRE(depJRE, context.ApplicationPath, dt, jrePlanEntry.Metadata, context); err != nil {
+		if err = b.contributeJRE(depJRE, context.ApplicationPath, dt, jrePlanEntry.Metadata); err != nil {
 			return libcnb.BuildResult{}, fmt.Errorf("unable to contribute JDK \n%w", err)
 		}
 		if IsLaunchContribution(jrePlanEntry.Metadata) {
@@ -246,21 +225,30 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 		}
 	}
 
-	return b.Result, nil
+	return b.createResult(context)
 }
 
-func (b *Build) contributeJDK(jdkDep libpak.BuildModuleDependency, ctx libcnb.BuildContext) error {
+func (b *Build) createResult(ctx libcnb.BuildContext) (libcnb.BuildResult, error) {
+	result := libcnb.BuildResult{}
+	for _, c := range b.Contributable {
+		l, err := b.FlattenContributorFn(c, ctx)
+		if err != nil {
+			return libcnb.BuildResult{}, fmt.Errorf("unable to contribute layer %s\n%w", c.Name(), err)
+		}
+		result.Layers = append(result.Layers, l)
+	}
+
+	return result, nil
+}
+
+func (b *Build) contributeJDK(jdkDep libpak.BuildModuleDependency) error {
 	jdk, err := NewJDK(jdkDep, b.DependencyCache, b.CertLoader)
 	if err != nil {
 		return fmt.Errorf("unable to create jdk\n%w", err)
 	}
 	jdk.Logger = b.Logger
 
-	l, err := b.FlattenContributorFn(jdk, ctx)
-	if err != nil {
-		return fmt.Errorf("unable to contribute jdk layer\n%w", err)
-	}
-	b.Result.Layers = append(b.Result.Layers, l)
+	b.Contributable = append(b.Contributable, jdk)
 	return nil
 }
 
@@ -270,28 +258,23 @@ func (b *Build) contributeJDKAsJRE(jdkDep libpak.BuildModuleDependency, jrePlanE
 	jrePlanEntry.Metadata["cache"] = true
 
 	dt := JDKType
-	if err := b.contributeJRE(jdkDep, context.ApplicationPath, dt, jrePlanEntry.Metadata, context); err != nil {
+	if err := b.contributeJRE(jdkDep, context.ApplicationPath, dt, jrePlanEntry.Metadata); err != nil {
 		return fmt.Errorf("unable to contribute JRE\n%w", err)
 	}
 	return nil
 }
 
-func (b *Build) contributeJRE(jreDep libpak.BuildModuleDependency, appPath string, distributionType DistributionType, metadata map[string]interface{}, ctx libcnb.BuildContext) error {
+func (b *Build) contributeJRE(jreDep libpak.BuildModuleDependency, appPath string, distributionType DistributionType, metadata map[string]interface{}) error {
 	jre, err := NewJRE(appPath, jreDep, b.DependencyCache, distributionType, b.CertLoader, metadata)
 	if err != nil {
 		return fmt.Errorf("unable to create jre\n%w", err)
 	}
-
 	jre.Logger = b.Logger
-	l, err := b.FlattenContributorFn(jre, ctx)
-	if err != nil {
-		return fmt.Errorf("unable to contribute jre layer\n%w", err)
-	}
-	b.Result.Layers = append(b.Result.Layers, l)
+	b.Contributable = append(b.Contributable, jre)
 	return nil
 }
 
-func (b *Build) contributeJLink(configurationResolver libpak.ConfigurationResolver, planEntryMetadata map[string]interface{}, appPath string, jdkDep libpak.BuildModuleDependency, ctx libcnb.BuildContext) error {
+func (b *Build) contributeJLink(configurationResolver libpak.ConfigurationResolver, planEntryMetadata map[string]interface{}, appPath string, jdkDep libpak.BuildModuleDependency) error {
 	args, explicit := configurationResolver.Resolve("BP_JVM_JLINK_ARGS")
 	argList, err := shellwords.Parse(args)
 	if err != nil {
@@ -304,15 +287,12 @@ func (b *Build) contributeJLink(configurationResolver libpak.ConfigurationResolv
 	}
 	jlink.JavaVersion = jdkDep.Version
 	jlink.Logger = b.Logger
-	l, err := b.FlattenContributorFn(jlink, ctx)
-	if err != nil {
-		return fmt.Errorf("unable to contribute jlink layer\n%w", err)
-	}
-	b.Result.Layers = append(b.Result.Layers, l)
+
+	b.Contributable = append(b.Contributable, jlink)
 	return nil
 }
 
-func (b *Build) contributeNIK(jdkDep libpak.BuildModuleDependency, nativeDep libpak.BuildModuleDependency, ctx libcnb.BuildContext) error {
+func (b *Build) contributeNIK(jdkDep libpak.BuildModuleDependency, nativeDep libpak.BuildModuleDependency) error {
 	if !(len(b.Native.CustomCommand) > 0) {
 		return fmt.Errorf("unable to create NIK, custom command has not been supplied by buildpack")
 	}
@@ -321,11 +301,7 @@ func (b *Build) contributeNIK(jdkDep libpak.BuildModuleDependency, nativeDep lib
 		return fmt.Errorf("unable to create NIK with custom command: %s and custom args: %s \n%w", b.Native.CustomCommand, b.Native.CustomArgs, err)
 	}
 	nik.Logger = b.Logger
-	l, err := b.FlattenContributorFn(nik, ctx)
-	if err != nil {
-		return fmt.Errorf("unable to contribute nik layer\n%w", err)
-	}
-	b.Result.Layers = append(b.Result.Layers, l)
+	b.Contributable = append(b.Contributable, nik)
 	return nil
 }
 
@@ -363,19 +339,11 @@ func (b *Build) contributeHelpers(context libcnb.BuildContext, depJRE libpak.Bui
 
 	h := libpak.NewHelperLayerContributor(context.Buildpack, helpers...)
 	h.Logger = b.Logger
-	l, err := b.FlattenContributorFn(h, context)
-	if err != nil {
-		return fmt.Errorf("unable to contribute helper layer\n%w", err)
-	}
-	b.Result.Layers = append(b.Result.Layers, l)
+	b.Contributable = append(b.Contributable, h)
 
 	jsp := NewJavaSecurityProperties(context.Buildpack.Info)
 	jsp.Logger = b.Logger
-	l, err = b.FlattenContributorFn(jsp, context)
-	if err != nil {
-		return fmt.Errorf("unable to contribute jsp layer\n%w", err)
-	}
-	b.Result.Layers = append(b.Result.Layers, l)
+	b.Contributable = append(b.Contributable, jsp)
 
 	return nil
 }

@@ -66,7 +66,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		}
 		ctx.StackID = "test-stack-id"
 
-		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), libjvm.WithCustomFlattenContributorFn(func(creator libjvm.LayerContributor, ctx libcnb.BuildContext) (libcnb.Layer, error) {
+		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), libjvm.WithCustomFlattenContributorFn(func(creator libpak.Contributable, ctx libcnb.BuildContext) (libcnb.Layer, error) {
 			name := creator.Name()
 			layer, err := ctx.Layers.Layer(name)
 			if err != nil {
@@ -95,7 +95,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		}
 		ctx.StackID = "test-stack-id"
 
-		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), libjvm.WithCustomFlattenContributorFn(func(creator libjvm.LayerContributor, ctx libcnb.BuildContext) (libcnb.Layer, error) {
+		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), libjvm.WithCustomFlattenContributorFn(func(creator libpak.Contributable, ctx libcnb.BuildContext) (libcnb.Layer, error) {
 			name := creator.Name()
 			layer, err := ctx.Layers.Layer(name)
 			if err != nil {
@@ -125,7 +125,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		ctx.StackID = "test-stack-id"
 
 		var names []string
-		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), libjvm.WithCustomFlattenContributorFn(func(creator libjvm.LayerContributor, ctx libcnb.BuildContext) (libcnb.Layer, error) {
+		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), libjvm.WithCustomFlattenContributorFn(func(creator libpak.Contributable, ctx libcnb.BuildContext) (libcnb.Layer, error) {
 			name := creator.Name()
 			layer, err := ctx.Layers.Layer(name)
 			if name == "helper" {
@@ -170,7 +170,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		ctx.StackID = "test-stack-id"
 
 		var names []string
-		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), libjvm.WithCustomFlattenContributorFn(func(creator libjvm.LayerContributor, ctx libcnb.BuildContext) (libcnb.Layer, error) {
+		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), libjvm.WithCustomFlattenContributorFn(func(creator libpak.Contributable, ctx libcnb.BuildContext) (libcnb.Layer, error) {
 			name := creator.Name()
 			layer, err := ctx.Layers.Layer(name)
 			if name == "helper" {
@@ -216,7 +216,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		ctx.StackID = "test-stack-id"
 
 		var id string
-		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), libjvm.WithCustomFlattenContributorFn(func(creator libjvm.LayerContributor, ctx libcnb.BuildContext) (libcnb.Layer, error) {
+		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), libjvm.WithCustomFlattenContributorFn(func(creator libpak.Contributable, ctx libcnb.BuildContext) (libcnb.Layer, error) {
 			name := creator.Name()
 			layer, err := ctx.Layers.Layer(name)
 			if name == "jdk" {
@@ -249,7 +249,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		ctx.StackID = "test-stack-id"
 
 		var id string
-		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), libjvm.WithCustomFlattenContributorFn(func(creator libjvm.LayerContributor, ctx libcnb.BuildContext) (libcnb.Layer, error) {
+		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), libjvm.WithCustomFlattenContributorFn(func(creator libpak.Contributable, ctx libcnb.BuildContext) (libcnb.Layer, error) {
 			name := creator.Name()
 			layer, err := ctx.Layers.Layer(name)
 			if name == "jdk" {
@@ -286,7 +286,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		ctx.Buildpack.API = "0.6"
 		ctx.StackID = "test-stack-id"
 
-		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), nativeOptionBundledWithJDK, libjvm.WithCustomFlattenContributorFn(func(creator libjvm.LayerContributor, ctx libcnb.BuildContext) (libcnb.Layer, error) {
+		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), nativeOptionBundledWithJDK, libjvm.WithCustomFlattenContributorFn(func(creator libpak.Contributable, ctx libcnb.BuildContext) (libcnb.Layer, error) {
 			name := creator.Name()
 			layer, err := ctx.Layers.Layer(name)
 			if err != nil {
@@ -320,7 +320,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		ctx.Buildpack.API = "0.7"
 		ctx.StackID = "test-stack-id"
 
-		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), nativeOptionBundledWithJDK, libjvm.WithCustomFlattenContributorFn(func(creator libjvm.LayerContributor, ctx libcnb.BuildContext) (libcnb.Layer, error) {
+		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), nativeOptionBundledWithJDK, libjvm.WithCustomFlattenContributorFn(func(creator libpak.Contributable, ctx libcnb.BuildContext) (libcnb.Layer, error) {
 			name := creator.Name()
 			layer, err := ctx.Layers.Layer(name)
 			if err != nil {
@@ -366,7 +366,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			ctx.Buildpack.API = "0.7"
 
 			var dep *libpak.BuildModuleDependency
-			result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), nativeOptionSeparateFromJDK, libjvm.WithCustomFlattenContributorFn(func(creator libjvm.LayerContributor, ctx libcnb.BuildContext) (libcnb.Layer, error) {
+			result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), nativeOptionSeparateFromJDK, libjvm.WithCustomFlattenContributorFn(func(creator libpak.Contributable, ctx libcnb.BuildContext) (libcnb.Layer, error) {
 				name := creator.Name()
 				layer, err := ctx.Layers.Layer(name)
 				if name == "nik" {
@@ -416,7 +416,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			ctx.StackID = "test-stack-id"
 			ctx.Buildpack.API = "0.7"
 
-			_, err := libjvm.NewBuild(bard.NewLogger(io.Discard), nativeOptionMissingCommand, libjvm.WithCustomFlattenContributorFn(func(creator libjvm.LayerContributor, ctx libcnb.BuildContext) (libcnb.Layer, error) {
+			_, err := libjvm.NewBuild(bard.NewLogger(io.Discard), nativeOptionMissingCommand, libjvm.WithCustomFlattenContributorFn(func(creator libpak.Contributable, ctx libcnb.BuildContext) (libcnb.Layer, error) {
 				name := creator.Name()
 				layer, err := ctx.Layers.Layer(name)
 				if err != nil {
@@ -448,7 +448,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		ctx.Buildpack.API = "0.6"
 		ctx.StackID = "test-stack-id"
 
-		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), nativeOptionBundledWithJDK, libjvm.WithCustomFlattenContributorFn(func(creator libjvm.LayerContributor, ctx libcnb.BuildContext) (libcnb.Layer, error) {
+		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), nativeOptionBundledWithJDK, libjvm.WithCustomFlattenContributorFn(func(creator libpak.Contributable, ctx libcnb.BuildContext) (libcnb.Layer, error) {
 			name := creator.Name()
 			layer, err := ctx.Layers.Layer(name)
 			if err != nil {
@@ -504,7 +504,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 			var jdkver string
 			var jrever string
-			result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), libjvm.WithCustomFlattenContributorFn(func(creator libjvm.LayerContributor, ctx libcnb.BuildContext) (libcnb.Layer, error) {
+			result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), libjvm.WithCustomFlattenContributorFn(func(creator libpak.Contributable, ctx libcnb.BuildContext) (libcnb.Layer, error) {
 				name := creator.Name()
 				layer, err := ctx.Layers.Layer(name)
 				if name == "jdk" {
@@ -554,7 +554,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			ctx.StackID = "test-stack-id"
 
 			var jdkid string
-			result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), libjvm.WithCustomFlattenContributorFn(func(creator libjvm.LayerContributor, ctx libcnb.BuildContext) (libcnb.Layer, error) {
+			result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), libjvm.WithCustomFlattenContributorFn(func(creator libpak.Contributable, ctx libcnb.BuildContext) (libcnb.Layer, error) {
 				name := creator.Name()
 				layer, err := ctx.Layers.Layer(name)
 				if name == "jdk" {
@@ -594,7 +594,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 			var jdkid string
 			var jreid string
-			result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), libjvm.WithCustomFlattenContributorFn(func(creator libjvm.LayerContributor, ctx libcnb.BuildContext) (libcnb.Layer, error) {
+			result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), libjvm.WithCustomFlattenContributorFn(func(creator libpak.Contributable, ctx libcnb.BuildContext) (libcnb.Layer, error) {
 				name := creator.Name()
 				layer, err := ctx.Layers.Layer(name)
 				if name == "jdk" {

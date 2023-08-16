@@ -1,5 +1,7 @@
 module github.com/paketo-buildpacks/libjvm/v2
 
+replace github.com/paketo-buildpacks/libpak/v2 => github.com/paketo-buildpacks/libpak/v2 v2.0.0-20230816035821-9588657bf5d9
+
 go 1.20
 
 require (
