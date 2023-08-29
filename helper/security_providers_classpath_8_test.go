@@ -25,7 +25,7 @@ import (
 	"github.com/sclevine/spec"
 
 	"github.com/paketo-buildpacks/libjvm/v2/helper"
-	"github.com/paketo-buildpacks/libpak/v2/bard"
+	"github.com/paketo-buildpacks/libpak/v2/log"
 )
 
 func testSecurityProvidersClasspath8(t *testing.T, context spec.G, it spec.S) {
@@ -34,7 +34,7 @@ func testSecurityProvidersClasspath8(t *testing.T, context spec.G, it spec.S) {
 	)
 
 	it("does nothing if $SECURITY_PROVIDERS_CLASSPATH is no set", func() {
-		Expect(helper.SecurityProvidersClasspath8{Logger: bard.NewLogger(io.Discard)}.Execute()).To(BeNil())
+		Expect(helper.SecurityProvidersClasspath8{Logger: log.NewPaketoLogger(io.Discard)}.Execute()).To(BeNil())
 	})
 
 	context("$SECURITY_PROVIDERS_CLASSPATH", func() {
@@ -49,7 +49,7 @@ func testSecurityProvidersClasspath8(t *testing.T, context spec.G, it spec.S) {
 		})
 
 		it("returns error if $BPI_JVM_EXT_DIR is not set", func() {
-			_, err := helper.SecurityProvidersClasspath8{Logger: bard.NewLogger(io.Discard)}.Execute()
+			_, err := helper.SecurityProvidersClasspath8{Logger: log.NewPaketoLogger(io.Discard)}.Execute()
 
 			Expect(err).To(MatchError("$BPI_JVM_EXT_DIR must be set"))
 		})
@@ -65,7 +65,7 @@ func testSecurityProvidersClasspath8(t *testing.T, context spec.G, it spec.S) {
 			})
 
 			it("return $JAVA_TOOL_OPTIONS with $SECURITY_PROVIDERS_CLASSPATH only", func() {
-				Expect(helper.SecurityProvidersClasspath8{Logger: bard.NewLogger(io.Discard)}.Execute()).To(Equal(map[string]string{
+				Expect(helper.SecurityProvidersClasspath8{Logger: log.NewPaketoLogger(io.Discard)}.Execute()).To(Equal(map[string]string{
 					"JAVA_TOOL_OPTIONS": "-Djava.ext.dirs=test-bpi-jvm-ext-dir:test-dir-1:test-dir-2",
 				}))
 			})
@@ -80,7 +80,7 @@ func testSecurityProvidersClasspath8(t *testing.T, context spec.G, it spec.S) {
 				})
 
 				it("return $JAVA_TOOL_OPTIONS with $SECURITY_PROVIDERS_CLASSPATH included", func() {
-					Expect(helper.SecurityProvidersClasspath8{Logger: bard.NewLogger(io.Discard)}.Execute()).To(Equal(map[string]string{
+					Expect(helper.SecurityProvidersClasspath8{Logger: log.NewPaketoLogger(io.Discard)}.Execute()).To(Equal(map[string]string{
 						"JAVA_TOOL_OPTIONS": "test-java-tool-options -Djava.ext.dirs=test-bpi-jvm-ext-dir:test-dir-1:test-dir-2",
 					}))
 				})

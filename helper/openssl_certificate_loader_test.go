@@ -28,13 +28,11 @@ import (
 	"github.com/pavlo-v-chernykh/keystore-go/v4"
 	"github.com/sclevine/spec"
 
-	"github.com/buildpacks/libcnb/v2/log"
-
 	"github.com/paketo-buildpacks/libjvm/v2"
 	"github.com/paketo-buildpacks/libjvm/v2/helper"
 	"github.com/paketo-buildpacks/libjvm/v2/internal"
 
-	"github.com/paketo-buildpacks/libpak/v2/bard"
+	"github.com/paketo-buildpacks/libpak/v2/log"
 )
 
 func testOpenSSLCertificateLoader(t *testing.T, context spec.G, it spec.S) {
@@ -43,7 +41,7 @@ func testOpenSSLCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 
 		cl = libjvm.CertificateLoader{
 			CertDirs: []string{filepath.Join("testdata", "certificates")},
-			Logger:   io.Discard,
+			Logger:   log.NewDiscardLogger(),
 		}
 
 		path string
@@ -69,8 +67,7 @@ func testOpenSSLCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	it("returns error if BPI_JVM_CACERTS is not set", func() {
-		o := helper.OpenSSLCertificateLoader{CertificateLoader: cl, Logger: bard.NewLogger(ioutil.Discard)}
-		o.Logger.Logger = log.NewDiscard()
+		o := helper.OpenSSLCertificateLoader{CertificateLoader: cl, Logger: log.NewDiscardLogger()}
 
 		_, err := o.Execute()
 
@@ -89,8 +86,7 @@ func testOpenSSLCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 		})
 
 		it("loads additional certificates", func() {
-			o := helper.OpenSSLCertificateLoader{CertificateLoader: cl, Logger: bard.NewLogger(ioutil.Discard)}
-			o.Logger.Logger = log.NewDiscard()
+			o := helper.OpenSSLCertificateLoader{CertificateLoader: cl, Logger: log.NewDiscardLogger()}
 
 			Expect(o.Execute()).To(BeNil())
 
@@ -111,8 +107,7 @@ func testOpenSSLCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 		it("does use temp keystore if keystore is read-only", func() {
 			Expect(os.Chmod(path, 0555)).To(Succeed())
 
-			o := helper.OpenSSLCertificateLoader{CertificateLoader: cl, Logger: bard.NewLogger(ioutil.Discard)}
-			o.Logger.Logger = log.NewDiscard()
+			o := helper.OpenSSLCertificateLoader{CertificateLoader: cl, Logger: log.NewDiscardLogger()}
 
 			env, err := o.Execute()
 			Expect(err).NotTo(HaveOccurred())
@@ -135,8 +130,7 @@ func testOpenSSLCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(os.Chmod(helper.TmpTrustStore, 0555)).To(Succeed())
 
-			o := helper.OpenSSLCertificateLoader{CertificateLoader: cl, Logger: bard.NewLogger(os.Stdout)}
-			o.Logger.Logger = log.NewDiscard()
+			o := helper.OpenSSLCertificateLoader{CertificateLoader: cl, Logger: log.NewPaketoLogger(os.Stdout)}
 
 			env, err := o.Execute()
 			Expect(env).To(BeNil())

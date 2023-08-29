@@ -23,7 +23,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/paketo-buildpacks/libpak/v2/bard"
+	"github.com/paketo-buildpacks/libpak/v2/log"
 
 	"github.com/buildpacks/libcnb/v2"
 	. "github.com/onsi/gomega"
@@ -58,7 +58,7 @@ func testGenerate(t *testing.T, context spec.G, it spec.S) {
 		ctx.StackID = "test-stack-id"
 
 		invoked := false
-		_, err := libjvm.NewGenerate(bard.NewLogger(io.Discard), func(ctx libjvm.GenerateContentContext) (libjvm.GenerateContentResult, error) {
+		_, err := libjvm.NewGenerate(log.NewPaketoLogger(io.Discard), func(ctx libjvm.GenerateContentContext) (libjvm.GenerateContentResult, error) {
 			invoked = true
 			return libjvm.GenerateContentResult{
 				ExtendConfig:    libjvm.ExtendConfig{Build: libjvm.ExtendImageConfig{Args: []libjvm.ExtendImageConfigArg{}}},
@@ -78,7 +78,7 @@ func testGenerate(t *testing.T, context spec.G, it spec.S) {
 		ctx.StackID = "test-stack-id"
 
 		invoked := false
-		_, err := libjvm.NewGenerate(bard.NewLogger(io.Discard), func(ctx libjvm.GenerateContentContext) (libjvm.GenerateContentResult, error) {
+		_, err := libjvm.NewGenerate(log.NewPaketoLogger(io.Discard), func(ctx libjvm.GenerateContentContext) (libjvm.GenerateContentResult, error) {
 			invoked = true
 			return libjvm.GenerateContentResult{
 				ExtendConfig:    libjvm.ExtendConfig{Build: libjvm.ExtendImageConfig{Args: []libjvm.ExtendImageConfigArg{}}},
@@ -98,7 +98,7 @@ func testGenerate(t *testing.T, context spec.G, it spec.S) {
 		ctx.StackID = "test-stack-id"
 
 		invoked := false
-		_, err := libjvm.NewGenerate(bard.NewLogger(io.Discard), func(ctx libjvm.GenerateContentContext) (libjvm.GenerateContentResult, error) {
+		_, err := libjvm.NewGenerate(log.NewPaketoLogger(io.Discard), func(ctx libjvm.GenerateContentContext) (libjvm.GenerateContentResult, error) {
 			invoked = true
 			return libjvm.GenerateContentResult{
 				ExtendConfig:    libjvm.ExtendConfig{Build: libjvm.ExtendImageConfig{Args: []libjvm.ExtendImageConfigArg{}}},

@@ -30,7 +30,7 @@ import (
 	"github.com/sclevine/spec"
 
 	"github.com/paketo-buildpacks/libjvm/v2/helper"
-	"github.com/paketo-buildpacks/libpak/v2/bard"
+	"github.com/paketo-buildpacks/libpak/v2/log"
 )
 
 func testJVMHeapDump(t *testing.T, context spec.G, it spec.S) {
@@ -68,7 +68,7 @@ func testJVMHeapDump(t *testing.T, context spec.G, it spec.S) {
 			it("enables heap dumps", func() {
 				expectedPath := filepath.Join(HeapDumpPath, fmt.Sprintf(`java_%s:.*\.hprof`,
 					strings.Join(strings.SplitN(time.Now().Format(time.RFC3339), ":", 3)[0:2], ":")))
-				env, err := helper.JVMHeapDump{Logger: bard.NewLogger(io.Discard)}.Execute()
+				env, err := helper.JVMHeapDump{Logger: log.NewPaketoLogger(io.Discard)}.Execute()
 				Expect(err).ToNot(HaveOccurred())
 				Expect(env).To(HaveKeyWithValue("JAVA_TOOL_OPTIONS",
 					MatchRegexp(`-XX:\+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=%s`, expectedPath)))
@@ -87,7 +87,7 @@ func testJVMHeapDump(t *testing.T, context spec.G, it spec.S) {
 			it("passes through existing options and appends heap dump options", func() {
 				expectedPath := filepath.Join(HeapDumpPath, fmt.Sprintf(`java_%s:.*\.hprof`,
 					strings.Join(strings.SplitN(time.Now().Format(time.RFC3339), ":", 3)[0:2], ":")))
-				env, err := helper.JVMHeapDump{Logger: bard.NewLogger(io.Discard)}.Execute()
+				env, err := helper.JVMHeapDump{Logger: log.NewPaketoLogger(io.Discard)}.Execute()
 				Expect(err).ToNot(HaveOccurred())
 				Expect(env).To(HaveKeyWithValue("JAVA_TOOL_OPTIONS",
 					MatchRegexp(`-Xmx2G -Xss256k -XX:\+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=%s`, expectedPath)))
@@ -106,7 +106,7 @@ func testJVMHeapDump(t *testing.T, context spec.G, it spec.S) {
 			it("passes through existing options and appends heap dump path option", func() {
 				expectedPath := filepath.Join(HeapDumpPath, fmt.Sprintf(`java_%s:.*\.hprof`,
 					strings.Join(strings.SplitN(time.Now().Format(time.RFC3339), ":", 3)[0:2], ":")))
-				env, err := helper.JVMHeapDump{Logger: bard.NewLogger(io.Discard)}.Execute()
+				env, err := helper.JVMHeapDump{Logger: log.NewPaketoLogger(io.Discard)}.Execute()
 				Expect(err).ToNot(HaveOccurred())
 				Expect(env).To(HaveKeyWithValue("JAVA_TOOL_OPTIONS",
 					MatchRegexp(`-Xmx2G -Xss256k -XX:\+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=%s`, expectedPath)))
@@ -126,7 +126,7 @@ func testJVMHeapDump(t *testing.T, context spec.G, it spec.S) {
 			})
 
 			it("passes through existing options and appends heap dump options", func() {
-				env, err := helper.JVMHeapDump{Logger: bard.NewLogger(io.Discard)}.Execute()
+				env, err := helper.JVMHeapDump{Logger: log.NewPaketoLogger(io.Discard)}.Execute()
 				Expect(err).ToNot(HaveOccurred())
 				Expect(env).To(Equal(map[string]string{
 					"JAVA_TOOL_OPTIONS": expectedArgs,

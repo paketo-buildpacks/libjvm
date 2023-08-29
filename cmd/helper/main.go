@@ -21,7 +21,7 @@ import (
 	"os"
 
 	"github.com/miekg/dns"
-	"github.com/paketo-buildpacks/libpak/v2/bard"
+	"github.com/paketo-buildpacks/libpak/v2/log"
 	"github.com/paketo-buildpacks/libpak/v2/sherpa"
 
 	"github.com/paketo-buildpacks/libjvm/v2"
@@ -33,9 +33,9 @@ func main() {
 		var (
 			err error
 
-			l = bard.NewLogger(os.Stdout)
+			l = log.NewPaketoLogger(os.Stdout)
 
-			cl = libjvm.NewCertificateLoader()
+			cl = libjvm.NewCertificateLoader(l)
 
 			a  = helper.ActiveProcessorCount{Logger: l}
 			c  = helper.SecurityProvidersConfigurer{Logger: l}

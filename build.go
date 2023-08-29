@@ -25,18 +25,18 @@ import (
 	"github.com/buildpacks/libcnb/v2"
 	"github.com/heroku/color"
 	"github.com/paketo-buildpacks/libpak/v2"
-	"github.com/paketo-buildpacks/libpak/v2/bard"
 	"github.com/paketo-buildpacks/libpak/v2/effect"
+	"github.com/paketo-buildpacks/libpak/v2/log"
 )
 
 type Build struct {
-	Logger               bard.Logger
+	Logger               log.Logger
 	CertLoader           CertificateLoader
 	DependencyCache      libpak.DependencyCache
 	Native               NativeImage
 	CustomHelpers        []string
 	Contributable        []libpak.Contributable
-	FlattenContributorFn libpak.FlattenContributableFn
+	FlattenContributorFn func([]libpak.Contributable) libcnb.BuildFunc
 }
 
 type BuildOption func(build Build) Build
@@ -55,22 +55,22 @@ func WithCustomHelpers(customHelpers []string) BuildOption {
 	}
 }
 
-func WithCustomFlattenContributorFn(fn libpak.FlattenContributableFn) BuildOption {
+// Used to process contributors into layers.
+func WithCustomFlattenContributorFn(fn func([]libpak.Contributable) libcnb.BuildFunc) BuildOption {
 	return func(build Build) Build {
 		build.FlattenContributorFn = fn
 		return build
 	}
 }
 
-func NewBuild(logger bard.Logger, buildOpts ...BuildOption) Build {
-	cl := NewCertificateLoader()
-	cl.Logger = logger.BodyWriter()
+func NewBuild(logger log.Logger, buildOpts ...BuildOption) Build {
+	cl := NewCertificateLoader(logger)
 
 	build := Build{
 		Logger:               logger,
 		CertLoader:           cl,
 		Contributable:        []libpak.Contributable{},
-		FlattenContributorFn: libpak.DefaultFlattenContributableFn,
+		FlattenContributorFn: libpak.ContributableBuildFunc,
 	}
 
 	for _, option := range buildOpts {
@@ -115,10 +115,11 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 		return libcnb.BuildResult{}, fmt.Errorf("unable to create build module metadata\n%w", err)
 	}
 
-	cr, err := libpak.NewConfigurationResolver(bpm, &b.Logger)
+	cr, err := libpak.NewConfigurationResolver(bpm)
 	if err != nil {
 		return libcnb.BuildResult{}, fmt.Errorf("unable to create configuration resolver\n%w", err)
 	}
+	cr.LogConfiguration(b.Logger)
 
 	jvmVersion := NewJVMVersion(b.Logger)
 	v, err := jvmVersion.GetJVMVersion(context.ApplicationPath, cr)
@@ -131,7 +132,7 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 		return libcnb.BuildResult{}, fmt.Errorf("unable to create dependency resolver\n%w", err)
 	}
 
-	b.DependencyCache, err = libpak.NewDependencyCache(context.Buildpack.Info.ID, context.Buildpack.Info.Version, context.Buildpack.Path, context.Platform.Bindings)
+	b.DependencyCache, err = libpak.NewDependencyCache(context.Buildpack.Info.ID, context.Buildpack.Info.Version, context.Buildpack.Path, context.Platform.Bindings, b.Logger)
 	if err != nil {
 		return libcnb.BuildResult{}, fmt.Errorf("unable to create dependency cache\n%w", err)
 	}
@@ -229,16 +230,9 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 }
 
 func (b *Build) createResult(ctx libcnb.BuildContext) (libcnb.BuildResult, error) {
-	result := libcnb.BuildResult{}
-	for _, c := range b.Contributable {
-		l, err := b.FlattenContributorFn(c, ctx)
-		if err != nil {
-			return libcnb.BuildResult{}, fmt.Errorf("unable to contribute layer %s\n%w", c.Name(), err)
-		}
-		result.Layers = append(result.Layers, l)
-	}
-
-	return result, nil
+	//delegate the processing of contributions to the overridable method allowing
+	//for test cases to skip the invocation of every contributable.
+	return b.FlattenContributorFn(b.Contributable)(ctx)
 }
 
 func (b *Build) contributeJDK(jdkDep libpak.BuildModuleDependency) error {
@@ -246,7 +240,6 @@ func (b *Build) contributeJDK(jdkDep libpak.BuildModuleDependency) error {
 	if err != nil {
 		return fmt.Errorf("unable to create jdk\n%w", err)
 	}
-	jdk.Logger = b.Logger
 
 	b.Contributable = append(b.Contributable, jdk)
 	return nil
@@ -269,7 +262,6 @@ func (b *Build) contributeJRE(jreDep libpak.BuildModuleDependency, appPath strin
 	if err != nil {
 		return fmt.Errorf("unable to create jre\n%w", err)
 	}
-	jre.Logger = b.Logger
 	b.Contributable = append(b.Contributable, jre)
 	return nil
 }
@@ -281,13 +273,11 @@ func (b *Build) contributeJLink(configurationResolver libpak.ConfigurationResolv
 		return fmt.Errorf("unable to parse jlink arguments %s %w\n", args, err)
 	}
 
-	jlink, err := NewJLink(appPath, effect.NewExecutor(), argList, b.CertLoader, planEntryMetadata, explicit)
+	jlink, err := NewJLink(appPath, effect.NewExecutor(), argList, b.CertLoader, planEntryMetadata, explicit, b.Logger)
 	if err != nil {
 		return fmt.Errorf("unable to create jlink jre\n%w", err)
 	}
 	jlink.JavaVersion = jdkDep.Version
-	jlink.Logger = b.Logger
-
 	b.Contributable = append(b.Contributable, jlink)
 	return nil
 }
@@ -300,7 +290,6 @@ func (b *Build) contributeNIK(jdkDep libpak.BuildModuleDependency, nativeDep lib
 	if err != nil {
 		return fmt.Errorf("unable to create NIK with custom command: %s and custom args: %s \n%w", b.Native.CustomCommand, b.Native.CustomArgs, err)
 	}
-	nik.Logger = b.Logger
 	b.Contributable = append(b.Contributable, nik)
 	return nil
 }
@@ -341,8 +330,7 @@ func (b *Build) contributeHelpers(context libcnb.BuildContext, depJRE libpak.Bui
 	h.Logger = b.Logger
 	b.Contributable = append(b.Contributable, h)
 
-	jsp := NewJavaSecurityProperties(context.Buildpack.Info)
-	jsp.Logger = b.Logger
+	jsp := NewJavaSecurityProperties(context.Buildpack.Info, b.Logger)
 	b.Contributable = append(b.Contributable, jsp)
 
 	return nil

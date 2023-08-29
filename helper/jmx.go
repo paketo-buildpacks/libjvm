@@ -19,12 +19,12 @@ package helper
 import (
 	"fmt"
 
-	"github.com/paketo-buildpacks/libpak/v2/bard"
+	"github.com/paketo-buildpacks/libpak/v2/log"
 	"github.com/paketo-buildpacks/libpak/v2/sherpa"
 )
 
 type JMX struct {
-	Logger bard.Logger
+	Logger log.Logger
 }
 
 func (j JMX) Execute() (map[string]string, error) {
@@ -34,7 +34,7 @@ func (j JMX) Execute() (map[string]string, error) {
 
 	port := sherpa.GetEnvWithDefault("BPL_JMX_PORT", "5000")
 
-	j.Logger.Debug("JMX enabled on port %s", port)
+	j.Logger.Body("JMX enabled on port %s", port)
 
 	opts := sherpa.AppendToEnvVar("JAVA_TOOL_OPTIONS", " ", "-Djava.rmi.server.hostname=127.0.0.1",
 		"-Dcom.sun.management.jmxremote.authenticate=false",

@@ -28,7 +28,7 @@ import (
 
 	"github.com/paketo-buildpacks/libjvm/v2/helper"
 	"github.com/paketo-buildpacks/libjvm/v2/internal"
-	"github.com/paketo-buildpacks/libpak/v2/bard"
+	"github.com/paketo-buildpacks/libpak/v2/log"
 )
 
 func testLinkLocalDNS(t *testing.T, context spec.G, it spec.S) {
@@ -55,7 +55,7 @@ func testLinkLocalDNS(t *testing.T, context spec.G, it spec.S) {
 
 	it("does not modify file if not link local", func() {
 		config := &ddns.ClientConfig{Servers: []string{"1.1.1.1"}}
-		l := helper.LinkLocalDNS{Config: config, Logger: bard.NewLogger(io.Discard)}
+		l := helper.LinkLocalDNS{Config: config, Logger: log.NewPaketoLogger(io.Discard)}
 
 		Expect(l.Execute()).To(BeNil())
 		Expect(ioutil.ReadFile(path)).To(Equal([]byte("test")))
@@ -63,7 +63,7 @@ func testLinkLocalDNS(t *testing.T, context spec.G, it spec.S) {
 
 	it("returns an error if $JAVA_SECURITY_PROPERTIES is not set", func() {
 		config := &ddns.ClientConfig{Servers: []string{"169.254.0.1"}}
-		l := helper.LinkLocalDNS{Config: config, Logger: bard.NewLogger(io.Discard)}
+		l := helper.LinkLocalDNS{Config: config, Logger: log.NewPaketoLogger(io.Discard)}
 
 		_, err := l.Execute()
 
@@ -83,7 +83,7 @@ func testLinkLocalDNS(t *testing.T, context spec.G, it spec.S) {
 
 		it("modifies file if link local", func() {
 			config := &ddns.ClientConfig{Servers: []string{"169.254.0.1"}}
-			l := helper.LinkLocalDNS{Config: config, Logger: bard.NewLogger(io.Discard)}
+			l := helper.LinkLocalDNS{Config: config, Logger: log.NewPaketoLogger(io.Discard)}
 
 			Expect(l.Execute()).To(BeNil())
 			Expect(ioutil.ReadFile(path)).To(Equal([]byte(`test
@@ -100,7 +100,7 @@ networkaddress.cache.negative.ttl=0
 			Expect(os.Chmod(path, 0555)).To(Succeed())
 
 			config := &ddns.ClientConfig{Servers: []string{"169.254.0.1"}}
-			l := helper.LinkLocalDNS{Config: config, Logger: bard.NewLogger(io.Discard)}
+			l := helper.LinkLocalDNS{Config: config, Logger: log.NewPaketoLogger(io.Discard)}
 
 			Expect(l.Execute()).To(BeNil())
 			Expect(ioutil.ReadFile(path)).To(Equal([]byte(`test`)))

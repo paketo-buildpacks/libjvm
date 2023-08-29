@@ -27,7 +27,7 @@ import (
 
 	"github.com/paketo-buildpacks/libjvm/v2/helper"
 	"github.com/paketo-buildpacks/libjvm/v2/internal"
-	"github.com/paketo-buildpacks/libpak/v2/bard"
+	"github.com/paketo-buildpacks/libpak/v2/log"
 )
 
 func testSecurityProvidersConfigurer(t *testing.T, context spec.G, it spec.S) {
@@ -51,7 +51,7 @@ func testSecurityProvidersConfigurer(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	it("returns if $SECURITY_PROVIDERS not set", func() {
-		Expect(helper.SecurityProvidersConfigurer{Logger: bard.NewLogger(io.Discard)}.Execute()).To(BeNil())
+		Expect(helper.SecurityProvidersConfigurer{Logger: log.NewPaketoLogger(io.Discard)}.Execute()).To(BeNil())
 
 		Expect(ioutil.ReadFile(path)).To(Equal([]byte("test")))
 	})
@@ -66,7 +66,7 @@ func testSecurityProvidersConfigurer(t *testing.T, context spec.G, it spec.S) {
 		})
 
 		it("returns error if BPI_SECURITY_PROVIDERS is not set", func() {
-			_, err := helper.SecurityProvidersConfigurer{Logger: bard.NewLogger(io.Discard)}.Execute()
+			_, err := helper.SecurityProvidersConfigurer{Logger: log.NewPaketoLogger(io.Discard)}.Execute()
 
 			Expect(err).To(MatchError("$BPI_JVM_SECURITY_PROVIDERS must be set"))
 		})
@@ -81,7 +81,7 @@ func testSecurityProvidersConfigurer(t *testing.T, context spec.G, it spec.S) {
 			})
 
 			it("returns error if $JAVA_SECURITY_PROPERTIES is not set", func() {
-				_, err := helper.SecurityProvidersConfigurer{Logger: bard.NewLogger(io.Discard)}.Execute()
+				_, err := helper.SecurityProvidersConfigurer{Logger: log.NewPaketoLogger(io.Discard)}.Execute()
 
 				Expect(err).To(MatchError("$JAVA_SECURITY_PROPERTIES must be set"))
 			})
@@ -96,7 +96,7 @@ func testSecurityProvidersConfigurer(t *testing.T, context spec.G, it spec.S) {
 				})
 
 				it("modifies the security properties file", func() {
-					Expect(helper.SecurityProvidersConfigurer{Logger: bard.NewLogger(io.Discard)}.Execute()).To(BeNil())
+					Expect(helper.SecurityProvidersConfigurer{Logger: log.NewPaketoLogger(io.Discard)}.Execute()).To(BeNil())
 
 					Expect(ioutil.ReadFile(path)).To(Equal([]byte(`test
 security.provider.1=ALPHA
@@ -115,7 +115,7 @@ security.provider.6=FOXTROT
 				it("warns if the file is read-only", func() {
 					Expect(os.Chmod(path, 0555)).To(Succeed())
 
-					Expect(helper.SecurityProvidersConfigurer{Logger: bard.NewLogger(io.Discard)}.Execute()).To(BeNil())
+					Expect(helper.SecurityProvidersConfigurer{Logger: log.NewPaketoLogger(io.Discard)}.Execute()).To(BeNil())
 
 					Expect(ioutil.ReadFile(path)).To(Equal([]byte("test")))
 				})

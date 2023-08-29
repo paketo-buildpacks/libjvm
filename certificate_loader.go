@@ -28,6 +28,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/paketo-buildpacks/libpak/v2/log"
 	"github.com/paketo-buildpacks/libpak/v2/sherpa"
 	"github.com/pavlo-v-chernykh/keystore-go/v4"
 	"golang.org/x/sys/unix"
@@ -40,10 +41,10 @@ var NormalizedDateTime = time.Date(1980, time.January, 1, 0, 0, 1, 0, time.UTC)
 type CertificateLoader struct {
 	CertFile string
 	CertDirs []string
-	Logger   io.Writer
+	Logger   log.Logger
 }
 
-func NewCertificateLoader() CertificateLoader {
+func NewCertificateLoader(logger log.Logger) CertificateLoader {
 	c := CertificateLoader{CertFile: DefaultCertFile}
 
 	if s, ok := os.LookupEnv("SSL_CERT_FILE"); ok {
@@ -53,6 +54,8 @@ func NewCertificateLoader() CertificateLoader {
 	if s, ok := os.LookupEnv("SSL_CERT_DIR"); ok {
 		c.CertDirs = filepath.SplitList(s)
 	}
+
+	c.Logger = logger
 
 	return c
 }
@@ -92,7 +95,7 @@ func (c *CertificateLoader) Load(path string, password string) error {
 		}
 	}
 
-	_, _ = fmt.Fprintf(c.Logger, "Adding %d container CA certificates to JVM truststore\n", added)
+	c.Logger.Bodyf("Adding %d container CA certificates to JVM truststore\n", added)
 
 	if err := c.writeKeyStore(ks, path, password); err != nil {
 		return fmt.Errorf("unable to write keystore\n%w", err)
@@ -195,7 +198,7 @@ func (CertificateLoader) readKeyStore(path string, password string) (keystore.Ke
 
 func (c CertificateLoader) writeKeyStore(ks keystore.KeyStore, path string, password string) error {
 	if unix.Access(path, unix.W_OK) != nil {
-		_, _ = fmt.Fprintf(c.Logger, "WARNING: Unable to add container CA certificates to JVM because %s is read-only", path)
+		c.Logger.Bodyf("WARNING: Unable to add container CA certificates to JVM because %s is read-only", path)
 		return nil
 	}
 

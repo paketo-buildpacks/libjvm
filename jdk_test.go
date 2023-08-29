@@ -25,7 +25,7 @@ import (
 	"github.com/buildpacks/libcnb/v2"
 	. "github.com/onsi/gomega"
 	"github.com/paketo-buildpacks/libpak/v2"
-	"github.com/paketo-buildpacks/libpak/v2/bard"
+	"github.com/paketo-buildpacks/libpak/v2/log"
 	"github.com/pavlo-v-chernykh/keystore-go/v4"
 	"github.com/sclevine/spec"
 
@@ -38,7 +38,7 @@ func testJDK(t *testing.T, context spec.G, it spec.S) {
 
 		cl = libjvm.CertificateLoader{
 			CertDirs: []string{filepath.Join("testdata", "certificates")},
-			Logger:   ioutil.Discard,
+			Logger:   log.NewDiscardLogger(),
 		}
 
 		ctx libcnb.BuildContext
@@ -61,18 +61,17 @@ func testJDK(t *testing.T, context spec.G, it spec.S) {
 			URI:     "https://localhost/stub-jdk-11.tar.gz",
 			SHA256:  "e40a6ddb7d74d78a6d5557380160a174b1273813db1caf9b1f7bcbfe1578e818",
 		}
-		dc := libpak.DependencyCache{CachePath: "testdata"}
+		dc := libpak.DependencyCache{CachePath: "testdata", Logger: log.NewDiscardLogger()}
 
 		j, err := libjvm.NewJDK(dep, dc, cl)
 		Expect(err).NotTo(HaveOccurred())
-		j.Logger = bard.NewLogger(ioutil.Discard)
 
 		Expect(j.LayerContributor.ExpectedMetadata.(map[string]interface{})["cert-dir"]).To(HaveLen(4))
 
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
 
-		layer, err = j.Contribute(layer)
+		err = j.Contribute(&layer)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(layer.LayerTypes.Build).To(BeTrue())
@@ -88,18 +87,17 @@ func testJDK(t *testing.T, context spec.G, it spec.S) {
 			URI:     "https://localhost/stub-jdk-11.zip",
 			SHA256:  "8138da5a0340f89b47ec4ab3fb5f12034ce793eb45af257820ec457316559a39",
 		}
-		dc := libpak.DependencyCache{CachePath: "testdata"}
+		dc := libpak.DependencyCache{CachePath: "testdata", Logger: log.NewDiscardLogger()}
 
 		j, err := libjvm.NewJDK(dep, dc, cl)
 		Expect(err).NotTo(HaveOccurred())
-		j.Logger = bard.NewLogger(ioutil.Discard)
 
 		Expect(j.LayerContributor.ExpectedMetadata.(map[string]interface{})["cert-dir"]).To(HaveLen(4))
 
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
 
-		layer, err = j.Contribute(layer)
+		err = j.Contribute(&layer)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(layer.LayerTypes.Build).To(BeTrue())
@@ -115,16 +113,15 @@ func testJDK(t *testing.T, context spec.G, it spec.S) {
 			URI:     "https://localhost/stub-jdk-8.tar.gz",
 			SHA256:  "6860fb9a9a66817ec285fac64c342b678b0810656b1f2413f063911a8bde6447",
 		}
-		dc := libpak.DependencyCache{CachePath: "testdata"}
+		dc := libpak.DependencyCache{CachePath: "testdata", Logger: log.NewDiscardLogger()}
 
 		j, err := libjvm.NewJDK(dep, dc, cl)
 		Expect(err).NotTo(HaveOccurred())
-		j.Logger = bard.NewLogger(ioutil.Discard)
 
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
 
-		layer, err = j.Contribute(layer)
+		err = j.Contribute(&layer)
 		Expect(err).NotTo(HaveOccurred())
 
 		in, err := os.Open(filepath.Join(layer.Path, "jre", "lib", "security", "cacerts"))
@@ -143,16 +140,15 @@ func testJDK(t *testing.T, context spec.G, it spec.S) {
 			URI:     "https://localhost/stub-jdk-11.tar.gz",
 			SHA256:  "e40a6ddb7d74d78a6d5557380160a174b1273813db1caf9b1f7bcbfe1578e818",
 		}
-		dc := libpak.DependencyCache{CachePath: "testdata"}
+		dc := libpak.DependencyCache{CachePath: "testdata", Logger: log.NewDiscardLogger()}
 
 		j, err := libjvm.NewJDK(dep, dc, cl)
 		Expect(err).NotTo(HaveOccurred())
-		j.Logger = bard.NewLogger(ioutil.Discard)
 
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
 
-		layer, err = j.Contribute(layer)
+		err = j.Contribute(&layer)
 		Expect(err).NotTo(HaveOccurred())
 
 		in, err := os.Open(filepath.Join(layer.Path, "lib", "security", "cacerts"))

@@ -23,11 +23,11 @@ import (
 	"strings"
 
 	"github.com/mattn/go-shellwords"
-	"github.com/paketo-buildpacks/libpak/v2/bard"
+	"github.com/paketo-buildpacks/libpak/v2/log"
 )
 
 type ActiveProcessorCount struct {
-	Logger bard.Logger
+	Logger log.Logger
 }
 
 func (a ActiveProcessorCount) Execute() (map[string]string, error) {

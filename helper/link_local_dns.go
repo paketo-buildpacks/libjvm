@@ -22,13 +22,13 @@ import (
 	"os"
 
 	"github.com/miekg/dns"
-	"github.com/paketo-buildpacks/libpak/v2/bard"
+	"github.com/paketo-buildpacks/libpak/v2/log"
 	"golang.org/x/sys/unix"
 )
 
 type LinkLocalDNS struct {
 	Config *dns.ClientConfig
-	Logger bard.Logger
+	Logger log.Logger
 }
 
 func (l LinkLocalDNS) Execute() (map[string]string, error) {
@@ -41,11 +41,11 @@ func (l LinkLocalDNS) Execute() (map[string]string, error) {
 		return nil, fmt.Errorf("$JAVA_SECURITY_PROPERTIES must be set")
 	}
 	if unix.Access(file, unix.W_OK) != nil {
-		l.Logger.Debugf("WARNING: Unable to disable JVM DNS caching disabled in favor of link-local DNS caching because %s is read-only", file)
+		l.Logger.Bodyf("WARNING: Unable to disable JVM DNS caching disabled in favor of link-local DNS caching because %s is read-only", file)
 		return nil, nil
 	}
 
-	l.Logger.Debug("JVM DNS caching disabled in favor of link-local DNS caching")
+	l.Logger.Body("JVM DNS caching disabled in favor of link-local DNS caching")
 
 	f, err := os.OpenFile(file, os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {

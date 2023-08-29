@@ -20,11 +20,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/paketo-buildpacks/libpak/v2/bard"
+	"github.com/paketo-buildpacks/libpak/v2/log"
 )
 
 type SecurityProvidersClasspath9 struct {
-	Logger bard.Logger
+	Logger log.Logger
 }
 
 func (s SecurityProvidersClasspath9) Execute() (map[string]string, error) {
@@ -33,7 +33,7 @@ func (s SecurityProvidersClasspath9) Execute() (map[string]string, error) {
 		return nil, nil
 	}
 
-	s.Logger.Debug("Adding $SECURITY_PROVIDERS_CLASSPATH to $CLASSPATH")
+	s.Logger.Body("Adding $SECURITY_PROVIDERS_CLASSPATH to $CLASSPATH")
 
 	var values []string
 	if s, ok := os.LookupEnv("CLASSPATH"); ok {

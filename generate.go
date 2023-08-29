@@ -26,13 +26,13 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/buildpacks/libcnb/v2"
 	"github.com/paketo-buildpacks/libpak/v2"
-	"github.com/paketo-buildpacks/libpak/v2/bard"
+	"github.com/paketo-buildpacks/libpak/v2/log"
 )
 
 type GenerateContentBuilder func(GenerateContentContext) (GenerateContentResult, error)
 
 type Generate struct {
-	Logger                 bard.Logger
+	Logger                 log.Logger
 	GenerateContentBuilder GenerateContentBuilder
 }
 
@@ -42,7 +42,7 @@ type GenerateContentContext struct {
 	DependencyCache       libpak.DependencyCache
 	Context               libcnb.GenerateContext
 	PlanEntryResolver     libpak.PlanEntryResolver
-	Logger                bard.Logger
+	Logger                log.Logger
 	Result                libcnb.GenerateResult
 }
 
@@ -66,7 +66,7 @@ type ExtendImageConfigArg struct {
 	Value string `toml:"value"`
 }
 
-func NewGenerate(logger bard.Logger, contentBuilder GenerateContentBuilder) Generate {
+func NewGenerate(logger log.Logger, contentBuilder GenerateContentBuilder) Generate {
 	return Generate{
 		Logger:                 logger,
 		GenerateContentBuilder: contentBuilder,
@@ -107,17 +107,18 @@ func (b Generate) Generate(context libcnb.GenerateContext) (libcnb.GenerateResul
 		return libcnb.GenerateResult{}, fmt.Errorf("unable to create build module metadata\n%w", err)
 	}
 
-	cr, err := libpak.NewConfigurationResolver(bpm, &b.Logger)
+	cr, err := libpak.NewConfigurationResolver(bpm)
 	if err != nil {
 		return libcnb.GenerateResult{}, fmt.Errorf("unable to create configuration resolver\n%w", err)
 	}
+	cr.LogConfiguration(b.Logger)
 
 	dr, err := libpak.NewDependencyResolver(bpm, context.StackID)
 	if err != nil {
 		return libcnb.GenerateResult{}, fmt.Errorf("unable to create dependency resolver\n%w", err)
 	}
 
-	dc, err := libpak.NewDependencyCache(context.Extension.Info.ID, context.Extension.Info.Version, context.Extension.Path, context.Platform.Bindings)
+	dc, err := libpak.NewDependencyCache(context.Extension.Info.ID, context.Extension.Info.Version, context.Extension.Path, context.Platform.Bindings, b.Logger)
 	if err != nil {
 		return libcnb.GenerateResult{}, fmt.Errorf("unable to create dependency cache\n%w", err)
 	}

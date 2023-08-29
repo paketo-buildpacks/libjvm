@@ -24,10 +24,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/paketo-buildpacks/libpak/v2/bard"
 	"github.com/paketo-buildpacks/libpak/v2/crush"
 	"github.com/paketo-buildpacks/libpak/v2/effect"
 	"github.com/paketo-buildpacks/libpak/v2/effect/mocks"
+	"github.com/paketo-buildpacks/libpak/v2/log"
 
 	"github.com/stretchr/testify/mock"
 
@@ -45,7 +45,7 @@ func testJLink(t *testing.T, context spec.G, it spec.S) {
 
 		cl = libjvm.CertificateLoader{
 			CertDirs: []string{filepath.Join("testdata", "certificates")},
-			Logger:   io.Discard,
+			Logger:   log.NewDiscardLogger(),
 		}
 
 		ctx libcnb.BuildContext
@@ -66,9 +66,9 @@ func testJLink(t *testing.T, context spec.G, it spec.S) {
 
 		args := []string{"--no-man-pages", "--no-header-files", "--strip-debug"}
 		exec := &mocks.Executor{}
-		j, err := libjvm.NewJLink(ctx.ApplicationPath, exec, args, cl, LaunchContribution, false)
+		j, err := libjvm.NewJLink(ctx.ApplicationPath, exec, args, cl, LaunchContribution, false, log.NewDiscardLogger())
 		Expect(err).NotTo(HaveOccurred())
-		j.Logger = bard.NewLogger(io.Discard)
+		j.Logger = log.NewPaketoLogger(io.Discard)
 
 		Expect(j.LayerContributor.ExpectedMetadata.(map[string]interface{})["cert-dir"]).To(HaveLen(4))
 
@@ -93,7 +93,7 @@ func testJLink(t *testing.T, context spec.G, it spec.S) {
 			Expect(err).NotTo(HaveOccurred())
 		}).Return(nil)
 
-		layer, err = j.Contribute(layer)
+		err = j.Contribute(&layer)
 		Expect(err).NotTo(HaveOccurred())
 
 		e := exec.Calls[1].Arguments[0].(effect.Execution)
@@ -106,9 +106,9 @@ func testJLink(t *testing.T, context spec.G, it spec.S) {
 
 		args := []string{"--no-man-pages", "--no-header-files", "--strip-debug", "--add-modules", "java.se"}
 		exec := &mocks.Executor{}
-		j, err := libjvm.NewJLink(ctx.ApplicationPath, exec, args, cl, LaunchContribution, true)
+		j, err := libjvm.NewJLink(ctx.ApplicationPath, exec, args, cl, LaunchContribution, true, log.NewDiscardLogger())
 		Expect(err).NotTo(HaveOccurred())
-		j.Logger = bard.NewLogger(io.Discard)
+		j.Logger = log.NewPaketoLogger(io.Discard)
 
 		Expect(j.LayerContributor.ExpectedMetadata.(map[string]interface{})["cert-dir"]).To(HaveLen(4))
 
@@ -123,7 +123,7 @@ func testJLink(t *testing.T, context spec.G, it spec.S) {
 			Expect(err).NotTo(HaveOccurred())
 		}).Return(nil)
 
-		layer, err = j.Contribute(layer)
+		err = j.Contribute(&layer)
 		Expect(err).NotTo(HaveOccurred())
 
 		e := exec.Calls[0].Arguments[0].(effect.Execution)
@@ -136,9 +136,9 @@ func testJLink(t *testing.T, context spec.G, it spec.S) {
 
 		args := []string{"--no-man-pages", "--no-header-files", "--strip-debug", "--add-modules", "ALL-MODULE-PATH"}
 		exec := &mocks.Executor{}
-		j, err := libjvm.NewJLink(ctx.ApplicationPath, exec, args, cl, LaunchContribution, true)
+		j, err := libjvm.NewJLink(ctx.ApplicationPath, exec, args, cl, LaunchContribution, true, log.NewDiscardLogger())
 		Expect(err).NotTo(HaveOccurred())
-		j.Logger = bard.NewLogger(io.Discard)
+		j.Logger = log.NewPaketoLogger(io.Discard)
 
 		Expect(j.LayerContributor.ExpectedMetadata.(map[string]interface{})["cert-dir"]).To(HaveLen(4))
 
@@ -153,7 +153,7 @@ func testJLink(t *testing.T, context spec.G, it spec.S) {
 			Expect(err).NotTo(HaveOccurred())
 		}).Return(nil)
 
-		layer, err = j.Contribute(layer)
+		err = j.Contribute(&layer)
 		Expect(err).NotTo(HaveOccurred())
 
 		e := exec.Calls[0].Arguments[0].(effect.Execution)
@@ -169,9 +169,9 @@ func testJLink(t *testing.T, context spec.G, it spec.S) {
 
 		args := []string{"--no-man-pages", "--no-header-files", "--strip-debug"}
 		exec := &mocks.Executor{}
-		j, err := libjvm.NewJLink(ctx.ApplicationPath, exec, args, cl, LaunchContribution, true)
+		j, err := libjvm.NewJLink(ctx.ApplicationPath, exec, args, cl, LaunchContribution, true, log.NewDiscardLogger())
 		Expect(err).NotTo(HaveOccurred())
-		j.Logger = bard.NewLogger(io.Discard)
+		j.Logger = log.NewPaketoLogger(io.Discard)
 
 		Expect(j.LayerContributor.ExpectedMetadata.(map[string]interface{})["cert-dir"]).To(HaveLen(4))
 
@@ -196,7 +196,7 @@ func testJLink(t *testing.T, context spec.G, it spec.S) {
 			Expect(err).NotTo(HaveOccurred())
 		}).Return(nil)
 
-		layer, err = j.Contribute(layer)
+		err = j.Contribute(&layer)
 		Expect(err).NotTo(HaveOccurred())
 
 		e := exec.Calls[1].Arguments[0].(effect.Execution)

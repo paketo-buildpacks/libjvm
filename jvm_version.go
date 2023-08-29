@@ -9,14 +9,14 @@ import (
 
 	"github.com/heroku/color"
 	"github.com/paketo-buildpacks/libpak/v2"
-	"github.com/paketo-buildpacks/libpak/v2/bard"
+	"github.com/paketo-buildpacks/libpak/v2/log"
 )
 
 type JVMVersion struct {
-	Logger bard.Logger
+	Logger log.Logger
 }
 
-func NewJVMVersion(logger bard.Logger) JVMVersion {
+func NewJVMVersion(logger log.Logger) JVMVersion {
 	return JVMVersion{Logger: logger}
 }
 

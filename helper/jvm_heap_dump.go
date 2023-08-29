@@ -24,11 +24,11 @@ import (
 	"time"
 
 	"github.com/mattn/go-shellwords"
-	"github.com/paketo-buildpacks/libpak/v2/bard"
+	"github.com/paketo-buildpacks/libpak/v2/log"
 )
 
 type JVMHeapDump struct {
-	Logger bard.Logger
+	Logger log.Logger
 }
 
 func (a JVMHeapDump) Execute() (map[string]string, error) {
@@ -64,7 +64,7 @@ func (a JVMHeapDump) Execute() (map[string]string, error) {
 		}
 
 		if !found {
-			a.Logger.Debug("Enabling HeapDumpOnOutOfMemoryError")
+			a.Logger.Body("Enabling HeapDumpOnOutOfMemoryError")
 			values = append(values, "-XX:+HeapDumpOnOutOfMemoryError")
 		}
 
@@ -77,7 +77,7 @@ func (a JVMHeapDump) Execute() (map[string]string, error) {
 		}
 
 		if !found {
-			a.Logger.Debug("Setting HeapDumpPath to %s", heapDumpPath)
+			a.Logger.Body("Setting HeapDumpPath to %s", heapDumpPath)
 			values = append(values, fmt.Sprintf("-XX:HeapDumpPath=%s", heapDumpPath))
 		}
 	}

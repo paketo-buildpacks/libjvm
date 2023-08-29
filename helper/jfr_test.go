@@ -25,7 +25,7 @@ import (
 
 	. "github.com/onsi/gomega"
 	"github.com/paketo-buildpacks/libjvm/v2/helper"
-	"github.com/paketo-buildpacks/libpak/v2/bard"
+	"github.com/paketo-buildpacks/libpak/v2/log"
 	"github.com/sclevine/spec"
 )
 
@@ -33,7 +33,7 @@ func testJFR(t *testing.T, context spec.G, it spec.S) {
 	var (
 		Expect = NewWithT(t).Expect
 
-		jfr = helper.JFR{Logger: bard.NewLogger(io.Discard)}
+		jfr = helper.JFR{Logger: log.NewPaketoLogger(io.Discard)}
 	)
 
 	it("returns if $BPL_JFR_ENABLED is not set", func() {

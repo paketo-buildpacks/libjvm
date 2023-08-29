@@ -23,7 +23,7 @@ import (
 
 	. "github.com/onsi/gomega"
 	"github.com/paketo-buildpacks/libjvm/v2/helper"
-	"github.com/paketo-buildpacks/libpak/v2/bard"
+	"github.com/paketo-buildpacks/libpak/v2/log"
 	"github.com/sclevine/spec"
 )
 
@@ -31,7 +31,7 @@ func testNMT(t *testing.T, context spec.G, it spec.S) {
 	var (
 		Expect = NewWithT(t).Expect
 
-		n = helper.NMT{Logger: bard.NewLogger(io.Discard)}
+		n = helper.NMT{Logger: log.NewPaketoLogger(io.Discard)}
 	)
 
 	it("returns if $BPL_JAVA_NMT_ENABLED is set to false", func() {
