@@ -37,7 +37,7 @@ func main() {
 
 			cl = libjvm.NewCertificateLoader()
 
-			a  = helper.ActiveProcessorCount{Logger: l}
+			// a  = helper.ActiveProcessorCount{Logger: l}
 			c  = helper.SecurityProvidersConfigurer{Logger: l}
 			d  = helper.LinkLocalDNS{Logger: l}
 			j  = helper.JavaOpts{Logger: l}
@@ -65,7 +65,7 @@ func main() {
 		}
 
 		return sherpa.Helpers(map[string]sherpa.ExecD{
-			"active-processor-count":         a,
+			// "active-processor-count":         a,
 			"java-opts":                      j,
 			"jvm-heap":                       jh,
 			"link-local-dns":                 d,
