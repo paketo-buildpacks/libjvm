@@ -2,12 +2,6 @@ module github.com/paketo-buildpacks/libjvm/v2
 
 go 1.20
 
-replace github.com/paketo-buildpacks/libpak/v2 v2.0.0-alpha => github.com/paketo-buildpacks/libpak/v2 v2.0.0-20230829042532-0d4ef1637cfb
-
-replace github.com/paketo-buildpacks/libpak/v2 v2.0.0-alpha.1 => github.com/paketo-buildpacks/libpak/v2 v2.0.0-20230829042532-0d4ef1637cfb
-
-replace github.com/paketo-buildpacks/libpak/v2 v2.0.0-alpha.2 => github.com/paketo-buildpacks/libpak/v2 v2.0.0-20230829042532-0d4ef1637cfb
-
 require (
 	github.com/BurntSushi/toml v1.3.2
 	github.com/Masterminds/semver/v3 v3.2.1
@@ -17,11 +11,11 @@ require (
 	github.com/mattn/go-shellwords v1.0.12
 	github.com/miekg/dns v1.1.55
 	github.com/onsi/gomega v1.27.10
-	github.com/paketo-buildpacks/libpak/v2 v2.0.0-alpha.2
-	github.com/pavlo-v-chernykh/keystore-go/v4 v4.4.1
+	github.com/paketo-buildpacks/libpak/v2 v2.0.0-alpha.3
+	github.com/pavlo-v-chernykh/keystore-go/v4 v4.5.0
 	github.com/sclevine/spec v1.4.0
 	github.com/stretchr/testify v1.8.4
-	golang.org/x/sys v0.11.0
+	golang.org/x/sys v0.12.0
 )
 
 require (
