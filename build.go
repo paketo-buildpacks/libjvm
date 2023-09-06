@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 the original author or authors.
+ * Copyright 2018-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,13 +30,12 @@ import (
 )
 
 type Build struct {
-	Logger               log.Logger
-	CertLoader           CertificateLoader
-	DependencyCache      libpak.DependencyCache
-	Native               NativeImage
-	CustomHelpers        []string
-	Contributable        []libpak.Contributable
-	FlattenContributorFn func([]libpak.Contributable) libcnb.BuildFunc
+	Logger          log.Logger
+	CertLoader      CertificateLoader
+	DependencyCache libpak.DependencyCache
+	Native          NativeImage
+	CustomHelpers   []string
+	Contributable   []libpak.Contributable
 }
 
 type BuildOption func(build Build) Build
@@ -55,22 +54,13 @@ func WithCustomHelpers(customHelpers []string) BuildOption {
 	}
 }
 
-// Used to process contributors into layers.
-func WithCustomFlattenContributorFn(fn func([]libpak.Contributable) libcnb.BuildFunc) BuildOption {
-	return func(build Build) Build {
-		build.FlattenContributorFn = fn
-		return build
-	}
-}
-
 func NewBuild(logger log.Logger, buildOpts ...BuildOption) Build {
 	cl := NewCertificateLoader(logger)
 
 	build := Build{
-		Logger:               logger,
-		CertLoader:           cl,
-		Contributable:        []libpak.Contributable{},
-		FlattenContributorFn: libpak.ContributableBuildFunc,
+		Logger:        logger,
+		CertLoader:    cl,
+		Contributable: []libpak.Contributable{},
 	}
 
 	for _, option := range buildOpts {
@@ -85,62 +75,62 @@ type NativeImage struct {
 	CustomArgs     []string
 }
 
-func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
+func (b Build) Build(context libcnb.BuildContext, result *libcnb.BuildResult) ([]libpak.Contributable, error) {
 	var jdkRequired, jreRequired, jreMissing, jreSkipped, jLinkEnabled, nativeImage bool
 
 	pr := libpak.PlanEntryResolver{Plan: context.Plan}
 
 	_, jdkRequired, err := pr.Resolve("jdk")
 	if err != nil {
-		return libcnb.BuildResult{}, fmt.Errorf("unable to resolve jdk plan entry\n%w", err)
+		return []libpak.Contributable{}, fmt.Errorf("unable to resolve jdk plan entry\n%w", err)
 	}
 
 	jrePlanEntry, jreRequired, err := pr.Resolve("jre")
 	if err != nil {
-		return libcnb.BuildResult{}, fmt.Errorf("unable to resolve jre plan entry\n%w", err)
+		return []libpak.Contributable{}, fmt.Errorf("unable to resolve jre plan entry\n%w", err)
 	}
 
 	_, nativeImage, err = pr.Resolve("native-image-builder")
 	if err != nil {
-		return libcnb.BuildResult{}, fmt.Errorf("unable to resolve native-image-builder plan entry\n%w", err)
+		return []libpak.Contributable{}, fmt.Errorf("unable to resolve native-image-builder plan entry\n%w", err)
 	}
 
 	if !jdkRequired && !jreRequired && !nativeImage {
-		return libcnb.BuildResult{}, nil
+		return []libpak.Contributable{}, nil
 	}
 	b.Logger.Title(context.Buildpack.Info.Name, context.Buildpack.Info.Version, context.Buildpack.Info.Homepage)
 
 	bpm, err := libpak.NewBuildModuleMetadata(context.Buildpack.Metadata)
 	if err != nil {
-		return libcnb.BuildResult{}, fmt.Errorf("unable to create build module metadata\n%w", err)
+		return []libpak.Contributable{}, fmt.Errorf("unable to create build module metadata\n%w", err)
 	}
 
 	cr, err := libpak.NewConfigurationResolver(bpm)
 	if err != nil {
-		return libcnb.BuildResult{}, fmt.Errorf("unable to create configuration resolver\n%w", err)
+		return []libpak.Contributable{}, fmt.Errorf("unable to create configuration resolver\n%w", err)
 	}
 	cr.LogConfiguration(b.Logger)
 
 	jvmVersion := NewJVMVersion(b.Logger)
 	v, err := jvmVersion.GetJVMVersion(context.ApplicationPath, cr)
 	if err != nil {
-		return libcnb.BuildResult{}, fmt.Errorf("unable to determine jvm version\n%w", err)
+		return []libpak.Contributable{}, fmt.Errorf("unable to determine jvm version\n%w", err)
 	}
 
 	dr, err := libpak.NewDependencyResolver(bpm, context.StackID)
 	if err != nil {
-		return libcnb.BuildResult{}, fmt.Errorf("unable to create dependency resolver\n%w", err)
+		return []libpak.Contributable{}, fmt.Errorf("unable to create dependency resolver\n%w", err)
 	}
 
 	b.DependencyCache, err = libpak.NewDependencyCache(context.Buildpack.Info.ID, context.Buildpack.Info.Version, context.Buildpack.Path, context.Platform.Bindings, b.Logger)
 	if err != nil {
-		return libcnb.BuildResult{}, fmt.Errorf("unable to create dependency cache\n%w", err)
+		return []libpak.Contributable{}, fmt.Errorf("unable to create dependency cache\n%w", err)
 	}
 	b.DependencyCache.Logger = b.Logger
 
 	depJDK, err := dr.Resolve("jdk", v)
 	if (jdkRequired && !nativeImage) && err != nil {
-		return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)
+		return []libpak.Contributable{}, fmt.Errorf("unable to find dependency\n%w", err)
 	}
 
 	jreMissing = false
@@ -160,55 +150,55 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 	if nativeImage {
 		depNative, err := dr.Resolve("native-image-svm", v)
 		if err != nil {
-			return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)
+			return []libpak.Contributable{}, fmt.Errorf("unable to find dependency\n%w", err)
 		}
 		if b.Native.BundledWithJDK {
 			if err = b.contributeJDK(depNative); err != nil {
-				return libcnb.BuildResult{}, fmt.Errorf("unable to contribute Native Image bundled with JDK\n%w", err)
+				return []libpak.Contributable{}, fmt.Errorf("unable to contribute Native Image bundled with JDK\n%w", err)
 			}
-			return b.createResult(context)
+			return b.Contributable, nil
 		}
 		if err = b.contributeNIK(depJDK, depNative); err != nil {
-			return libcnb.BuildResult{}, fmt.Errorf("unable to contribute Native Image\n%w", err)
+			return []libpak.Contributable{}, fmt.Errorf("unable to contribute Native Image\n%w", err)
 		}
-		return b.createResult(context)
+		return b.Contributable, nil
 	}
 
 	// jLink
 	if jLinkEnabled {
 		if IsBeforeJava9(v) {
-			return libcnb.BuildResult{}, fmt.Errorf("unable to build, jlink is compatible with Java 9+ only\n")
+			return []libpak.Contributable{}, fmt.Errorf("unable to build, jlink is compatible with Java 9+ only")
 		}
 		if err = b.contributeJDK(depJDK); err != nil {
-			return libcnb.BuildResult{}, fmt.Errorf("unable to contribute JDK for Jlink\n%w", err)
+			return []libpak.Contributable{}, fmt.Errorf("unable to contribute JDK for Jlink\n%w", err)
 		}
 		if err = b.contributeJLink(cr, jrePlanEntry.Metadata, context.ApplicationPath, depJDK); err != nil {
-			return libcnb.BuildResult{}, fmt.Errorf("unable to contribute Jlink\n%w", err)
+			return []libpak.Contributable{}, fmt.Errorf("unable to contribute Jlink\n%w", err)
 		}
 		err := b.contributeHelpers(context, depJDK)
 		if err != nil {
-			return libcnb.BuildResult{}, fmt.Errorf("unable to contribute helpers\n%w", err)
+			return []libpak.Contributable{}, fmt.Errorf("unable to contribute helpers\n%w", err)
 		}
-		return b.createResult(context)
+		return b.Contributable, nil
 	}
 
 	// use JDK as JRE
 	if jreRequired && (jreSkipped || jreMissing) {
 		b.warnIfJreNotUsed(jreMissing, jreSkipped)
 		if err = b.contributeJDKAsJRE(depJDK, jrePlanEntry, context); err != nil {
-			return libcnb.BuildResult{}, fmt.Errorf("unable to contribute JDK as JRE\n%w", err)
+			return []libpak.Contributable{}, fmt.Errorf("unable to contribute JDK as JRE\n%w", err)
 		}
 		err := b.contributeHelpers(context, depJDK)
 		if err != nil {
-			return libcnb.BuildResult{}, fmt.Errorf("unable to contribute helpers\n%w", err)
+			return []libpak.Contributable{}, fmt.Errorf("unable to contribute helpers\n%w", err)
 		}
-		return b.createResult(context)
+		return b.Contributable, nil
 	}
 
 	// contribute a JDK
 	if jdkRequired {
 		if err = b.contributeJDK(depJDK); err != nil {
-			return libcnb.BuildResult{}, fmt.Errorf("unable to contribute JDK \n%w", err)
+			return []libpak.Contributable{}, fmt.Errorf("unable to contribute JDK \n%w", err)
 		}
 	}
 
@@ -216,23 +206,17 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 	if jreRequired {
 		dt := JREType
 		if err = b.contributeJRE(depJRE, context.ApplicationPath, dt, jrePlanEntry.Metadata); err != nil {
-			return libcnb.BuildResult{}, fmt.Errorf("unable to contribute JDK \n%w", err)
+			return []libpak.Contributable{}, fmt.Errorf("unable to contribute JDK \n%w", err)
 		}
 		if IsLaunchContribution(jrePlanEntry.Metadata) {
 			err := b.contributeHelpers(context, depJRE)
 			if err != nil {
-				return libcnb.BuildResult{}, fmt.Errorf("unable to contribute helpers\n%w", err)
+				return []libpak.Contributable{}, fmt.Errorf("unable to contribute helpers\n%w", err)
 			}
 		}
 	}
 
-	return b.createResult(context)
-}
-
-func (b *Build) createResult(ctx libcnb.BuildContext) (libcnb.BuildResult, error) {
-	//delegate the processing of contributions to the overridable method allowing
-	//for test cases to skip the invocation of every contributable.
-	return b.FlattenContributorFn(b.Contributable)(ctx)
+	return b.Contributable, nil
 }
 
 func (b *Build) contributeJDK(jdkDep libpak.BuildModuleDependency) error {
@@ -270,7 +254,7 @@ func (b *Build) contributeJLink(configurationResolver libpak.ConfigurationResolv
 	args, explicit := configurationResolver.Resolve("BP_JVM_JLINK_ARGS")
 	argList, err := shellwords.Parse(args)
 	if err != nil {
-		return fmt.Errorf("unable to parse jlink arguments %s %w\n", args, err)
+		return fmt.Errorf("unable to parse jlink arguments %s\n%w", args, err)
 	}
 
 	jlink, err := NewJLink(appPath, effect.NewExecutor(), argList, b.CertLoader, planEntryMetadata, explicit, b.Logger)
@@ -326,8 +310,7 @@ func (b *Build) contributeHelpers(context libcnb.BuildContext, depJRE libpak.Bui
 		}
 	}
 
-	h := libpak.NewHelperLayerContributor(context.Buildpack, helpers...)
-	h.Logger = b.Logger
+	h := libpak.NewHelperLayerContributor(context.Buildpack, b.Logger, helpers...)
 	b.Contributable = append(b.Contributable, h)
 
 	jsp := NewJavaSecurityProperties(context.Buildpack.Info, b.Logger)
