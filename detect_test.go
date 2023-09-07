@@ -19,11 +19,11 @@ package libjvm_test
 import (
 	"testing"
 
-	"github.com/buildpacks/libcnb"
+	"github.com/buildpacks/libcnb/v2"
 	. "github.com/onsi/gomega"
 	"github.com/sclevine/spec"
 
-	"github.com/paketo-buildpacks/libjvm"
+	"github.com/paketo-buildpacks/libjvm/v2"
 )
 
 func testDetect(t *testing.T, context spec.G, it spec.S) {

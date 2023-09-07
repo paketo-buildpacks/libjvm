@@ -23,11 +23,12 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/buildpacks/libcnb"
+	"github.com/buildpacks/libcnb/v2"
 	. "github.com/onsi/gomega"
 	"github.com/sclevine/spec"
 
-	"github.com/paketo-buildpacks/libjvm"
+	"github.com/paketo-buildpacks/libjvm/v2"
+	"github.com/paketo-buildpacks/libpak/v2/log"
 )
 
 func testJavaSecurityProperties(t *testing.T, context spec.G, it spec.S) {
@@ -51,11 +52,12 @@ func testJavaSecurityProperties(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	it("contributes Java Security Properties", func() {
-		l := libjvm.NewJavaSecurityProperties(ctx.Buildpack.Info)
+		l := libjvm.NewJavaSecurityProperties(ctx.Buildpack.Info, log.NewDiscardLogger())
+
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
 
-		layer, err = l.Contribute(layer)
+		err = l.Contribute(&layer)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(layer.LayerTypes.Launch).To(BeTrue())

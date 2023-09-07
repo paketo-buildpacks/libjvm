@@ -23,51 +23,50 @@ import (
 
 	"github.com/heroku/color"
 
-	"github.com/buildpacks/libcnb"
-	"github.com/paketo-buildpacks/libpak"
-	"github.com/paketo-buildpacks/libpak/bard"
-	"github.com/paketo-buildpacks/libpak/crush"
+	"github.com/buildpacks/libcnb/v2"
+	"github.com/paketo-buildpacks/libpak/v2"
+	"github.com/paketo-buildpacks/libpak/v2/crush"
 )
 
 type JDK struct {
 	CertificateLoader CertificateLoader
 	LayerContributor  libpak.DependencyLayerContributor
-	Logger            bard.Logger
 }
 
-func NewJDK(dependency libpak.BuildpackDependency, cache libpak.DependencyCache, certificateLoader CertificateLoader) (JDK, libcnb.BOMEntry, error) {
+func NewJDK(dependency libpak.BuildModuleDependency, cache libpak.DependencyCache, certificateLoader CertificateLoader) (JDK, error) {
 	expected := map[string]interface{}{"dependency": dependency}
 
 	if md, err := certificateLoader.Metadata(); err != nil {
-		return JDK{}, libcnb.BOMEntry{}, fmt.Errorf("unable to generate certificate loader metadata")
+		return JDK{}, fmt.Errorf("unable to generate certificate loader metadata")
 	} else {
 		for k, v := range md {
 			expected[k] = v
 		}
 	}
 
-	contributor, be := libpak.NewDependencyLayer(
+	contributor := libpak.NewDependencyLayerContributor(
 		dependency,
 		cache,
 		libcnb.LayerTypes{
 			Build: true,
 			Cache: true,
-		})
+		},
+		cache.Logger,
+	)
 	contributor.ExpectedMetadata = expected
 
 	return JDK{
 		CertificateLoader: certificateLoader,
 		LayerContributor:  contributor,
-	}, be, nil
+	}, nil
 }
 
-func (j JDK) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
-	j.LayerContributor.Logger = j.Logger
+func (j JDK) Contribute(layer *libcnb.Layer) error {
 
-	return j.LayerContributor.Contribute(layer, func(artifact *os.File) (libcnb.Layer, error) {
-		j.Logger.Bodyf("Expanding to %s", layer.Path)
+	return j.LayerContributor.Contribute(layer, func(layer *libcnb.Layer, artifact *os.File) error {
+		j.LayerContributor.Logger.Bodyf("Expanding to %s", layer.Path)
 		if err := crush.Extract(artifact, layer.Path, 1); err != nil {
-			return libcnb.Layer{}, fmt.Errorf("unable to expand JDK\n%w", err)
+			return fmt.Errorf("unable to expand JDK\n%w", err)
 		}
 
 		layer.BuildEnvironment.Override("JAVA_HOME", layer.Path)
@@ -79,18 +78,18 @@ func (j JDK) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 		} else {
 			keyStorePath = filepath.Join(layer.Path, "lib", "security", "cacerts")
 		}
-		if err := os.Chmod(keyStorePath, 0664); err != nil{
-			return  libcnb.Layer{}, fmt.Errorf("unable to set keystore file permissions\n%w", err)
+		if err := os.Chmod(keyStorePath, 0664); err != nil {
+			return fmt.Errorf("unable to set keystore file permissions\n%w", err)
 		}
 
 		if IsBeforeJava18(j.LayerContributor.Dependency.Version) {
 			if err := j.CertificateLoader.Load(keyStorePath, "changeit"); err != nil {
-				return libcnb.Layer{}, fmt.Errorf("unable to load certificates\n%w", err)
+				return fmt.Errorf("unable to load certificates\n%w", err)
 			}
 		} else {
-			j.Logger.Bodyf("%s: The JVM cacerts entries cannot be loaded with Java 18+, for more information see: https://github.com/paketo-buildpacks/libjvm/issues/158", color.YellowString("Warning"))
+			j.LayerContributor.Logger.Bodyf("%s: The JVM cacerts entries cannot be loaded with Java 18+, for more information see: https://github.com/paketo-buildpacks/libjvm/issues/158", color.YellowString("Warning"))
 		}
-		return layer, nil
+		return nil
 	})
 }
 

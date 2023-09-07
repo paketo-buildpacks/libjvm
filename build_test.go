@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 the original author or authors.
+ * Copyright 2018-2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,33 +17,36 @@
 package libjvm_test
 
 import (
-	"github.com/paketo-buildpacks/libpak/bard"
 	"io"
-	"os"
 	"testing"
 
-	"github.com/buildpacks/libcnb"
+	"github.com/paketo-buildpacks/libpak/v2"
+	"github.com/paketo-buildpacks/libpak/v2/log"
+
+	"github.com/buildpacks/libcnb/v2"
 	. "github.com/onsi/gomega"
-	"github.com/paketo-buildpacks/libpak"
 	"github.com/sclevine/spec"
 
-	"github.com/paketo-buildpacks/libjvm"
+	"github.com/paketo-buildpacks/libjvm/v2"
 )
 
 func testBuild(t *testing.T, context spec.G, it spec.S) {
 	var (
 		Expect = NewWithT(t).Expect
 
-		ctx libcnb.BuildContext
+		ctx    libcnb.BuildContext
+		result libcnb.BuildResult
 
 		nativeOptionBundledWithJDK = libjvm.WithNativeImage(libjvm.NativeImage{
 			BundledWithJDK: true,
 		})
+
 		nativeOptionSeparateFromJDK = libjvm.WithNativeImage(libjvm.NativeImage{
 			BundledWithJDK: false,
 			CustomCommand:  "/bin/gu",
 			CustomArgs:     []string{"install", "--local-file"},
 		})
+
 		nativeOptionMissingCommand = libjvm.WithNativeImage(libjvm.NativeImage{
 			BundledWithJDK: false,
 			CustomCommand:  "",
@@ -64,16 +67,11 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		}
 		ctx.StackID = "test-stack-id"
 
-		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard)).Build(ctx)
+		contributors, err := libjvm.NewBuild(log.NewPaketoLogger(io.Discard)).Build(ctx, &result)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(result.Layers).To(HaveLen(1))
-		Expect(result.Layers[0].Name()).To(Equal("jdk"))
-
-		Expect(result.BOM.Entries).To(HaveLen(1))
-		Expect(result.BOM.Entries[0].Name).To(Equal("jdk"))
-		Expect(result.BOM.Entries[0].Launch).To(BeFalse())
-		Expect(result.BOM.Entries[0].Build).To(BeTrue())
+		Expect(contributors).To(HaveLen(1))
+		Expect(contributors[0].Name()).To(Equal("jdk"))
 	})
 
 	it("contributes JRE", func() {
@@ -90,19 +88,13 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		}
 		ctx.StackID = "test-stack-id"
 
-		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard)).Build(ctx)
+		contributors, err := libjvm.NewBuild(log.NewPaketoLogger(io.Discard)).Build(ctx, &result)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(result.Layers).To(HaveLen(3))
-		Expect(result.Layers[0].Name()).To(Equal("jre"))
-		Expect(result.Layers[1].Name()).To(Equal("helper"))
-		Expect(result.Layers[2].Name()).To(Equal("java-security-properties"))
-
-		Expect(result.BOM.Entries).To(HaveLen(2))
-		Expect(result.BOM.Entries[0].Name).To(Equal("jre"))
-		Expect(result.BOM.Entries[0].Launch).To(BeTrue())
-		Expect(result.BOM.Entries[1].Name).To(Equal("helper"))
-		Expect(result.BOM.Entries[1].Launch).To(BeTrue())
+		Expect(contributors).To(HaveLen(3))
+		Expect(contributors[0].Name()).To(Equal("jre"))
+		Expect(contributors[1].Name()).To(Equal("helper"))
+		Expect(contributors[2].Name()).To(Equal("java-security-properties"))
 	})
 
 	it("contributes security-providers-classpath-8 before Java 9", func() {
@@ -118,10 +110,13 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		}
 		ctx.StackID = "test-stack-id"
 
-		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard)).Build(ctx)
+		contributors, err := libjvm.NewBuild(log.NewPaketoLogger(io.Discard)).Build(ctx, &result)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(result.Layers[1].(libpak.HelperLayerContributor).Names).To(Equal([]string{
+		Expect(contributors[0].Name()).To(Equal("jre"))
+		Expect(contributors[1].Name()).To(Equal("helper"))
+
+		Expect(contributors[1].(libpak.HelperLayerContributor).Names).To(Equal([]string{
 			"active-processor-count",
 			"java-opts",
 			"jvm-heap",
@@ -149,10 +144,14 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		}
 		ctx.StackID = "test-stack-id"
 
-		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard)).Build(ctx)
+		contributors, err := libjvm.NewBuild(log.NewPaketoLogger(io.Discard)).Build(ctx, &result)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(result.Layers[1].(libpak.HelperLayerContributor).Names).To(Equal([]string{
+		Expect(contributors).To(HaveLen(3))
+		Expect(contributors[0].Name()).To(Equal("jre"))
+		Expect(contributors[1].Name()).To(Equal("helper"))
+
+		Expect(contributors[1].(libpak.HelperLayerContributor).Names).To(Equal([]string{
 			"active-processor-count",
 			"java-opts",
 			"jvm-heap",
@@ -182,18 +181,12 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		}
 		ctx.StackID = "test-stack-id"
 
-		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard)).Build(ctx)
+		contributors, err := libjvm.NewBuild(log.NewPaketoLogger(io.Discard)).Build(ctx, &result)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(result.Layers[0].Name()).To(Equal("jdk"))
-		Expect(result.Layers[0].(libjvm.JRE).LayerContributor.Dependency.ID).To(Equal("jdk"))
-
-		Expect(result.BOM.Entries).To(HaveLen(2))
-		Expect(result.BOM.Entries[0].Name).To(Equal("jdk"))
-		Expect(result.BOM.Entries[0].Launch).To(BeTrue())
-		Expect(result.BOM.Entries[0].Build).To(BeTrue())
-		Expect(result.BOM.Entries[1].Name).To(Equal("helper"))
-		Expect(result.BOM.Entries[1].Launch).To(BeTrue())
+		Expect(contributors).To(HaveLen(3))
+		Expect(contributors[0].Name()).To(Equal("jdk"))
+		Expect(contributors[0].(libjvm.JRE).LayerContributor.Dependency.ID).To(Equal("jdk"))
 	})
 
 	it("contributes JDK when no JRE and both a JDK and JRE are wanted", func() {
@@ -211,22 +204,16 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		}
 		ctx.StackID = "test-stack-id"
 
-		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard)).Build(ctx)
+		contributors, err := libjvm.NewBuild(log.NewPaketoLogger(io.Discard)).Build(ctx, &result)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(result.Layers[0].Name()).To(Equal("jdk"))
-		Expect(result.Layers[0].(libjvm.JRE).LayerContributor.Dependency.ID).To(Equal("jdk"))
+		Expect(contributors).To(HaveLen(3))
+		Expect(contributors[0].Name()).To(Equal("jdk"))
+		Expect(contributors[0].(libjvm.JRE).LayerContributor.Dependency.ID).To(Equal("jdk"))
 
-		Expect(result.BOM.Entries).To(HaveLen(2))
-		Expect(result.BOM.Entries[0].Name).To(Equal("jdk"))
-		Expect(result.BOM.Entries[0].Launch).To(BeTrue())
-		Expect(result.BOM.Entries[0].Build).To(BeTrue())
-		Expect(result.BOM.Entries[1].Name).To(Equal("helper"))
-		Expect(result.BOM.Entries[1].Launch).To(BeTrue())
 	})
 
 	it("contributes NIK API <= 0.6", func() {
-
 		ctx.Plan.Entries = append(
 			ctx.Plan.Entries,
 			libcnb.BuildpackPlanEntry{Name: "jdk", Metadata: map[string]interface{}{}},
@@ -244,16 +231,11 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		ctx.Buildpack.API = "0.6"
 		ctx.StackID = "test-stack-id"
 
-		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), nativeOptionBundledWithJDK).Build(ctx)
+		contributors, err := libjvm.NewBuild(log.NewPaketoLogger(io.Discard), nativeOptionBundledWithJDK).Build(ctx, &result)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(result.Layers).To(HaveLen(1))
-		Expect(result.Layers[0].Name()).To(Equal("native-image-svm"))
-
-		Expect(result.BOM.Entries).To(HaveLen(1))
-		Expect(result.BOM.Entries[0].Name).To(Equal("native-image-svm"))
-		Expect(result.BOM.Entries[0].Launch).To(BeFalse())
-		Expect(result.BOM.Entries[0].Build).To(BeTrue())
+		Expect(contributors).To(HaveLen(1))
+		Expect(contributors[0].Name()).To(Equal("native-image-svm"))
 	})
 
 	it("contributes NIK API >= 0.7", func() {
@@ -276,16 +258,11 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		ctx.Buildpack.API = "0.7"
 		ctx.StackID = "test-stack-id"
 
-		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), nativeOptionBundledWithJDK).Build(ctx)
+		contributors, err := libjvm.NewBuild(log.NewPaketoLogger(io.Discard), nativeOptionBundledWithJDK).Build(ctx, &result)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(result.Layers).To(HaveLen(1))
-		Expect(result.Layers[0].Name()).To(Equal("native-image-svm"))
-
-		Expect(result.BOM.Entries).To(HaveLen(1))
-		Expect(result.BOM.Entries[0].Name).To(Equal("native-image-svm"))
-		Expect(result.BOM.Entries[0].Launch).To(BeFalse())
-		Expect(result.BOM.Entries[0].Build).To(BeTrue())
+		Expect(contributors).To(HaveLen(1))
+		Expect(contributors[0].Name()).To(Equal("native-image-svm"))
 	})
 
 	context("native image enabled for API 0.7+ (not bundled with JDK)", func() {
@@ -319,20 +296,12 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			ctx.StackID = "test-stack-id"
 			ctx.Buildpack.API = "0.7"
 
-			result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), nativeOptionSeparateFromJDK).Build(ctx)
+			contributors, err := libjvm.NewBuild(log.NewPaketoLogger(io.Discard), nativeOptionSeparateFromJDK).Build(ctx, &result)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(result.Layers).To(HaveLen(1))
-			Expect(result.Layers[0].Name()).To(Equal("nik"))
-			Expect(result.Layers[0].(libjvm.NIK).NativeDependency).NotTo(BeNil())
-
-			Expect(result.BOM.Entries).To(HaveLen(2))
-			Expect(result.BOM.Entries[0].Name).To(Equal("jdk"))
-			Expect(result.BOM.Entries[0].Launch).To(BeFalse())
-			Expect(result.BOM.Entries[0].Build).To(BeTrue())
-			Expect(result.BOM.Entries[1].Name).To(Equal("native-image-svm"))
-			Expect(result.BOM.Entries[1].Launch).To(BeTrue())
-			Expect(result.BOM.Entries[1].Build).To(BeTrue())
+			Expect(contributors).To(HaveLen(1))
+			Expect(contributors[0].Name()).To(Equal("nik"))
+			Expect(contributors[0].(libjvm.NIK).NativeDependency).NotTo(BeNil())
 		})
 	})
 
@@ -367,8 +336,9 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			ctx.StackID = "test-stack-id"
 			ctx.Buildpack.API = "0.7"
 
-			_, err := libjvm.NewBuild(bard.NewLogger(io.Discard), nativeOptionMissingCommand).Build(ctx)
+			_, err := libjvm.NewBuild(log.NewPaketoLogger(io.Discard), nativeOptionMissingCommand).Build(ctx, &result)
 			Expect(err).To(HaveOccurred())
+
 			Expect(err.Error()).To(ContainSubstring("unable to create NIK, custom command has not been supplied by buildpack"))
 		})
 	})
@@ -392,25 +362,16 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		ctx.Buildpack.API = "0.6"
 		ctx.StackID = "test-stack-id"
 
-		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard), nativeOptionBundledWithJDK).Build(ctx)
+		contributors, err := libjvm.NewBuild(log.NewPaketoLogger(io.Discard), nativeOptionBundledWithJDK).Build(ctx, &result)
 		Expect(err).NotTo(HaveOccurred())
 
-		Expect(result.Layers).To(HaveLen(1))
-		Expect(result.Layers[0].Name()).To(Equal("native-image-svm"))
-
-		Expect(result.BOM.Entries).To(HaveLen(1))
-		Expect(result.BOM.Entries[0].Name).To(Equal("native-image-svm"))
-		Expect(result.BOM.Entries[0].Launch).To(BeFalse())
-		Expect(result.BOM.Entries[0].Build).To(BeTrue())
+		Expect(contributors).To(HaveLen(1))
+		Expect(contributors[0].Name()).To(Equal("native-image-svm"))
 	})
 
 	context("$BP_JVM_VERSION", func() {
 		it.Before(func() {
-			Expect(os.Setenv("BP_JVM_VERSION", "1.1.1")).To(Succeed())
-		})
-
-		it.After(func() {
-			Expect(os.Unsetenv("BP_JVM_VERSION")).To(Succeed())
+			t.Setenv("BP_JVM_VERSION", "1.1.1")
 		})
 
 		it("selects versions based on BP_JVM_VERSION", func() {
@@ -444,22 +405,19 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			}
 			ctx.StackID = "test-stack-id"
 
-			result, err := libjvm.NewBuild(bard.NewLogger(io.Discard)).Build(ctx)
+			contributors, err := libjvm.NewBuild(log.NewPaketoLogger(io.Discard)).Build(ctx, &result)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(result.Layers[0].(libjvm.JDK).LayerContributor.Dependency.Version).To(Equal("1.1.1"))
-			Expect(result.Layers[1].(libjvm.JRE).LayerContributor.Dependency.Version).To(Equal("1.1.1"))
+			Expect(contributors).To(HaveLen(2))
+			Expect(contributors[0].Name()).To(Equal("jdk"))
+			Expect(contributors[0].(libjvm.JDK).LayerContributor.Dependency.Version).To(Equal("1.1.1"))
+			Expect(contributors[1].(libjvm.JRE).LayerContributor.Dependency.Version).To(Equal("1.1.1"))
 		})
 	})
 
 	context("$BP_JVM_TYPE", func() {
-
-		it.After(func() {
-			Expect(os.Unsetenv("BP_JVM_TYPE")).To(Succeed())
-		})
-
 		it("contributes JDK when specified explicitly in $BP_JVM_TYPE", func() {
-			Expect(os.Setenv("BP_JVM_TYPE", "jdk")).To(Succeed())
+			t.Setenv("BP_JVM_TYPE", "jdk")
 
 			ctx.Plan.Entries = append(ctx.Plan.Entries, libcnb.BuildpackPlanEntry{Name: "jdk", Metadata: LaunchContribution})
 			ctx.Plan.Entries = append(ctx.Plan.Entries, libcnb.BuildpackPlanEntry{Name: "jre", Metadata: LaunchContribution})
@@ -479,17 +437,16 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			}
 			ctx.StackID = "test-stack-id"
 
-			result, err := libjvm.NewBuild(bard.NewLogger(io.Discard)).Build(ctx)
+			contributors, err := libjvm.NewBuild(log.NewPaketoLogger(io.Discard)).Build(ctx, &result)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result.Layers[0].Name()).To(Equal("jdk"))
-			Expect(result.Layers[0].(libjvm.JRE).LayerContributor.Dependency.ID).To(Equal("jdk"))
 
-			Expect(result.BOM.Entries[0].Name).To(Equal("jdk"))
-			Expect(result.BOM.Entries[0].Launch).To(BeTrue())
+			Expect(contributors).To(HaveLen(3))
+			Expect(contributors[0].Name()).To(Equal("jdk"))
+			Expect(contributors[0].(libjvm.JRE).LayerContributor.Dependency.ID).To(Equal("jdk"))
 		})
 
 		it("contributes JRE when specified explicitly in $BP_JVM_TYPE", func() {
-			Expect(os.Setenv("BP_JVM_TYPE", "jre")).To(Succeed())
+			t.Setenv("BP_JVM_TYPE", "jre")
 
 			ctx.Plan.Entries = append(ctx.Plan.Entries, libcnb.BuildpackPlanEntry{Name: "jdk", Metadata: LaunchContribution})
 			ctx.Plan.Entries = append(ctx.Plan.Entries, libcnb.BuildpackPlanEntry{Name: "jre", Metadata: LaunchContribution})
@@ -509,21 +466,13 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			}
 			ctx.StackID = "test-stack-id"
 
-			result, err := libjvm.NewBuild(bard.NewLogger(io.Discard)).Build(ctx)
+			contributors, err := libjvm.NewBuild(log.NewPaketoLogger(io.Discard)).Build(ctx, &result)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result.Layers[0].Name()).To(Equal("jdk"))
-			Expect(result.Layers[0].(libjvm.JDK).LayerContributor.Dependency.ID).To(Equal("jdk"))
-			Expect(result.Layers[1].(libjvm.JRE).LayerContributor.Dependency.ID).To(Equal("jre"))
 
-			Expect(result.BOM.Entries).To(HaveLen(3))
-			Expect(result.BOM.Entries[0].Name).To(Equal("jdk"))
-			Expect(result.BOM.Entries[0].Launch).To(BeFalse())
-			Expect(result.BOM.Entries[0].Build).To(BeTrue())
-
-			Expect(result.BOM.Entries[1].Name).To(Equal("jre"))
-			Expect(result.BOM.Entries[1].Launch).To(BeTrue())
-			Expect(result.BOM.Entries[1].Build).To(BeTrue())
-
+			Expect(contributors).To(HaveLen(4))
+			Expect(contributors[0].Name()).To(Equal("jdk"))
+			Expect(contributors[0].(libjvm.JDK).LayerContributor.Dependency.ID).To(Equal("jdk"))
+			Expect(contributors[1].(libjvm.JRE).LayerContributor.Dependency.ID).To(Equal("jre"))
 		})
 	})
 }

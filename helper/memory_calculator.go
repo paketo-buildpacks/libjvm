@@ -26,10 +26,10 @@ import (
 
 	"github.com/mattn/go-shellwords"
 
-	"github.com/paketo-buildpacks/libpak/bard"
+	"github.com/paketo-buildpacks/libpak/v2/log"
 
-	"github.com/paketo-buildpacks/libjvm/calc"
-	"github.com/paketo-buildpacks/libjvm/count"
+	"github.com/paketo-buildpacks/libjvm/v2/calc"
+	"github.com/paketo-buildpacks/libjvm/v2/count"
 )
 
 const (
@@ -44,7 +44,7 @@ const (
 )
 
 type MemoryCalculator struct {
-	Logger            bard.Logger
+	Logger            log.Logger
 	MemoryLimitPathV1 string
 	MemoryLimitPathV2 string
 	MemoryInfoPath    string
@@ -65,7 +65,7 @@ func (m MemoryCalculator) Execute() (map[string]string, error) {
 			return nil, fmt.Errorf("unable to convert $BPL_JVM_HEADROOM=%s to integer\n%w", s, err)
 		}
 		deprecatedHeadroom = true
-		m.Logger.Info("WARNING: BPL_JVM_HEADROOM is deprecated and will be removed, please switch to BPL_JVM_HEAD_ROOM")
+		m.Logger.Body("WARNING: BPL_JVM_HEADROOM is deprecated and will be removed, please switch to BPL_JVM_HEAD_ROOM")
 	}
 
 	if s, ok := os.LookupEnv("BPL_JVM_HEAD_ROOM"); ok {
@@ -73,7 +73,7 @@ func (m MemoryCalculator) Execute() (map[string]string, error) {
 			return nil, fmt.Errorf("unable to convert $BPL_JVM_HEAD_ROOM=%s to integer\n%w", s, err)
 		}
 		if deprecatedHeadroom {
-			m.Logger.Info("WARNING: You have set both BPL_JVM_HEAD_ROOM and BPL_JVM_HEADROOM. BPL_JVM_HEADROOM has been deprecated, so it will be ignored.")
+			m.Logger.Body("WARNING: You have set both BPL_JVM_HEAD_ROOM and BPL_JVM_HEADROOM. BPL_JVM_HEADROOM has been deprecated, so it will be ignored.")
 		}
 	}
 
@@ -145,23 +145,23 @@ func (m MemoryCalculator) Execute() (map[string]string, error) {
 
 	if totalMemory == UnsetTotalMemory {
 		if b, err := ioutil.ReadFile(m.MemoryInfoPath); err != nil && !os.IsNotExist(err) {
-			m.Logger.Infof(`WARNING: failed to read %q: %s`, m.MemoryInfoPath, err)
+			m.Logger.Bodyf(`WARNING: failed to read %q: %s`, m.MemoryInfoPath, err)
 		} else if err == nil {
 			if mem, err := parseMemInfo(string(b)); err != nil {
-				m.Logger.Infof(`WARNING: failed to parse available memory from path %q: %s`, m.MemoryInfoPath, err)
+				m.Logger.Bodyf(`WARNING: failed to parse available memory from path %q: %s`, m.MemoryInfoPath, err)
 			} else {
-				m.Logger.Infof("Calculating JVM memory based on %s available memory", calc.Size{Value: mem}.String())
-				m.Logger.Info("For more information on this calculation, see https://paketo.io/docs/reference/java-reference/#memory-calculator")
+				m.Logger.Bodyf("Calculating JVM memory based on %s available memory", calc.Size{Value: mem}.String())
+				m.Logger.Body("For more information on this calculation, see https://paketo.io/docs/reference/java-reference/#memory-calculator")
 				totalMemory = mem
 			}
 		}
 	}
 
 	if totalMemory == UnsetTotalMemory {
-		m.Logger.Info("WARNING: Unable to determine memory limit. Configuring JVM for 1G container.")
+		m.Logger.Body("WARNING: Unable to determine memory limit. Configuring JVM for 1G container.")
 		c.TotalMemory = calc.Size{Value: calc.Gibi}
 	} else if totalMemory > MaxJVMSize {
-		m.Logger.Info("WARNING: Container memory limit too large. Configuring JVM for 64T container.")
+		m.Logger.Body("WARNING: Container memory limit too large. Configuring JVM for 64T container.")
 		c.TotalMemory = calc.Size{Value: MaxJVMSize}
 	} else {
 		c.TotalMemory = calc.Size{Value: totalMemory}
@@ -190,7 +190,7 @@ func (m MemoryCalculator) Execute() (map[string]string, error) {
 	}
 	values = append(values, calculated...)
 
-	m.Logger.Infof("Calculated JVM Memory Configuration: %s (Total Memory: %s, Thread Count: %d, Loaded Class Count: %d, Headroom: %d%%)",
+	m.Logger.Bodyf("Calculated JVM Memory Configuration: %s (Total Memory: %s, Thread Count: %d, Loaded Class Count: %d, Headroom: %d%%)",
 		strings.Join(calculated, " "), c.TotalMemory, c.ThreadCount, c.LoadedClassCount, c.HeadRoom)
 
 	return map[string]string{"JAVA_TOOL_OPTIONS": strings.Join(values, " ")}, nil
@@ -198,14 +198,14 @@ func (m MemoryCalculator) Execute() (map[string]string, error) {
 
 func (m MemoryCalculator) getMemoryLimitFromPath(memoryLimitPath string) int64 {
 	if b, err := ioutil.ReadFile(memoryLimitPath); err != nil && !os.IsNotExist(err) {
-		m.Logger.Infof("WARNING: Unable to read %s: %s", memoryLimitPath, err)
+		m.Logger.Bodyf("WARNING: Unable to read %s: %s", memoryLimitPath, err)
 	} else if err == nil {
 		limit := strings.TrimSpace(string(b))
 		if size, err := calc.ParseSize(limit); err != nil {
 			if limit == "max" {
 				return UnsetTotalMemory
 			}
-			m.Logger.Infof("WARNING: Unable to convert memory limit %q from path %q as int: %s", limit, memoryLimitPath, err)
+			m.Logger.Bodyf("WARNING: Unable to convert memory limit %q from path %q as int: %s", limit, memoryLimitPath, err)
 		} else {
 			return size.Value
 		}
@@ -248,7 +248,7 @@ func (m MemoryCalculator) CountAgentClasses(opts string) (int, error) {
 			if err != nil {
 				return 0, fmt.Errorf("error counting agent jar classes \n%w", err)
 			} else if skippedAgents > 0 {
-				m.Logger.Infof(`WARNING: could not count classes from all agent jars (skipped %d), class count and metaspace may not be sized correctly`, skippedAgents)
+				m.Logger.Bodyf(`WARNING: could not count classes from all agent jars (skipped %d), class count and metaspace may not be sized correctly`, skippedAgents)
 			}
 		}
 	}

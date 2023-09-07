@@ -21,39 +21,38 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/buildpacks/libcnb"
-	"github.com/paketo-buildpacks/libpak"
-	"github.com/paketo-buildpacks/libpak/bard"
+	"github.com/buildpacks/libcnb/v2"
+	"github.com/paketo-buildpacks/libpak/v2"
+	"github.com/paketo-buildpacks/libpak/v2/log"
 )
 
 type JavaSecurityProperties struct {
 	LayerContributor libpak.LayerContributor
-	Logger           bard.Logger
 }
 
-func NewJavaSecurityProperties(info libcnb.BuildpackInfo) JavaSecurityProperties {
+func NewJavaSecurityProperties(info libcnb.BuildpackInfo, logger log.Logger) JavaSecurityProperties {
 	return JavaSecurityProperties{LayerContributor: libpak.NewLayerContributor(
 		"Java Security Properties",
 		info,
 		libcnb.LayerTypes{
 			Launch: true,
 		},
+		logger,
 	)}
 }
 
-func (j JavaSecurityProperties) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
-	j.LayerContributor.Logger = j.Logger
+func (j JavaSecurityProperties) Contribute(layer *libcnb.Layer) error {
 
-	return j.LayerContributor.Contribute(layer, func() (libcnb.Layer, error) {
+	return j.LayerContributor.Contribute(layer, func(layer *libcnb.Layer) error {
 		file := filepath.Join(layer.Path, "java-security.properties")
 		if err := ioutil.WriteFile(file, []byte{}, 0644); err != nil {
-			return libcnb.Layer{}, fmt.Errorf("unable to touch file %s\n%w", file, err)
+			return fmt.Errorf("unable to touch file %s\n%w", file, err)
 		}
 
 		layer.LaunchEnvironment.Appendf("JAVA_TOOL_OPTIONS", " ", "-Djava.security.properties=%s", file)
 		layer.LaunchEnvironment.Default("JAVA_SECURITY_PROPERTIES", file)
 
-		return layer, nil
+		return nil
 	})
 }
 

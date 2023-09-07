@@ -18,6 +18,7 @@ package helper_test
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -27,8 +28,9 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/sclevine/spec"
 
-	"github.com/paketo-buildpacks/libjvm/calc"
-	"github.com/paketo-buildpacks/libjvm/helper"
+	"github.com/paketo-buildpacks/libjvm/v2/calc"
+	"github.com/paketo-buildpacks/libjvm/v2/helper"
+	"github.com/paketo-buildpacks/libpak/v2/log"
 )
 
 func testMemoryCalculator(t *testing.T, context spec.G, it spec.S) {
@@ -70,6 +72,7 @@ func testMemoryCalculator(t *testing.T, context spec.G, it spec.S) {
 			MemoryLimitPathV1: memoryLimitPathV1,
 			MemoryLimitPathV2: memoryLimitPathV2,
 			MemoryInfoPath:    memoryInfoPath,
+			Logger:            log.NewPaketoLogger(io.Discard),
 		}
 	})
 

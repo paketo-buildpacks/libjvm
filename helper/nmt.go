@@ -21,25 +21,24 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/paketo-buildpacks/libpak/sherpa"
-
-	"github.com/paketo-buildpacks/libpak/bard"
+	"github.com/paketo-buildpacks/libpak/v2/log"
+	"github.com/paketo-buildpacks/libpak/v2/sherpa"
 )
 
 type NMT struct {
-	Logger bard.Logger
+	Logger log.Logger
 }
 
 func (n NMT) Execute() (map[string]string, error) {
 
 	if !ResolveBoolWithDefault("BPL_JAVA_NMT_ENABLED", true) {
-		n.Logger.Info("Disabling Java Native Memory Tracking")
+		n.Logger.Body("Disabling Java Native Memory Tracking")
 		return nil, nil
 	}
 
 	level := sherpa.GetEnvWithDefault("BPL_JAVA_NMT_LEVEL", "summary")
 
-	n.Logger.Info("Enabling Java Native Memory Tracking")
+	n.Logger.Body("Enabling Java Native Memory Tracking")
 
 	opts := sherpa.AppendToEnvVar("JAVA_TOOL_OPTIONS", " ", fmt.Sprintf("-XX:+UnlockDiagnosticVMOptions -XX:NativeMemoryTracking=%s -XX:+PrintNMTStatistics", level))
 

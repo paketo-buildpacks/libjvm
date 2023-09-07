@@ -22,13 +22,13 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/buildpacks/libcnb"
+	"github.com/buildpacks/libcnb/v2"
 	. "github.com/onsi/gomega"
-	"github.com/paketo-buildpacks/libjvm"
-	"github.com/paketo-buildpacks/libpak"
-	"github.com/paketo-buildpacks/libpak/bard"
-	"github.com/paketo-buildpacks/libpak/effect"
-	"github.com/paketo-buildpacks/libpak/effect/mocks"
+	"github.com/paketo-buildpacks/libjvm/v2"
+	"github.com/paketo-buildpacks/libpak/v2"
+	"github.com/paketo-buildpacks/libpak/v2/effect"
+	"github.com/paketo-buildpacks/libpak/v2/effect/mocks"
+	"github.com/paketo-buildpacks/libpak/v2/log"
 	"github.com/pavlo-v-chernykh/keystore-go/v4"
 	"github.com/sclevine/spec"
 	"github.com/stretchr/testify/mock"
@@ -40,7 +40,7 @@ func testNIK(t *testing.T, context spec.G, it spec.S) {
 
 		cl = libjvm.CertificateLoader{
 			CertDirs: []string{filepath.Join("testdata", "certificates")},
-			Logger:   ioutil.Discard,
+			Logger:   log.NewDiscardLogger(),
 		}
 
 		ctx      libcnb.BuildContext
@@ -62,28 +62,22 @@ func testNIK(t *testing.T, context spec.G, it spec.S) {
 
 	it("contributes JDK without NIK", func() {
 		executor.On("Execute", mock.Anything).Return(nil)
-		dep := libpak.BuildpackDependency{
+		dep := libpak.BuildModuleDependency{
 			Version: "11.0.0",
 			URI:     "https://localhost/stub-jdk-11.tar.gz",
 			SHA256:  "e40a6ddb7d74d78a6d5557380160a174b1273813db1caf9b1f7bcbfe1578e818",
 		}
-		dc := libpak.DependencyCache{CachePath: "testdata"}
+		dc := libpak.DependencyCache{CachePath: "testdata", Logger: log.NewDiscardLogger()}
 
-		n, bomEntries, err := libjvm.NewNIK(dep, nil, dc, cl, "", nil)
+		n, err := libjvm.NewNIK(dep, nil, dc, cl, "", nil)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(len(bomEntries)).To(Equal(1))
-		Expect(bomEntries[0].Build).To(BeTrue())
-		Expect(bomEntries[0].Launch).To(BeFalse())
-		Expect(bomEntries[0].Metadata["uri"]).To(Equal("https://localhost/stub-jdk-11.tar.gz"))
-
-		n.Logger = bard.NewLogger(ioutil.Discard)
 
 		Expect(n.LayerContributor.ExpectedMetadata.(map[string]interface{})["cert-dir"]).To(HaveLen(4))
 
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
 
-		layer, err = n.Contribute(layer)
+		err = n.Contribute(&layer)
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(executor.Calls).To(HaveLen(0))
@@ -98,26 +92,26 @@ func testNIK(t *testing.T, context spec.G, it spec.S) {
 	it("contributes native image to JDK", func() {
 		executor.On("Execute", mock.Anything).Return(nil)
 
-		jdkDep := libpak.BuildpackDependency{
+		jdkDep := libpak.BuildModuleDependency{
 			Version: "11.0.0",
 			URI:     "https://localhost/stub-jdk-11.tar.gz",
 			SHA256:  "e40a6ddb7d74d78a6d5557380160a174b1273813db1caf9b1f7bcbfe1578e818",
 		}
-		niDep := &libpak.BuildpackDependency{
+		niDep := &libpak.BuildModuleDependency{
 			URI:    "https://localhost/stub-native-image.jar",
 			SHA256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
 		}
-		dc := libpak.DependencyCache{CachePath: "testdata"}
+		dc := libpak.DependencyCache{CachePath: "testdata", Logger: log.NewDiscardLogger()}
 
-		n, _, err := libjvm.NewNIK(jdkDep, niDep, dc, cl, "bin/gu", []string{"install", "--local-file"})
+		n, err := libjvm.NewNIK(jdkDep, niDep, dc, cl, "bin/gu", []string{"install", "--local-file"})
 		Expect(err).NotTo(HaveOccurred())
-		n.Logger = bard.NewLogger(ioutil.Discard)
+
 		n.Executor = executor
 
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
 
-		layer, err = n.Contribute(layer)
+		err = n.Contribute(&layer)
 		Expect(err).NotTo(HaveOccurred())
 
 		executor := executor.Calls[0].Arguments[0].(effect.Execution)
@@ -127,22 +121,20 @@ func testNIK(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	it("updates before Java 9 certificates", func() {
-		dep := libpak.BuildpackDependency{
+		dep := libpak.BuildModuleDependency{
 			Version: "8.0.0",
 			URI:     "https://localhost/stub-jdk-8.tar.gz",
 			SHA256:  "6860fb9a9a66817ec285fac64c342b678b0810656b1f2413f063911a8bde6447",
 		}
-		dc := libpak.DependencyCache{CachePath: "testdata"}
+		dc := libpak.DependencyCache{CachePath: "testdata", Logger: log.NewDiscardLogger()}
 
-		n, _, err := libjvm.NewNIK(dep, nil, dc, cl, "", nil)
+		n, err := libjvm.NewNIK(dep, nil, dc, cl, "", nil)
 		Expect(err).NotTo(HaveOccurred())
-
-		n.Logger = bard.NewLogger(ioutil.Discard)
 
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
 
-		layer, err = n.Contribute(layer)
+		err = n.Contribute(&layer)
 		Expect(err).NotTo(HaveOccurred())
 
 		in, err := os.Open(filepath.Join(layer.Path, "jre", "lib", "security", "cacerts"))
@@ -157,23 +149,20 @@ func testNIK(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	it("updates after Java 9 certificates", func() {
-		dep := libpak.BuildpackDependency{
+		dep := libpak.BuildModuleDependency{
 			Version: "11.0.0",
 			URI:     "https://localhost/stub-jdk-11.tar.gz",
 			SHA256:  "e40a6ddb7d74d78a6d5557380160a174b1273813db1caf9b1f7bcbfe1578e818",
 		}
-		dc := libpak.DependencyCache{CachePath: "testdata"}
+		dc := libpak.DependencyCache{CachePath: "testdata", Logger: log.NewDiscardLogger()}
 
-		j, be, err := libjvm.NewNIK(dep, nil, dc, cl, "", nil)
+		j, err := libjvm.NewNIK(dep, nil, dc, cl, "", nil)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(be[0].Build).To(BeTrue())
-
-		j.Logger = bard.NewLogger(ioutil.Discard)
 
 		layer, err := ctx.Layers.Layer("test-layer")
 		Expect(err).NotTo(HaveOccurred())
 
-		layer, err = j.Contribute(layer)
+		err = j.Contribute(&layer)
 		Expect(err).NotTo(HaveOccurred())
 
 		in, err := os.Open(filepath.Join(layer.Path, "lib", "security", "cacerts"))

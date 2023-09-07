@@ -17,19 +17,21 @@
 package helper_test
 
 import (
+	"io"
 	"os"
 	"testing"
 
 	. "github.com/onsi/gomega"
 
-	"github.com/paketo-buildpacks/libjvm/helper"
+	"github.com/paketo-buildpacks/libjvm/v2/helper"
+	"github.com/paketo-buildpacks/libpak/v2/log"
 	"github.com/sclevine/spec"
 )
 
 func testDebug8(t *testing.T, context spec.G, it spec.S) {
 	var (
 		Expect = NewWithT(t).Expect
-		d      = helper.Debug8{}
+		d      = helper.Debug8{Logger: log.NewPaketoLogger(io.Discard)}
 	)
 
 	it("does nothing if $BPL_DEBUG_ENABLED is no set", func() {

@@ -21,22 +21,22 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/paketo-buildpacks/libpak/bard"
-	"github.com/paketo-buildpacks/libpak/sherpa"
+	"github.com/paketo-buildpacks/libpak/v2/log"
+	"github.com/paketo-buildpacks/libpak/v2/sherpa"
 	"golang.org/x/sys/unix"
 
-	"github.com/paketo-buildpacks/libjvm"
+	"github.com/paketo-buildpacks/libjvm/v2"
 )
 
 var TmpTrustStore = filepath.Join(os.TempDir(), "truststore")
 
 type OpenSSLCertificateLoader struct {
 	CertificateLoader libjvm.CertificateLoader
-	Logger            bard.Logger
+	Logger            log.Logger
 }
 
 func (o OpenSSLCertificateLoader) prepareTempTrustStore(trustStore, tempTrustStore string) (map[string]string, error) {
-	o.Logger.Infof("Using readonly truststore: %s", tempTrustStore)
+	o.Logger.Bodyf("Using readonly truststore: %s", tempTrustStore)
 
 	trustStoreFile, err := os.Open(trustStore)
 	if err != nil {
@@ -50,7 +50,7 @@ func (o OpenSSLCertificateLoader) prepareTempTrustStore(trustStore, tempTrustSto
 	}
 
 	opts := sherpa.AppendToEnvVar("JAVA_TOOL_OPTIONS", " ", fmt.Sprintf("-Djavax.net.ssl.trustStore=%s", tempTrustStore))
-	o.Logger.Debugf("changed JAVA_TOOL_OPTIONS: '%s'", opts)
+	o.Logger.Bodyf("changed JAVA_TOOL_OPTIONS: '%s'", opts)
 
 	return map[string]string{"JAVA_TOOL_OPTIONS": opts}, nil
 }
@@ -74,8 +74,6 @@ func (o OpenSSLCertificateLoader) Execute() (map[string]string, error) {
 			opts = tmpOpts
 		}
 	}
-
-	o.CertificateLoader.Logger = o.Logger.InfoWriter()
 
 	if err := o.CertificateLoader.Load(trustStore, "changeit"); err != nil {
 		return nil, fmt.Errorf("unable to load certificates\n%w", err)

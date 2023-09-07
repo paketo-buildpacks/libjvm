@@ -20,11 +20,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/paketo-buildpacks/libpak/bard"
+	"github.com/paketo-buildpacks/libpak/v2/log"
 )
 
 type JavaOpts struct {
-	Logger bard.Logger
+	Logger log.Logger
 }
 
 func (j JavaOpts) Execute() (map[string]string, error) {
@@ -33,7 +33,7 @@ func (j JavaOpts) Execute() (map[string]string, error) {
 		return nil, nil
 	}
 
-	j.Logger.Info("Adding $JAVA_OPTS to $JAVA_TOOL_OPTIONS")
+	j.Logger.Body("Adding $JAVA_OPTS to $JAVA_TOOL_OPTIONS")
 
 	var values []string
 	if s, ok := os.LookupEnv("JAVA_TOOL_OPTIONS"); ok {

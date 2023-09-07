@@ -18,30 +18,31 @@ package libjvm
 
 import (
 	"fmt"
-	"github.com/buildpacks/libcnb"
-	"github.com/heroku/color"
-	"github.com/paketo-buildpacks/libpak"
-	"github.com/paketo-buildpacks/libpak/bard"
-	"github.com/paketo-buildpacks/libpak/crush"
-	"github.com/paketo-buildpacks/libpak/effect"
 	"os"
 	"path/filepath"
+
+	"github.com/buildpacks/libcnb/v2"
+	"github.com/heroku/color"
+	"github.com/paketo-buildpacks/libpak/v2"
+	"github.com/paketo-buildpacks/libpak/v2/crush"
+	"github.com/paketo-buildpacks/libpak/v2/effect"
+	"github.com/paketo-buildpacks/libpak/v2/log"
 )
 
 type NIK struct {
 	CertificateLoader CertificateLoader
 	DependencyCache   libpak.DependencyCache
 	Executor          effect.Executor
-	JDKDependency     libpak.BuildpackDependency
+	JDKDependency     libpak.BuildModuleDependency
 	LayerContributor  libpak.LayerContributor
-	Logger            bard.Logger
-	NativeDependency  *libpak.BuildpackDependency
+	Logger            log.Logger
+	NativeDependency  *libpak.BuildModuleDependency
 	CustomCommand     string
 	CustomArgs        []string
 }
 
-func NewNIK(jdkDependency libpak.BuildpackDependency, nativeDependency *libpak.BuildpackDependency, cache libpak.DependencyCache, certificateLoader CertificateLoader, customCommand string, customArgs []string) (NIK, []libcnb.BOMEntry, error) {
-	dependencies := []libpak.BuildpackDependency{jdkDependency}
+func NewNIK(jdkDependency libpak.BuildModuleDependency, nativeDependency *libpak.BuildModuleDependency, cache libpak.DependencyCache, certificateLoader CertificateLoader, customCommand string, customArgs []string) (NIK, error) {
+	dependencies := []libpak.BuildModuleDependency{jdkDependency}
 
 	if nativeDependency != nil {
 		dependencies = append(dependencies, *nativeDependency)
@@ -50,7 +51,7 @@ func NewNIK(jdkDependency libpak.BuildpackDependency, nativeDependency *libpak.B
 	expected := map[string]interface{}{"dependencies": dependencies}
 
 	if md, err := certificateLoader.Metadata(); err != nil {
-		return NIK{}, nil, fmt.Errorf("unable to generate certificate loader metadata")
+		return NIK{}, fmt.Errorf("unable to generate certificate loader metadata")
 	} else {
 		for k, v := range md {
 			expected[k] = v
@@ -58,12 +59,13 @@ func NewNIK(jdkDependency libpak.BuildpackDependency, nativeDependency *libpak.B
 	}
 
 	contributor := libpak.NewLayerContributor(
-		bard.FormatIdentity(jdkDependency.Name, jdkDependency.Version),
+		log.FormatIdentity(jdkDependency.Name, jdkDependency.Version),
 		expected,
 		libcnb.LayerTypes{
 			Build: true,
 			Cache: true,
 		},
+		cache.Logger,
 	)
 	n := NIK{
 		CertificateLoader: certificateLoader,
@@ -74,40 +76,24 @@ func NewNIK(jdkDependency libpak.BuildpackDependency, nativeDependency *libpak.B
 		LayerContributor:  contributor,
 		CustomCommand:     customCommand,
 		CustomArgs:        customArgs,
+		Logger:            cache.Logger,
 	}
 
-	var bomEntries []libcnb.BOMEntry
-	entry := jdkDependency.AsBOMEntry()
-	entry.Metadata["layer"] = n.Name()
-	entry.Build = true
-	bomEntries = append(bomEntries, entry)
-
-	if nativeDependency != nil {
-		entry := nativeDependency.AsBOMEntry()
-		if entry.Name != "" {
-			entry.Metadata["layer"] = n.Name()
-			entry.Launch = true
-			entry.Build = true
-			bomEntries = append(bomEntries, entry)
-		}
-	}
-
-	return n, bomEntries, nil
+	return n, nil
 }
 
-func (n NIK) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
-	n.LayerContributor.Logger = n.Logger
+func (n NIK) Contribute(layer *libcnb.Layer) error {
 
-	return n.LayerContributor.Contribute(layer, func() (libcnb.Layer, error) {
+	return n.LayerContributor.Contribute(layer, func(layer *libcnb.Layer) error {
 		artifact, err := n.DependencyCache.Artifact(n.JDKDependency)
 		if err != nil {
-			return libcnb.Layer{}, fmt.Errorf("unable to get dependency %s\n%w", n.JDKDependency.ID, err)
+			return fmt.Errorf("unable to get dependency %s\n%w", n.JDKDependency.ID, err)
 		}
 		defer artifact.Close()
 
 		n.Logger.Bodyf("Expanding to %s", layer.Path)
 		if err := crush.Extract(artifact, layer.Path, 1); err != nil {
-			return libcnb.Layer{}, fmt.Errorf("unable to expand JDK\n%w", err)
+			return fmt.Errorf("unable to expand JDK\n%w", err)
 		}
 
 		layer.BuildEnvironment.Override("JAVA_HOME", layer.Path)
@@ -119,13 +105,13 @@ func (n NIK) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 		} else {
 			keyStorePath = filepath.Join(layer.Path, "lib", "security", "cacerts")
 		}
-		if err := os.Chmod(keyStorePath, 0664); err != nil{
-			return  libcnb.Layer{}, fmt.Errorf("unable to set keystore file permissions\n%w", err)
+		if err := os.Chmod(keyStorePath, 0664); err != nil {
+			return fmt.Errorf("unable to set keystore file permissions\n%w", err)
 		}
 
 		if IsBeforeJava18(n.JDKDependency.Version) {
 			if err := n.CertificateLoader.Load(keyStorePath, "changeit"); err != nil {
-				return libcnb.Layer{}, fmt.Errorf("unable to load certificates\n%w", err)
+				return fmt.Errorf("unable to load certificates\n%w", err)
 			}
 		} else {
 			n.Logger.Bodyf("%s: The JVM cacerts entries cannot be loaded with Java 18+, for more information see: https://github.com/paketo-buildpacks/libjvm/issues/158", color.YellowString("Warning"))
@@ -136,7 +122,7 @@ func (n NIK) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 
 			artifact, err := n.DependencyCache.Artifact(*n.NativeDependency)
 			if err != nil {
-				return libcnb.Layer{}, fmt.Errorf("unable to get dependency %s\n%w", n.NativeDependency.ID, err)
+				return fmt.Errorf("unable to get dependency %s\n%w", n.NativeDependency.ID, err)
 			}
 			defer artifact.Close()
 
@@ -148,14 +134,14 @@ func (n NIK) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 				Command: filepath.Join(layer.Path, n.CustomCommand),
 				Args:    n.CustomArgs,
 				Dir:     layer.Path,
-				Stdout:  n.Logger.InfoWriter(),
-				Stderr:  n.Logger.InfoWriter(),
+				Stdout:  n.Logger.BodyWriter(),
+				Stderr:  n.Logger.BodyWriter(),
 			}); err != nil {
-				return libcnb.Layer{}, fmt.Errorf("unable to run custom NIK command\n%w", err)
+				return fmt.Errorf("unable to run custom NIK command\n%w", err)
 			}
 		}
 
-		return layer, nil
+		return nil
 	})
 }
 

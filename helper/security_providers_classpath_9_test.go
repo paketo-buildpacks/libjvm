@@ -17,13 +17,15 @@
 package helper_test
 
 import (
+	"io"
 	"os"
 	"testing"
 
 	. "github.com/onsi/gomega"
 	"github.com/sclevine/spec"
 
-	"github.com/paketo-buildpacks/libjvm/helper"
+	"github.com/paketo-buildpacks/libjvm/v2/helper"
+	"github.com/paketo-buildpacks/libpak/v2/log"
 )
 
 func testSecurityProvidersClasspath9(t *testing.T, context spec.G, it spec.S) {
@@ -32,7 +34,7 @@ func testSecurityProvidersClasspath9(t *testing.T, context spec.G, it spec.S) {
 	)
 
 	it("return nil if SECURITY_PROVIDERS_CLASSPATH is not set", func() {
-		Expect(helper.SecurityProvidersClasspath9{}.Execute()).To(BeNil())
+		Expect(helper.SecurityProvidersClasspath9{Logger: log.NewPaketoLogger(io.Discard)}.Execute()).To(BeNil())
 	})
 
 	context("$SECURITY_PROVIDERS_CLASSPATH", func() {
@@ -45,7 +47,7 @@ func testSecurityProvidersClasspath9(t *testing.T, context spec.G, it spec.S) {
 		})
 
 		it("return $CLASSPATH with $SECURITY_PROVIDERS_CLASSPATH only", func() {
-			Expect(helper.SecurityProvidersClasspath9{}.Execute()).To(Equal(map[string]string{
+			Expect(helper.SecurityProvidersClasspath9{Logger: log.NewPaketoLogger(io.Discard)}.Execute()).To(Equal(map[string]string{
 				"CLASSPATH": "test-security-providers-classpath",
 			}))
 		})
@@ -61,7 +63,7 @@ func testSecurityProvidersClasspath9(t *testing.T, context spec.G, it spec.S) {
 			})
 
 			it("return $CLASSPATH with $SECURITY_PROVIDERS_CLASSPATH included", func() {
-				Expect(helper.SecurityProvidersClasspath9{}.Execute()).To(Equal(map[string]string{
+				Expect(helper.SecurityProvidersClasspath9{Logger: log.NewPaketoLogger(io.Discard)}.Execute()).To(Equal(map[string]string{
 					"CLASSPATH": "test-classpath:test-security-providers-classpath",
 				}))
 			})

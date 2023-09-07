@@ -22,21 +22,21 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/paketo-buildpacks/libpak"
-	"github.com/paketo-buildpacks/libpak/bard"
+	"github.com/paketo-buildpacks/libpak/v2"
+	"github.com/paketo-buildpacks/libpak/v2/log"
 
-	"github.com/buildpacks/libcnb"
+	"github.com/buildpacks/libcnb/v2"
 	. "github.com/onsi/gomega"
 	"github.com/sclevine/spec"
 
-	"github.com/paketo-buildpacks/libjvm"
+	"github.com/paketo-buildpacks/libjvm/v2"
 )
 
 func testJVMVersion(t *testing.T, context spec.G, it spec.S) {
 	var (
 		Expect    = NewWithT(t).Expect
 		appPath   string
-		logger    bard.Logger
+		logger    log.Logger
 		buildpack libcnb.Buildpack
 	)
 
@@ -56,7 +56,7 @@ func testJVMVersion(t *testing.T, context spec.G, it spec.S) {
 				},
 			},
 		}
-		logger = bard.NewLogger(ioutil.Discard)
+		logger = log.NewDiscardLogger()
 	})
 
 	it.After(func() {
@@ -66,7 +66,10 @@ func testJVMVersion(t *testing.T, context spec.G, it spec.S) {
 	it("detecting JVM version from default", func() {
 		jvmVersion := libjvm.JVMVersion{Logger: logger}
 
-		cr, err := libpak.NewConfigurationResolver(buildpack, &logger)
+		bpm, err := libpak.NewBuildModuleMetadata(buildpack.Metadata)
+		Expect(err).ToNot(HaveOccurred())
+
+		cr, err := libpak.NewConfigurationResolver(bpm)
 		Expect(err).ToNot(HaveOccurred())
 		version, err := jvmVersion.GetJVMVersion(appPath, cr)
 		Expect(err).ToNot(HaveOccurred())
@@ -85,7 +88,10 @@ func testJVMVersion(t *testing.T, context spec.G, it spec.S) {
 		it("from environment variable", func() {
 			jvmVersion := libjvm.JVMVersion{Logger: logger}
 
-			cr, err := libpak.NewConfigurationResolver(buildpack, &logger)
+			bpm, err := libpak.NewBuildModuleMetadata(buildpack.Metadata)
+			Expect(err).ToNot(HaveOccurred())
+
+			cr, err := libpak.NewConfigurationResolver(bpm)
 			Expect(err).ToNot(HaveOccurred())
 			version, err := jvmVersion.GetJVMVersion(appPath, cr)
 			Expect(err).ToNot(HaveOccurred())
@@ -101,7 +107,10 @@ func testJVMVersion(t *testing.T, context spec.G, it spec.S) {
 		it("from manifest via Build-Jdk-Spec", func() {
 			jvmVersion := libjvm.JVMVersion{Logger: logger}
 
-			cr, err := libpak.NewConfigurationResolver(buildpack, &logger)
+			bpm, err := libpak.NewBuildModuleMetadata(buildpack.Metadata)
+			Expect(err).ToNot(HaveOccurred())
+
+			cr, err := libpak.NewConfigurationResolver(bpm)
 			Expect(err).ToNot(HaveOccurred())
 			version, err := jvmVersion.GetJVMVersion(appPath, cr)
 			Expect(err).ToNot(HaveOccurred())
@@ -122,7 +131,10 @@ func testJVMVersion(t *testing.T, context spec.G, it spec.S) {
 		it("prefers environment variable over manifest", func() {
 			jvmVersion := libjvm.JVMVersion{Logger: logger}
 
-			cr, err := libpak.NewConfigurationResolver(buildpack, &logger)
+			bpm, err := libpak.NewBuildModuleMetadata(buildpack.Metadata)
+			Expect(err).ToNot(HaveOccurred())
+
+			cr, err := libpak.NewConfigurationResolver(bpm)
 			Expect(err).ToNot(HaveOccurred())
 			version, err := jvmVersion.GetJVMVersion(appPath, cr)
 			Expect(err).ToNot(HaveOccurred())
@@ -141,7 +153,10 @@ func testJVMVersion(t *testing.T, context spec.G, it spec.S) {
 		it("from .sdkmanrc file", func() {
 			jvmVersion := libjvm.JVMVersion{Logger: logger}
 
-			cr, err := libpak.NewConfigurationResolver(buildpack, &logger)
+			bpm, err := libpak.NewBuildModuleMetadata(buildpack.Metadata)
+			Expect(err).ToNot(HaveOccurred())
+
+			cr, err := libpak.NewConfigurationResolver(bpm)
 			Expect(err).ToNot(HaveOccurred())
 			version, err := jvmVersion.GetJVMVersion(appPath, cr)
 			Expect(err).ToNot(HaveOccurred())
@@ -161,7 +176,10 @@ java=11.0.2-tem`), 0644)).To(Succeed())
 		it("picks first from .sdkmanrc file if there are multiple", func() {
 			jvmVersion := libjvm.JVMVersion{Logger: logger}
 
-			cr, err := libpak.NewConfigurationResolver(buildpack, &logger)
+			bpm, err := libpak.NewBuildModuleMetadata(buildpack.Metadata)
+			Expect(err).ToNot(HaveOccurred())
+
+			cr, err := libpak.NewConfigurationResolver(bpm)
 			Expect(err).ToNot(HaveOccurred())
 			version, err := jvmVersion.GetJVMVersion(appPath, cr)
 			Expect(err).ToNot(HaveOccurred())

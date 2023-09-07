@@ -20,12 +20,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/paketo-buildpacks/libpak/bard"
-	"github.com/paketo-buildpacks/libpak/sherpa"
+	"github.com/paketo-buildpacks/libpak/v2/log"
+	"github.com/paketo-buildpacks/libpak/v2/sherpa"
 )
 
 type Debug8 struct {
-	Logger bard.Logger
+	Logger log.Logger
 }
 
 func (d Debug8) Execute() (map[string]string, error) {
@@ -38,7 +38,7 @@ func (d Debug8) Execute() (map[string]string, error) {
 	debugAlreadyExists := strings.Contains(opts, "-agentlib:jdwp=")
 
 	if debugAlreadyExists {
-		d.Logger.Info("Java agent 'jdwp' already configured")
+		d.Logger.Body("Java agent 'jdwp' already configured")
 		return nil, nil
 	}
 
@@ -50,7 +50,7 @@ func (d Debug8) Execute() (map[string]string, error) {
 	if suspend {
 		s = fmt.Sprintf("%s, suspended on start", s)
 	}
-	d.Logger.Info(s)
+	d.Logger.Body(s)
 
 	if suspend {
 		s = "y"

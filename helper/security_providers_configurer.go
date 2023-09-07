@@ -23,12 +23,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/paketo-buildpacks/libpak/bard"
+	"github.com/paketo-buildpacks/libpak/v2/log"
 	"golang.org/x/sys/unix"
 )
 
 type SecurityProvidersConfigurer struct {
-	Logger bard.Logger
+	Logger log.Logger
 }
 
 func (s SecurityProvidersConfigurer) Execute() (map[string]string, error) {
@@ -47,11 +47,11 @@ func (s SecurityProvidersConfigurer) Execute() (map[string]string, error) {
 		return nil, fmt.Errorf("$JAVA_SECURITY_PROPERTIES must be set")
 	}
 	if unix.Access(file, unix.W_OK) != nil {
-		s.Logger.Infof("WARNING: Unable to add additional security providers because %s is read-only", file)
+		s.Logger.Bodyf("WARNING: Unable to add additional security providers because %s is read-only", file)
 		return nil, nil
 	}
 
-	s.Logger.Info("Adding Security Providers to JVM")
+	s.Logger.Body("Adding Security Providers to JVM")
 
 	providers := make([]string, 0)
 	r := regexp.MustCompile(`(?:([\d]+)\|)?([\w.]+)`)

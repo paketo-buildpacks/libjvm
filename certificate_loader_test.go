@@ -28,8 +28,9 @@ import (
 	"github.com/pavlo-v-chernykh/keystore-go/v4"
 	"github.com/sclevine/spec"
 
-	"github.com/paketo-buildpacks/libjvm"
-	"github.com/paketo-buildpacks/libjvm/internal"
+	"github.com/paketo-buildpacks/libjvm/v2"
+	"github.com/paketo-buildpacks/libjvm/v2/internal"
+	"github.com/paketo-buildpacks/libpak/v2/log"
 )
 
 func testCertificateLoader(t *testing.T, context spec.G, it spec.S) {
@@ -39,7 +40,7 @@ func testCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 
 	context("certificate sources", func() {
 		it("returns default sources", func() {
-			c := libjvm.NewCertificateLoader()
+			c := libjvm.NewCertificateLoader(log.NewDiscardLogger())
 
 			Expect(c.CertFile).To(Equal(libjvm.DefaultCertFile))
 			Expect(c.CertDirs).To(BeNil())
@@ -55,7 +56,7 @@ func testCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 			})
 
 			it("returns configured file", func() {
-				c := libjvm.NewCertificateLoader()
+				c := libjvm.NewCertificateLoader(log.NewDiscardLogger())
 
 				Expect(c.CertFile).To(Equal("another-file"))
 				Expect(c.CertDirs).To(BeNil())
@@ -73,7 +74,7 @@ func testCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 			})
 
 			it("returns configured directories", func() {
-				c := libjvm.NewCertificateLoader()
+				c := libjvm.NewCertificateLoader(log.NewDiscardLogger())
 
 				Expect(c.CertFile).To(Equal(libjvm.DefaultCertFile))
 				Expect(c.CertDirs).To(Equal([]string{"test-1", "test-2"}))
@@ -108,7 +109,7 @@ func testCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 		it("ignores non-existent file", func() {
 			c := libjvm.CertificateLoader{
 				CertFile: filepath.Join("testdata", "non-existent-file"),
-				Logger:   ioutil.Discard,
+				Logger:   log.NewDiscardLogger(),
 			}
 
 			Expect(c.Load(path, "changeit")).To(Succeed())
@@ -117,7 +118,7 @@ func testCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 		it("ignores non-existent directory", func() {
 			c := libjvm.CertificateLoader{
 				CertDirs: []string{filepath.Join("testdata", "non-existent-directory")},
-				Logger:   ioutil.Discard,
+				Logger:   log.NewDiscardLogger(),
 			}
 
 			Expect(c.Load(path, "changeit")).To(Succeed())
@@ -126,7 +127,7 @@ func testCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 		it("loads additional certificates from file", func() {
 			c := libjvm.CertificateLoader{
 				CertFile: filepath.Join("testdata", "certificates", "certificate-1.pem"),
-				Logger:   ioutil.Discard,
+				Logger:   log.NewDiscardLogger(),
 			}
 
 			Expect(c.Load(path, "changeit")).To(Succeed())
@@ -144,7 +145,7 @@ func testCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 		it("loads additional certificates from directories", func() {
 			c := libjvm.CertificateLoader{
 				CertDirs: []string{filepath.Join("testdata", "certificates")},
-				Logger:   ioutil.Discard,
+				Logger:   log.NewDiscardLogger(),
 			}
 
 			Expect(c.Load(path, "changeit")).To(Succeed())
@@ -168,7 +169,7 @@ func testCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 
 			c := libjvm.CertificateLoader{
 				CertDirs: []string{filepath.Join("testdata", "certificates")},
-				Logger:   ioutil.Discard,
+				Logger:   log.NewDiscardLogger(),
 			}
 
 			Expect(c.Load(path, "changeit")).To(Succeed())

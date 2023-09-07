@@ -21,13 +21,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/paketo-buildpacks/libpak/sherpa"
-
-	"github.com/paketo-buildpacks/libpak/bard"
+	"github.com/paketo-buildpacks/libpak/v2/log"
+	"github.com/paketo-buildpacks/libpak/v2/sherpa"
 )
 
 type JFR struct {
-	Logger bard.Logger
+	Logger log.Logger
 }
 
 func (j JFR) Execute() (map[string]string, error) {
@@ -39,7 +38,7 @@ func (j JFR) Execute() (map[string]string, error) {
 	if argList = sherpa.GetEnvWithDefault("BPL_JFR_ARGS", ""); argList == "" {
 		argList = fmt.Sprintf("dumponexit=true,filename=%s", filepath.Join(os.TempDir(), "recording.jfr"))
 	}
-	j.Logger.Infof("Enabling Java Flight Recorder with args: %s", argList)
+	j.Logger.Body("Enabling Java Flight Recorder with args: %s", argList)
 
 	// minimum flag to enable JFR, with default config args
 	jfrConfig := fmt.Sprintf("-XX:StartFlightRecording=%s", argList)
