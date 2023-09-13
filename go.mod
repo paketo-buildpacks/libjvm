@@ -8,7 +8,7 @@ require (
 	github.com/heroku/color v0.0.6
 	github.com/magiconair/properties v1.8.7
 	github.com/mattn/go-shellwords v1.0.12
-	github.com/miekg/dns v1.1.55
+	github.com/miekg/dns v1.1.56
 	github.com/onsi/gomega v1.27.10
 	github.com/paketo-buildpacks/libpak v1.66.2
 	github.com/pavlo-v-chernykh/keystore-go/v4 v4.5.0
