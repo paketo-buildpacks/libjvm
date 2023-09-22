@@ -180,6 +180,7 @@ func (j JRE) Contribute(layer *libcnb.Layer) error {
 		}
 
 		return ConfigureJRE(ConfigJREContext{
+			Layer:             layer,
 			Logger:            j.Logger,
 			JavaHome:          layer.Path,
 			JavaVersion:       j.LayerContributor.Dependency.Version,
