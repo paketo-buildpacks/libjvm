@@ -71,6 +71,106 @@ func NewJRE(applicationPath string, dependency libpak.BuildModuleDependency, cac
 	}, nil
 }
 
+type ConfigJREContext struct {
+	Layer             *libcnb.Layer
+	Logger            log.Logger
+	JavaHome          string
+	JavaVersion       string
+	ApplicationPath   string
+	IsBuild           bool
+	IsLaunch          bool
+	SkipCerts         bool
+	CertificateLoader CertificateLoader
+	DistType          DistributionType
+}
+
+func ConfigureJRE(configCtx ConfigJREContext) error {
+
+	configCtx.Logger.Bodyf("Applying configuration for Java %s at %s", configCtx.JavaVersion, configCtx.JavaHome)
+
+	// cacerts processing.
+	var cacertsPath string
+	if IsBeforeJava9(configCtx.JavaVersion) && configCtx.DistType == JDKType {
+		cacertsPath = filepath.Join(configCtx.JavaHome, "jre", "lib", "security", "cacerts")
+	} else {
+		cacertsPath = filepath.Join(configCtx.JavaHome, "lib", "security", "cacerts")
+	}
+	if !configCtx.SkipCerts {
+		if err := os.Chmod(cacertsPath, 0664); err != nil {
+			return fmt.Errorf("unable to set keystore file permissions\n%w", err)
+		}
+		// If java < 18, load container certs into cacerts
+		// (this will normally run _after_ ca_certificates buildpack, which may have imported new trust certs)
+		if IsBeforeJava18(configCtx.JavaVersion) {
+			if err := configCtx.CertificateLoader.Load(cacertsPath, "changeit"); err != nil {
+				return fmt.Errorf("unable to load certificates\n%w", err)
+			}
+		} else {
+			configCtx.Logger.Bodyf("%s: The JVM cacerts entries cannot be loaded with Java 18+, for more information see: https://github.com/paketo-buildpacks/libjvm/issues/158", color.YellowString("Warning"))
+		}
+	} else {
+		//if we are skipping certs.. disable the runtime helper too.
+		configCtx.Layer.BuildEnvironment.Override("BP_RUNTIME_CERT_BINDING_DISABLED", true)
+	}
+
+	if configCtx.IsBuild {
+		configCtx.Logger.Body("Configuring for Build")
+		configCtx.Layer.BuildEnvironment.Default("JAVA_HOME", configCtx.JavaHome)
+	}
+
+	if configCtx.IsLaunch {
+		configCtx.Logger.Body("Configuring for Launch")
+
+		configCtx.Layer.LaunchEnvironment.Default("BPI_APPLICATION_PATH", configCtx.ApplicationPath)
+		configCtx.Layer.LaunchEnvironment.Default("BPI_JVM_CACERTS", cacertsPath)
+
+		//count the classes in the runtime (used by memory calculator)
+		if c, err := count.Classes(configCtx.JavaHome); err != nil {
+			return fmt.Errorf("unable to count JVM classes\n%w", err)
+		} else {
+			configCtx.Layer.LaunchEnvironment.Default("BPI_JVM_CLASS_COUNT", c)
+		}
+
+		//applies to java 8 only...
+		//locate ext dir to allow appending rather than replacing ext dir
+		if IsBeforeJava9(configCtx.JavaVersion) && configCtx.DistType == JDKType {
+			configCtx.Layer.LaunchEnvironment.Default("BPI_JVM_EXT_DIR", filepath.Join(configCtx.JavaHome, "jre", "lib", "ext"))
+		} else if IsBeforeJava9(configCtx.JavaVersion) && configCtx.DistType == JREType {
+			configCtx.Layer.LaunchEnvironment.Default("BPI_JVM_EXT_DIR", filepath.Join(configCtx.JavaHome, "lib", "ext"))
+		}
+
+		//locate the java security properties file...
+		var securityFile string
+		if IsBeforeJava9(configCtx.JavaVersion) && configCtx.DistType == JDKType {
+			securityFile = filepath.Join(configCtx.JavaHome, "jre", "lib", "security", "java.security")
+		} else if IsBeforeJava9(configCtx.JavaVersion) && configCtx.DistType == JREType {
+			securityFile = filepath.Join(configCtx.JavaHome, "lib", "security", "java.security")
+		} else {
+			securityFile = filepath.Join(configCtx.JavaHome, "conf", "security", "java.security")
+		}
+
+		//Extract the security providers from the security properties file, and set
+		//into BPI_JVM_SECURITY_PROVIDERS
+		p, err := properties.LoadFile(securityFile, properties.UTF8)
+		if err != nil {
+			return fmt.Errorf("unable to read properties file %s\n%w", securityFile, err)
+		}
+		p = p.FilterStripPrefix("security.provider.")
+		var providers []string
+		for k, v := range p.Map() {
+			providers = append(providers, fmt.Sprintf("%s|%s", k, v))
+		}
+		sort.Strings(providers)
+		configCtx.Layer.LaunchEnvironment.Default("BPI_JVM_SECURITY_PROVIDERS", strings.Join(providers, " "))
+
+		configCtx.Layer.LaunchEnvironment.Default("JAVA_HOME", configCtx.JavaHome)
+		configCtx.Layer.LaunchEnvironment.Default("MALLOC_ARENA_MAX", "2")
+
+		configCtx.Layer.LaunchEnvironment.Append("JAVA_TOOL_OPTIONS", " ", "-XX:+ExitOnOutOfMemoryError")
+	}
+	return nil
+}
+
 func (j JRE) Contribute(layer *libcnb.Layer) error {
 
 	return j.LayerContributor.Contribute(layer, func(layer *libcnb.Layer, artifact *os.File) error {
@@ -79,73 +179,18 @@ func (j JRE) Contribute(layer *libcnb.Layer) error {
 			return fmt.Errorf("unable to expand JRE\n%w", err)
 		}
 
-		var cacertsPath string
-		if IsBeforeJava9(j.LayerContributor.Dependency.Version) && j.DistributionType == JDKType {
-			cacertsPath = filepath.Join(layer.Path, "jre", "lib", "security", "cacerts")
-		} else {
-			cacertsPath = filepath.Join(layer.Path, "lib", "security", "cacerts")
-		}
-		if err := os.Chmod(cacertsPath, 0664); err != nil {
-			return fmt.Errorf("unable to set keystore file permissions\n%w", err)
-		}
-
-		if IsBeforeJava18(j.LayerContributor.Dependency.Version) {
-			if err := j.CertificateLoader.Load(cacertsPath, "changeit"); err != nil {
-				return fmt.Errorf("unable to load certificates\n%w", err)
-			}
-		} else {
-			j.Logger.Bodyf("%s: The JVM cacerts entries cannot be loaded with Java 18+, for more information see: https://github.com/paketo-buildpacks/libjvm/issues/158", color.YellowString("Warning"))
-		}
-
-		if IsBuildContribution(j.Metadata) {
-			layer.BuildEnvironment.Default("JAVA_HOME", layer.Path)
-		}
-
-		if IsLaunchContribution(j.Metadata) {
-			layer.LaunchEnvironment.Default("BPI_APPLICATION_PATH", j.ApplicationPath)
-			layer.LaunchEnvironment.Default("BPI_JVM_CACERTS", cacertsPath)
-
-			if c, err := count.Classes(layer.Path); err != nil {
-				return fmt.Errorf("unable to count JVM classes\n%w", err)
-			} else {
-				layer.LaunchEnvironment.Default("BPI_JVM_CLASS_COUNT", c)
-			}
-
-			if IsBeforeJava9(j.LayerContributor.Dependency.Version) && j.DistributionType == JDKType {
-				layer.LaunchEnvironment.Default("BPI_JVM_EXT_DIR", filepath.Join(layer.Path, "jre", "lib", "ext"))
-			} else if IsBeforeJava9(j.LayerContributor.Dependency.Version) && j.DistributionType == JREType {
-				layer.LaunchEnvironment.Default("BPI_JVM_EXT_DIR", filepath.Join(layer.Path, "lib", "ext"))
-			}
-
-			var file string
-			if IsBeforeJava9(j.LayerContributor.Dependency.Version) && j.DistributionType == JDKType {
-				file = filepath.Join(layer.Path, "jre", "lib", "security", "java.security")
-			} else if IsBeforeJava9(j.LayerContributor.Dependency.Version) && j.DistributionType == JREType {
-				file = filepath.Join(layer.Path, "lib", "security", "java.security")
-			} else {
-				file = filepath.Join(layer.Path, "conf", "security", "java.security")
-			}
-
-			p, err := properties.LoadFile(file, properties.UTF8)
-			if err != nil {
-				return fmt.Errorf("unable to read properties file %s\n%w", file, err)
-			}
-			p = p.FilterStripPrefix("security.provider.")
-
-			var providers []string
-			for k, v := range p.Map() {
-				providers = append(providers, fmt.Sprintf("%s|%s", k, v))
-			}
-			sort.Strings(providers)
-			layer.LaunchEnvironment.Default("BPI_JVM_SECURITY_PROVIDERS", strings.Join(providers, " "))
-
-			layer.LaunchEnvironment.Default("JAVA_HOME", layer.Path)
-			layer.LaunchEnvironment.Default("MALLOC_ARENA_MAX", "2")
-
-			layer.LaunchEnvironment.Append("JAVA_TOOL_OPTIONS", " ", "-XX:+ExitOnOutOfMemoryError")
-		}
-
-		return nil
+		return ConfigureJRE(ConfigJREContext{
+			Layer:             layer,
+			Logger:            j.Logger,
+			JavaHome:          layer.Path,
+			JavaVersion:       j.LayerContributor.Dependency.Version,
+			ApplicationPath:   j.ApplicationPath,
+			IsBuild:           IsBuildContribution(j.Metadata),
+			IsLaunch:          IsLaunchContribution(j.Metadata),
+			SkipCerts:         false,
+			CertificateLoader: j.CertificateLoader,
+			DistType:          j.DistributionType,
+		})
 	})
 }
 
