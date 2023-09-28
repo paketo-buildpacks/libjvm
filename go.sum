@@ -39,8 +39,8 @@ github.com/mitchellh/hashstructure/v2 v2.0.2/go.mod h1:MG3aRVU/N29oo/V/IhBX8GR/z
 github.com/onsi/ginkgo/v2 v2.11.0 h1:WgqUCUt/lT6yXoQ8Wef0fsNn5cAuMK7+KT9UFRz2tcU=
 github.com/onsi/gomega v1.27.10 h1:naR28SdDFlqrG6kScpT8VWpu1xWY5nJRCF3XaYyBjhI=
 github.com/onsi/gomega v1.27.10/go.mod h1:RsS8tutOdbdgzbPtzzATp12yT7kM5I5aElG3evPbQ0M=
-github.com/paketo-buildpacks/libpak v1.66.2 h1:ovvxoSMa+P2O6FwPnqGVwTeFqJZXwmq2b4+Wpeuk1xY=
-github.com/paketo-buildpacks/libpak v1.66.2/go.mod h1:m9ip2UPVCcrxK8TN8gGQ2WtJnjzBT84JFNl96mzYTwk=
+github.com/paketo-buildpacks/libpak v1.67.0 h1:c8LYndZkP7NsTtEVvpk0iEgmLxxV4Eo1sBwWPvUSNtw=
+github.com/paketo-buildpacks/libpak v1.67.0/go.mod h1:dtvRCaBQDEMDoKIG3v0VRqFmesCqdwLksxIybOESrcA=
 github.com/pavlo-v-chernykh/keystore-go/v4 v4.5.0 h1:2nosf3P75OZv2/ZO/9Px5ZgZ5gbKrzA3joN1QMfOGMQ=
 github.com/pavlo-v-chernykh/keystore-go/v4 v4.5.0/go.mod h1:lAVhWwbNaveeJmxrxuSTxMgKpF6DjnuVpn6T8WiBwYQ=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
