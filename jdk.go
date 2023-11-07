@@ -21,8 +21,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/heroku/color"
-
 	"github.com/buildpacks/libcnb"
 	"github.com/paketo-buildpacks/libpak"
 	"github.com/paketo-buildpacks/libpak/bard"
@@ -79,16 +77,12 @@ func (j JDK) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 		} else {
 			keyStorePath = filepath.Join(layer.Path, "lib", "security", "cacerts")
 		}
-		if err := os.Chmod(keyStorePath, 0664); err != nil{
-			return  libcnb.Layer{}, fmt.Errorf("unable to set keystore file permissions\n%w", err)
+		if err := os.Chmod(keyStorePath, 0664); err != nil {
+			return libcnb.Layer{}, fmt.Errorf("unable to set keystore file permissions\n%w", err)
 		}
 
-		if IsBeforeJava18(j.LayerContributor.Dependency.Version) {
-			if err := j.CertificateLoader.Load(keyStorePath, "changeit"); err != nil {
-				return libcnb.Layer{}, fmt.Errorf("unable to load certificates\n%w", err)
-			}
-		} else {
-			j.Logger.Bodyf("%s: The JVM cacerts entries cannot be loaded with Java 18+, for more information see: https://github.com/paketo-buildpacks/libjvm/issues/158", color.YellowString("Warning"))
+		if err := j.CertificateLoader.Load(keyStorePath, "changeit"); err != nil {
+			return libcnb.Layer{}, fmt.Errorf("unable to load certificates\n%w", err)
 		}
 		return layer, nil
 	})

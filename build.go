@@ -18,9 +18,10 @@ package libjvm
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/mattn/go-shellwords"
 	"github.com/paketo-buildpacks/libpak/effect"
-	"strings"
 
 	"github.com/buildpacks/libcnb"
 	"github.com/heroku/color"
@@ -272,7 +273,7 @@ func (b *Build) contributeNIK(jdkDep libpak.BuildpackDependency, nativeDep libpa
 
 func (b *Build) contributeHelpers(context libcnb.BuildContext, depJRE libpak.BuildpackDependency) {
 	helpers := []string{"active-processor-count", "java-opts", "jvm-heap", "link-local-dns", "memory-calculator",
-		"security-providers-configurer", "jmx", "jfr"}
+		"security-providers-configurer", "jmx", "jfr", "openssl-certificate-loader"}
 
 	if IsBeforeJava9(depJRE.Version) {
 		helpers = append(helpers, "security-providers-classpath-8")
@@ -281,10 +282,6 @@ func (b *Build) contributeHelpers(context libcnb.BuildContext, depJRE libpak.Bui
 		helpers = append(helpers, "security-providers-classpath-9")
 		helpers = append(helpers, "debug-9")
 		helpers = append(helpers, "nmt")
-	}
-	// Java 18 bug - cacerts keystore type not readable
-	if IsBeforeJava18(depJRE.Version) {
-		helpers = append(helpers, "openssl-certificate-loader")
 	}
 	found := false
 	for _, custom := range b.CustomHelpers {
