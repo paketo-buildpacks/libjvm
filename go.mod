@@ -15,7 +15,7 @@ require (
 	github.com/sclevine/spec v1.4.0
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/sys v0.14.0
-	software.sslmate.com/src/go-pkcs12 v0.3.0
+	software.sslmate.com/src/go-pkcs12 v0.4.0
 )
 
 require (
