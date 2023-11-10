@@ -88,12 +88,8 @@ func (j JLink) Contribute(layer *libcnb.Layer) error {
 			return fmt.Errorf("unable to set keystore file permissions\n%w", err)
 		}
 
-		if IsBeforeJava18(j.JavaVersion) {
-			if err := j.CertificateLoader.Load(cacertsPath, "changeit"); err != nil {
-				return fmt.Errorf("unable to load certificates\n%w", err)
-			}
-		} else {
-			j.Logger.Bodyf("%s: The JVM cacerts entries cannot be loaded with Java 18+, for more information see: https://github.com/paketo-buildpacks/libjvm/issues/158", color.YellowString("Warning"))
+		if err := j.CertificateLoader.Load(cacertsPath, "changeit"); err != nil {
+			return fmt.Errorf("unable to load certificates\n%w", err)
 		}
 
 		if IsBuildContribution(j.Metadata) {

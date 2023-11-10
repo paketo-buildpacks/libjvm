@@ -22,7 +22,6 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -30,8 +29,6 @@ import (
 
 	"github.com/paketo-buildpacks/libpak/v2/log"
 	"github.com/paketo-buildpacks/libpak/v2/sherpa"
-	"github.com/pavlo-v-chernykh/keystore-go/v4"
-	"golang.org/x/sys/unix"
 )
 
 const DefaultCertFile = "/etc/ssl/certs/ca-certificates.crt"
@@ -61,9 +58,9 @@ func NewCertificateLoader(logger log.Logger) CertificateLoader {
 }
 
 func (c *CertificateLoader) Load(path string, password string) error {
-	ks, err := c.readKeyStore(path, password)
+	ks, err := DetectKeystore(path)
 	if err != nil {
-		return fmt.Errorf("unable to read keystore\n%w", err)
+		return err
 	}
 
 	files, err := c.certFiles()
@@ -79,25 +76,14 @@ func (c *CertificateLoader) Load(path string, password string) error {
 		}
 
 		for i, b := range blocks {
-			entry := keystore.TrustedCertificateEntry{
-				CreationTime: NormalizedDateTime,
-				Certificate: keystore.Certificate{
-					Type:    "X.509",
-					Content: b.Bytes,
-				},
-			}
-
-			if err := ks.SetTrustedCertificateEntry(fmt.Sprintf("%s-%d", f, i), entry); err != nil {
-				return fmt.Errorf("unable to add trusted entry\n%w", err)
-			}
-
+			ks.Add(fmt.Sprintf("%s-%d", f, i), b)
 			added++
 		}
 	}
 
 	c.Logger.Bodyf("Adding %d container CA certificates to JVM truststore\n", added)
 
-	if err := c.writeKeyStore(ks, path, password); err != nil {
+	if err := ks.Write(); err != nil {
 		return fmt.Errorf("unable to write keystore\n%w", err)
 	}
 
@@ -115,7 +101,7 @@ func (c CertificateLoader) certFiles() ([]string, error) {
 
 	re := regexp.MustCompile(`^[[:xdigit:]]{8}\.[\d]$`)
 	for _, d := range c.CertDirs {
-		c, err := ioutil.ReadDir(d)
+		c, err := os.ReadDir(d)
 		if os.IsNotExist(err) {
 			continue
 		} else if err != nil {
@@ -165,7 +151,7 @@ func (c CertificateLoader) readBlocks(path string) ([]*pem.Block, error) {
 		blocks []*pem.Block
 	)
 
-	rest, err := ioutil.ReadFile(path)
+	rest, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read %s\n%w", path, err)
 	}
@@ -179,38 +165,4 @@ func (c CertificateLoader) readBlocks(path string) ([]*pem.Block, error) {
 	}
 
 	return blocks, nil
-}
-
-func (CertificateLoader) readKeyStore(path string, password string) (keystore.KeyStore, error) {
-	in, err := os.Open(path)
-	if err != nil {
-		return keystore.KeyStore{}, fmt.Errorf("unable to open %s\n%w", path, err)
-	}
-	defer in.Close()
-
-	ks := keystore.New(keystore.WithOrderedAliases())
-	if err := ks.Load(in, []byte(password)); err != nil {
-		return keystore.KeyStore{}, fmt.Errorf("unable to decode keystore\n %w", err)
-	}
-
-	return ks, nil
-}
-
-func (c CertificateLoader) writeKeyStore(ks keystore.KeyStore, path string, password string) error {
-	if unix.Access(path, unix.W_OK) != nil {
-		c.Logger.Bodyf("WARNING: Unable to add container CA certificates to JVM because %s is read-only", path)
-		return nil
-	}
-
-	out, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
-	if err != nil {
-		return fmt.Errorf("unable to open %s\n%w", path, err)
-	}
-	defer out.Close()
-
-	if err := ks.Store(out, []byte(password)); err != nil {
-		return fmt.Errorf("unable to encode keystore\n%w", err)
-	}
-
-	return nil
 }

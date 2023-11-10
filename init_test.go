@@ -47,5 +47,6 @@ func TestUnit(t *testing.T) {
 	suite("SDKMAN", testSDKMAN)
 	suite("Versions", testVersions)
 	suite("JVMVersions", testJVMVersion)
+	suite("Keystore", testKeystore)
 	suite.Run(t)
 }
