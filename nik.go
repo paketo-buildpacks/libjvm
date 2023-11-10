@@ -109,12 +109,8 @@ func (n NIK) Contribute(layer *libcnb.Layer) error {
 			return fmt.Errorf("unable to set keystore file permissions\n%w", err)
 		}
 
-		if IsBeforeJava18(n.JDKDependency.Version) {
-			if err := n.CertificateLoader.Load(keyStorePath, "changeit"); err != nil {
-				return fmt.Errorf("unable to load certificates\n%w", err)
-			}
-		} else {
-			n.Logger.Bodyf("%s: The JVM cacerts entries cannot be loaded with Java 18+, for more information see: https://github.com/paketo-buildpacks/libjvm/issues/158", color.YellowString("Warning"))
+		if err := n.CertificateLoader.Load(keyStorePath, "changeit"); err != nil {
+			return fmt.Errorf("unable to load certificates\n%w", err)
 		}
 
 		if n.NativeDependency != nil {

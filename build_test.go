@@ -125,9 +125,9 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			"security-providers-configurer",
 			"jmx",
 			"jfr",
+			"openssl-certificate-loader",
 			"security-providers-classpath-8",
 			"debug-8",
-			"openssl-certificate-loader",
 		}))
 	})
 
@@ -160,10 +160,10 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			"security-providers-configurer",
 			"jmx",
 			"jfr",
+			"openssl-certificate-loader",
 			"security-providers-classpath-9",
 			"debug-9",
 			"nmt",
-			"openssl-certificate-loader",
 		}))
 	})
 

@@ -23,8 +23,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/heroku/color"
-
 	"github.com/buildpacks/libcnb/v2"
 	"github.com/magiconair/properties"
 	"github.com/paketo-buildpacks/libpak/v2"
@@ -99,14 +97,8 @@ func ConfigureJRE(configCtx ConfigJREContext) error {
 		if err := os.Chmod(cacertsPath, 0664); err != nil {
 			return fmt.Errorf("unable to set keystore file permissions\n%w", err)
 		}
-		// If java < 18, load container certs into cacerts
-		// (this will normally run _after_ ca_certificates buildpack, which may have imported new trust certs)
-		if IsBeforeJava18(configCtx.JavaVersion) {
-			if err := configCtx.CertificateLoader.Load(cacertsPath, "changeit"); err != nil {
-				return fmt.Errorf("unable to load certificates\n%w", err)
-			}
-		} else {
-			configCtx.Logger.Bodyf("%s: The JVM cacerts entries cannot be loaded with Java 18+, for more information see: https://github.com/paketo-buildpacks/libjvm/issues/158", color.YellowString("Warning"))
+		if err := configCtx.CertificateLoader.Load(cacertsPath, "changeit"); err != nil {
+			return fmt.Errorf("unable to load certificates\n%w", err)
 		}
 	} else {
 		//if we are skipping certs.. disable the runtime helper too.
