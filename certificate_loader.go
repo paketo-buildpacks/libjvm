@@ -29,7 +29,6 @@ import (
 
 	"github.com/paketo-buildpacks/libpak/v2/log"
 	"github.com/paketo-buildpacks/libpak/v2/sherpa"
-	"golang.org/x/sys/unix"
 )
 
 const DefaultCertFile = "/etc/ssl/certs/ca-certificates.crt"
@@ -59,10 +58,6 @@ func NewCertificateLoader(logger log.Logger) CertificateLoader {
 }
 
 func (c *CertificateLoader) Load(path string, password string) error {
-	if unix.Access(path, unix.W_OK) != nil {
-		return nil
-	}
-
 	ks, err := DetectKeystore(path)
 	if err != nil {
 		return err

@@ -24,6 +24,7 @@ import (
 	"os"
 
 	"github.com/pavlo-v-chernykh/keystore-go/v4"
+	"golang.org/x/sys/unix"
 	"software.sslmate.com/src/go-pkcs12"
 )
 
@@ -90,6 +91,10 @@ func (k *JKSKeystore) Add(name string, b *pem.Block) error {
 }
 
 func (k *JKSKeystore) Write() error {
+	if unix.Access(k.location, unix.W_OK) != nil {
+		return nil
+	}
+
 	out, err := os.OpenFile(k.location, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
 		return fmt.Errorf("unable to open %s\n%w", k.location, err)
@@ -154,6 +159,10 @@ func (k *PasswordLessPKCS12Keystore) Add(name string, b *pem.Block) error {
 }
 
 func (k *PasswordLessPKCS12Keystore) Write() error {
+	if unix.Access(k.location, unix.W_OK) != nil {
+		return nil
+	}
+
 	out, err := os.OpenFile(k.location, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
