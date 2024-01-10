@@ -155,11 +155,7 @@ func testCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 			Expect(ks).To(HaveLen(3))
 		})
 
-		if internal.IsRoot() {
-			return
-		}
-
-		it("does not return error when keystore is read-only", func() {
+		internal.SkipIfRoot(it, "does not return error when keystore is read-only", func() {
 			Expect(os.Chmod(path, 0555)).To(Succeed())
 
 			c := libjvm.CertificateLoader{
@@ -256,11 +252,7 @@ func testCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 			Expect(ks.Aliases()).To(HaveLen(3))
 		})
 
-		if internal.IsRoot() {
-			return
-		}
-
-		it("does not return error when keystore is read-only", func() {
+		internal.SkipIfRoot(it, "does not return error when keystore is read-only", func() {
 			Expect(os.Chmod(path, 0555)).To(Succeed())
 
 			c := libjvm.CertificateLoader{

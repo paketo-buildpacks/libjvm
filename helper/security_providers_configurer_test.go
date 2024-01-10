@@ -106,11 +106,7 @@ security.provider.6=FOXTROT
 `)))
 				})
 
-				if internal.IsRoot() {
-					return
-				}
-
-				it("warns if the file is read-only", func() {
+				internal.SkipIfRoot(it, "warns if the file is read-only", func() {
 					Expect(os.Chmod(path, 0555)).To(Succeed())
 
 					Expect(helper.SecurityProvidersConfigurer{}.Execute()).To(BeNil())
