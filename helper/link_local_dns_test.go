@@ -92,11 +92,7 @@ networkaddress.cache.negative.ttl=0
 `)))
 		})
 
-		if internal.IsRoot() {
-			return
-		}
-
-		it("warns if file is read-only", func() {
+		internal.SkipIfRoot(it, "warns if file is read-only", func() {
 			Expect(os.Chmod(path, 0555)).To(Succeed())
 
 			config := &ddns.ClientConfig{Servers: []string{"169.254.0.1"}}
