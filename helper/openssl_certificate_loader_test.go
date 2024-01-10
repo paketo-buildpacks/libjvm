@@ -98,11 +98,7 @@ func testOpenSSLCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 			Expect(ks.Aliases()).To(HaveLen(3))
 		})
 
-		if internal.IsRoot() {
-			return
-		}
-
-		it("does use temp keystore if keystore is read-only", func() {
+		internal.SkipIfRoot(it, "does use temp keystore if keystore is read-only", func() {
 			Expect(os.Chmod(path, 0555)).To(Succeed())
 
 			o := helper.OpenSSLCertificateLoader{CertificateLoader: cl, Logger: bard.NewLogger(ioutil.Discard)}
@@ -122,7 +118,7 @@ func testOpenSSLCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 			Expect(env).To(HaveKeyWithValue("JAVA_TOOL_OPTIONS", fmt.Sprintf("-Djavax.net.ssl.trustStore=%s", helper.TmpTrustStore)))
 		})
 
-		it("does not return error when keystore and /tmp/truststore are read-only", func() {
+		internal.SkipIfRoot(it, "does not return error when keystore and /tmp/truststore are read-only", func() {
 			Expect(os.Chmod(path, 0555)).To(Succeed())
 			_, err := os.OpenFile(helper.TmpTrustStore, os.O_CREATE, 0)
 			Expect(err).NotTo(HaveOccurred())

@@ -47,7 +47,7 @@ func DetectKeystore(location string) (Keystore, error) {
 		return NewJKSKeystore(location, "changeit")
 	}
 
-	return NewPasswordLessPKCS12Keystore(location), nil
+	return NewPasswordLessPKCS12Keystore(location)
 }
 
 var _ Keystore = &JKSKeystore{}
@@ -119,11 +119,29 @@ type PasswordLessPKCS12Keystore struct {
 	entries  []pkcs12.TrustStoreEntry
 }
 
-func NewPasswordLessPKCS12Keystore(location string) *PasswordLessPKCS12Keystore {
+func NewPasswordLessPKCS12Keystore(location string) (*PasswordLessPKCS12Keystore, error) {
+	in, err := os.ReadFile(location)
+	if err != nil {
+		return nil, err
+	}
+
+	x509Certs, err := pkcs12.DecodeTrustStore(in, "")
+	if err != nil {
+		return nil, err
+	}
+
+	var entries []pkcs12.TrustStoreEntry
+	for _, x509Cert := range x509Certs {
+		entries = append(entries, pkcs12.TrustStoreEntry{
+			Cert:         x509Cert,
+			FriendlyName: x509Cert.Subject.String(),
+		})
+	}
+
 	return &PasswordLessPKCS12Keystore{
 		location: location,
-		entries:  []pkcs12.TrustStoreEntry{},
-	}
+		entries:  entries,
+	}, nil
 }
 
 func (k *PasswordLessPKCS12Keystore) Add(name string, b *pem.Block) error {
@@ -141,6 +159,10 @@ func (k *PasswordLessPKCS12Keystore) Add(name string, b *pem.Block) error {
 }
 
 func (k *PasswordLessPKCS12Keystore) Write() error {
+	if unix.Access(k.location, unix.W_OK) != nil {
+		return nil
+	}
+
 	out, err := os.OpenFile(k.location, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
@@ -155,7 +177,5 @@ func (k *PasswordLessPKCS12Keystore) Write() error {
 }
 
 func (k *PasswordLessPKCS12Keystore) Len() int {
-	data, _ := os.ReadFile(k.location)
-	certs, _ := pkcs12.DecodeTrustStore(data, "")
-	return len(certs) + len(k.entries)
+	return len(k.entries)
 }

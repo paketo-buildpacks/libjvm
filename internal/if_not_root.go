@@ -18,9 +18,18 @@ package internal
 
 import (
 	"os/user"
+
+	"github.com/sclevine/spec"
 )
 
-func IsRoot() bool {
+func isRoot() bool {
 	u, _ := user.Current()
 	return u.Username == "root"
+}
+
+func SkipIfRoot(it spec.S, text string, f func(), options ...spec.Option) {
+	if isRoot() {
+		it = it.Pend
+	}
+	it(text, f, options...)
 }

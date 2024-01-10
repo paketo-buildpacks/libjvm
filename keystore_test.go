@@ -97,7 +97,8 @@ func testKeystore(t *testing.T, context spec.G, it spec.S) {
 		})
 
 		it("can be written", func() {
-			ks := libjvm.NewPasswordLessPKCS12Keystore(path)
+			ks, err := libjvm.NewPasswordLessPKCS12Keystore(path)
+			Expect(err).ToNot(HaveOccurred())
 			Expect(ks.Len()).To(Equal(1))
 			cert, err := os.ReadFile(filepath.Join("testdata", "cert.pem"))
 			Expect(err).ToNot(HaveOccurred())
