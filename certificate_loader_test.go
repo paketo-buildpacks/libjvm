@@ -27,6 +27,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/pavlo-v-chernykh/keystore-go/v4"
 	"github.com/sclevine/spec"
+	"software.sslmate.com/src/go-pkcs12"
 
 	"github.com/paketo-buildpacks/libjvm/v2"
 	"github.com/paketo-buildpacks/libjvm/v2/internal"
@@ -82,7 +83,100 @@ func testCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 		})
 	})
 
-	context("load", func() {
+	context("load pkcs12", func() {
+		var (
+			path string
+		)
+
+		it.Before(func() {
+			in, err := os.Open(filepath.Join("testdata", "test-keystore.pkcs12"))
+			Expect(err).NotTo(HaveOccurred())
+			defer in.Close()
+
+			out, err := ioutil.TempFile("", "certificate-loader")
+			Expect(err).NotTo(HaveOccurred())
+			defer out.Close()
+
+			_, err = io.Copy(out, in)
+			Expect(err).NotTo(HaveOccurred())
+
+			path = out.Name()
+		})
+
+		it.After(func() {
+			Expect(os.RemoveAll(path)).To(Succeed())
+		})
+
+		it("ignores non-existent file", func() {
+			c := libjvm.CertificateLoader{
+				CertFile: filepath.Join("testdata", "non-existent-file"),
+				Logger:   log.NewDiscardLogger(),
+			}
+
+			Expect(c.Load(path, "changeit")).To(Succeed())
+		})
+
+		it("ignores non-existent directory", func() {
+			c := libjvm.CertificateLoader{
+				CertDirs: []string{filepath.Join("testdata", "non-existent-directory")},
+				Logger:   log.NewDiscardLogger(),
+			}
+
+			Expect(c.Load(path, "changeit")).To(Succeed())
+		})
+
+		it("loads additional certificates from file", func() {
+			c := libjvm.CertificateLoader{
+				CertFile: filepath.Join("testdata", "certificates", "certificate-1.pem"),
+				Logger:   log.NewDiscardLogger(),
+			}
+
+			Expect(c.Load(path, "changeit")).To(Succeed())
+
+			in, err := os.ReadFile(path)
+			Expect(err).NotTo(HaveOccurred())
+
+			ks, err := pkcs12.DecodeTrustStore(in, "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ks).To(HaveLen(2))
+		})
+
+		it("loads additional certificates from directories", func() {
+			c := libjvm.CertificateLoader{
+				CertDirs: []string{filepath.Join("testdata", "certificates")},
+				Logger:   log.NewDiscardLogger(),
+			}
+
+			Expect(c.Load(path, "changeit")).To(Succeed())
+
+			in, err := os.ReadFile(path)
+			Expect(err).NotTo(HaveOccurred())
+
+			ks, err := pkcs12.DecodeTrustStore(in, "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ks).To(HaveLen(3))
+		})
+
+		internal.SkipIfRoot(it, "does not return error when keystore is read-only", func() {
+			Expect(os.Chmod(path, 0555)).To(Succeed())
+
+			c := libjvm.CertificateLoader{
+				CertDirs: []string{filepath.Join("testdata", "certificates")},
+				Logger:   log.NewDiscardLogger(),
+			}
+
+			Expect(c.Load(path, "changeit")).To(Succeed())
+
+			in, err := os.ReadFile(path)
+			Expect(err).NotTo(HaveOccurred())
+
+			ks, err := pkcs12.DecodeTrustStore(in, "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ks).To(HaveLen(1))
+		})
+	})
+
+	context("load jks", func() {
 		var (
 			path string
 		)
@@ -160,11 +254,7 @@ func testCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 			Expect(ks.Aliases()).To(HaveLen(3))
 		})
 
-		if internal.IsRoot() {
-			return
-		}
-
-		it("does not return error when keystore is read-only", func() {
+		internal.SkipIfRoot(it, "does not return error when keystore is read-only", func() {
 			Expect(os.Chmod(path, 0555)).To(Succeed())
 
 			c := libjvm.CertificateLoader{
