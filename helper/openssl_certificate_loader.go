@@ -69,10 +69,14 @@ func (o OpenSSLCertificateLoader) Execute() (map[string]string, error) {
 	var opts map[string]string
 	if !trustStoreWriteable {
 		tmpOpts, err := o.prepareTempTrustStore(trustStore, TmpTrustStore)
-		if err == nil {
-			trustStore = TmpTrustStore
-			opts = tmpOpts
+		if err != nil {
+			o.Logger.Body("Warning: import of certificates into Java Truststore will be skipped, because the JVM directory is read-only and creating a writable copy failed: ", err.Error())
+			o.Logger.Body("If you need the certificates, please provide a writable temporary directroy, e.g. by mounting an empty ephemeral volume. Otherwise you can ignore this message.")
+			return nil, nil
 		}
+		trustStore = TmpTrustStore
+		opts = tmpOpts
+
 	}
 
 	if err := o.CertificateLoader.Load(trustStore, "changeit"); err != nil {

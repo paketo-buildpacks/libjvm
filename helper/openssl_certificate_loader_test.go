@@ -17,6 +17,7 @@
 package helper_test
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -120,26 +121,20 @@ func testOpenSSLCertificateLoader(t *testing.T, context spec.G, it spec.S) {
 			Expect(env).To(HaveKeyWithValue("JAVA_TOOL_OPTIONS", fmt.Sprintf("-Djavax.net.ssl.trustStore=%s", helper.TmpTrustStore)))
 		})
 
-		internal.SkipIfRoot(it, "does not return error when keystore and /tmp/truststore are read-only", func() {
+		internal.SkipIfRoot(it, "prints a warning when keystore and /tmp/truststore are read-only", func() {
 			Expect(os.Chmod(path, 0555)).To(Succeed())
 			_, err := os.OpenFile(helper.TmpTrustStore, os.O_CREATE, 0)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(os.Chmod(helper.TmpTrustStore, 0555)).To(Succeed())
 
-			o := helper.OpenSSLCertificateLoader{CertificateLoader: cl, Logger: log.NewPaketoLogger(os.Stdout)}
+			var output bytes.Buffer
+			o := helper.OpenSSLCertificateLoader{CertificateLoader: cl, Logger: log.NewPaketoLogger(&output)}
 
 			env, err := o.Execute()
 			Expect(env).To(BeNil())
 			Expect(err).NotTo(HaveOccurred())
 
-			in, err := os.Open(path)
-			Expect(err).NotTo(HaveOccurred())
-			defer in.Close()
-
-			ks := keystore.New()
-			err = ks.Load(in, []byte("changeit"))
-			Expect(err).NotTo(HaveOccurred())
-			Expect(ks.Aliases()).To(HaveLen(1))
+			Expect(output.String()).To(ContainSubstring("Warning: import of certificates into Java Truststore will be skipped"))
 		})
 
 	})
