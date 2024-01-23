@@ -18,15 +18,16 @@ package helper
 
 import (
 	"fmt"
-	"strings"
-
 	"github.com/paketo-buildpacks/libpak/sherpa"
+	"net"
+	"strings"
 
 	"github.com/paketo-buildpacks/libpak/bard"
 )
 
 type Debug9 struct {
-	Logger bard.Logger
+	Logger                 bard.Logger
+	Debug9ListenerAndError ListenerAndError
 }
 
 func (d Debug9) Execute() (map[string]string, error) {
@@ -43,11 +44,23 @@ func (d Debug9) Execute() (map[string]string, error) {
 		return nil, nil
 	}
 
-	port := "*:" + sherpa.GetEnvWithDefault("BPL_DEBUG_PORT", "8000")
+	port := sherpa.GetEnvWithDefault("BPL_DEBUG_PORT", "8000")
+	if &d.Debug9ListenerAndError.Listener == nil {
+		listener, err := net.Listen("tcp", fmt.Sprintf("[::]:%s", port))
+		d.Debug9ListenerAndError = ListenerAndError{listener, err}
+	}
+
+	var host = "*"
+	if !isIPv6PortBindingOK(&d.Debug9ListenerAndError) {
+		d.Logger.Debugf("Port %s is not available or cannot be opened on [::]; configuring debug agent with 0.0.0.0\n", port)
+		host = "0.0.0.0"
+	}
+
+	address := host + ":" + port
 
 	suspend := sherpa.ResolveBool("BPL_DEBUG_SUSPEND")
 
-	s := fmt.Sprintf("Debugging enabled on port %s", port)
+	s := fmt.Sprintf("Debugging enabled on address %s", address)
 	if suspend {
 		s = fmt.Sprintf("%s, suspended on start", s)
 	}
@@ -59,7 +72,17 @@ func (d Debug9) Execute() (map[string]string, error) {
 		s = "n"
 	}
 
-	opts = sherpa.AppendToEnvVar("JAVA_TOOL_OPTIONS", " ", fmt.Sprintf("-agentlib:jdwp=transport=dt_socket,server=y,address=%s,suspend=%s", port, s))
+	opts = sherpa.AppendToEnvVar("JAVA_TOOL_OPTIONS", " ", fmt.Sprintf("-agentlib:jdwp=transport=dt_socket,server=y,address=%s,suspend=%s", address, s))
 
 	return map[string]string{"JAVA_TOOL_OPTIONS": opts}, nil
+}
+
+func isIPv6PortBindingOK(listenerAndError *ListenerAndError) bool {
+	defer listenerAndError.Listener.Close()
+	return listenerAndError.Err == nil
+}
+
+type ListenerAndError struct {
+	Listener net.Listener
+	Err      error
 }

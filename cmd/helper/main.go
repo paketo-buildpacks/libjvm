@@ -52,6 +52,7 @@ func main() {
 			s8 = helper.SecurityProvidersClasspath8{Logger: l}
 			s9 = helper.SecurityProvidersClasspath9{Logger: l}
 			d8 = helper.Debug8{Logger: l}
+			//listener, err := net.Listen("tcp", fmt.Sprintf("[::]:%s", port))
 			d9 = helper.Debug9{Logger: l}
 			jm = helper.JMX{Logger: l}
 			n  = helper.NMT{Logger: l}

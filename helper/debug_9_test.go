@@ -17,6 +17,8 @@
 package helper_test
 
 import (
+	"errors"
+	"net"
 	"os"
 	"testing"
 
@@ -40,6 +42,7 @@ func testDebug9(t *testing.T, context spec.G, it spec.S) {
 		it.Before(func() {
 			Expect(os.Setenv("BPL_DEBUG_ENABLED", "true")).
 				To(Succeed())
+			d.Debug9ListenerAndError = helper.ListenerAndError{Listener: OKListener{}, Err: nil}
 		})
 
 		it.After(func() {
@@ -114,5 +117,36 @@ func testDebug9(t *testing.T, context spec.G, it spec.S) {
 			})
 		})
 
+		context("IPv6 is not present", func() {
+			it.Before(func() {
+				d.Debug9ListenerAndError = helper.ListenerAndError{Listener: OKListener{}, Err: errors.New("can't open port")}
+			})
+
+			it.After(func() {
+				d.Debug9ListenerAndError = helper.ListenerAndError{}
+			})
+
+			it("replaces '*' host with IPv4 0.0.0.0", func() {
+				Expect(d.Execute()).To(Equal(map[string]string{
+					"JAVA_TOOL_OPTIONS": "-agentlib:jdwp=transport=dt_socket,server=y,address=0.0.0.0:8000,suspend=n",
+				}))
+			})
+		})
+
 	})
+}
+
+type OKListener struct {
+}
+
+func (receiver OKListener) Close() error {
+	return nil
+}
+
+func (receiver OKListener) Accept() (net.Conn, error) {
+	return nil, nil
+}
+
+func (receiver OKListener) Addr() net.Addr {
+	return nil
 }
