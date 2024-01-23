@@ -17,6 +17,7 @@
 package helper_test
 
 import (
+	"log"
 	"os"
 	"testing"
 
@@ -36,14 +37,23 @@ func testDebug9(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	context("$BPL_DEBUG_ENABLED", func() {
-
+		var fakeIPv6File *os.File
 		it.Before(func() {
 			Expect(os.Setenv("BPL_DEBUG_ENABLED", "true")).
 				To(Succeed())
+
+			var fakeIPv6FileErr error
+			fakeIPv6File, fakeIPv6FileErr = os.CreateTemp("", "IPv6Test")
+			if fakeIPv6FileErr != nil {
+				log.Fatal(fakeIPv6FileErr)
+			}
+			fakeIPv6File.WriteString("0\n")
+			d.CustomIPv6CheckPath = fakeIPv6File.Name()
 		})
 
 		it.After(func() {
 			Expect(os.Unsetenv("BPL_DEBUG_ENABLED")).To(Succeed())
+			os.Remove(fakeIPv6File.Name())
 		})
 
 		it("contributes configuration", func() {
@@ -110,6 +120,40 @@ func testDebug9(t *testing.T, context spec.G, it spec.S) {
 			it("contributes configuration appended to existing $JAVA_TOOL_OPTIONS", func() {
 				Expect(d.Execute()).To(Equal(map[string]string{
 					"JAVA_TOOL_OPTIONS": "test-java-tool-options -agentlib:jdwp=transport=dt_socket,server=y,address=*:8000,suspend=n",
+				}))
+			})
+		})
+
+		context("IPv6 is not present", func() {
+			it.Before(func() {
+				d1 := []byte("1\n")
+				os.WriteFile(fakeIPv6File.Name(), d1, 0644)
+			})
+
+			it.After(func() {
+				d1 := []byte("0\n")
+				os.WriteFile(fakeIPv6File.Name(), d1, 0644)
+			})
+
+			it("replaces '*' host with IPv4 0.0.0.0", func() {
+				Expect(d.Execute()).To(Equal(map[string]string{
+					"JAVA_TOOL_OPTIONS": "-agentlib:jdwp=transport=dt_socket,server=y,address=0.0.0.0:8000,suspend=n",
+				}))
+			})
+		})
+
+		context("IPv6 kernel module file not there", func() {
+			it.Before(func() {
+				d.CustomIPv6CheckPath = "/does/not/exist"
+			})
+
+			it.After(func() {
+				d.CustomIPv6CheckPath = fakeIPv6File.Name()
+			})
+
+			it("replaces '*' host with IPv4 0.0.0.0", func() {
+				Expect(d.Execute()).To(Equal(map[string]string{
+					"JAVA_TOOL_OPTIONS": "-agentlib:jdwp=transport=dt_socket,server=y,address=0.0.0.0:8000,suspend=n",
 				}))
 			})
 		})
