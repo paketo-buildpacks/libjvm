@@ -1,9 +1,9 @@
-# `github.com/paketo-buildpacks/libjvm`
+# `github.com/anthonydahanne/libjvm`
 `libjvm` is a Go library and helper applications that form the basis for building the different Paketo-style JVM-providing buildpacks.
 
 ## Usage
 ```
-go get github.com/paketo-buildpacks/libjvm
+go get github.com/anthonydahanne/libjvm
 ```
 
 ## License

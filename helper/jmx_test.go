@@ -20,8 +20,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/anthonydahanne/libjvm/helper"
 	. "github.com/onsi/gomega"
-	"github.com/paketo-buildpacks/libjvm/helper"
 	"github.com/sclevine/spec"
 )
 

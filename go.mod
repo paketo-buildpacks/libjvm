@@ -1,4 +1,4 @@
-module github.com/paketo-buildpacks/libjvm
+module github.com/anthonydahanne/libjvm
 
 go 1.20
 

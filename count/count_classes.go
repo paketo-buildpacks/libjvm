@@ -62,7 +62,7 @@ func JarClasses(path string) (int, error) {
 
 		// Check for zero byte JAR files with name containing 'none' - these can not be unzipped
 		// examples of these were found in the JDK, e.g. svm-none.jar
-		// See https://github.com/paketo-buildpacks/libjvm/issues/84
+		// See https://github.com/anthonydahanne/libjvm/issues/84
 		if info.Size() == 0 && strings.Contains(info.Name(), "none") {
 			return nil
 		}

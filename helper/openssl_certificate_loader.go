@@ -25,7 +25,7 @@ import (
 	"github.com/paketo-buildpacks/libpak/sherpa"
 	"golang.org/x/sys/unix"
 
-	"github.com/paketo-buildpacks/libjvm"
+	"github.com/anthonydahanne/libjvm"
 )
 
 var TmpTrustStore = filepath.Join(os.TempDir(), "truststore")

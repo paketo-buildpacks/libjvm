@@ -29,9 +29,9 @@ import (
 	"github.com/pavlo-v-chernykh/keystore-go/v4"
 	"github.com/sclevine/spec"
 
-	"github.com/paketo-buildpacks/libjvm"
-	"github.com/paketo-buildpacks/libjvm/helper"
-	"github.com/paketo-buildpacks/libjvm/internal"
+	"github.com/anthonydahanne/libjvm"
+	"github.com/anthonydahanne/libjvm/helper"
+	"github.com/anthonydahanne/libjvm/internal"
 )
 
 func testOpenSSLCertificateLoader(t *testing.T, context spec.G, it spec.S) {

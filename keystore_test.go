@@ -23,8 +23,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/anthonydahanne/libjvm"
 	. "github.com/onsi/gomega"
-	"github.com/paketo-buildpacks/libjvm"
 	"github.com/sclevine/spec"
 )
 

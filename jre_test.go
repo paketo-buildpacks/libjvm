@@ -29,7 +29,7 @@ import (
 	"github.com/pavlo-v-chernykh/keystore-go/v4"
 	"github.com/sclevine/spec"
 
-	"github.com/paketo-buildpacks/libjvm"
+	"github.com/anthonydahanne/libjvm"
 )
 
 func testJRE(t *testing.T, context spec.G, it spec.S) {

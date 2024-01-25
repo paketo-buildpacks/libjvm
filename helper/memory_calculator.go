@@ -28,8 +28,8 @@ import (
 
 	"github.com/paketo-buildpacks/libpak/bard"
 
-	"github.com/paketo-buildpacks/libjvm/calc"
-	"github.com/paketo-buildpacks/libjvm/count"
+	"github.com/anthonydahanne/libjvm/calc"
+	"github.com/anthonydahanne/libjvm/count"
 )
 
 const (

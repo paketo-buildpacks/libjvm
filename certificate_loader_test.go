@@ -28,8 +28,8 @@ import (
 	"github.com/sclevine/spec"
 	"software.sslmate.com/src/go-pkcs12"
 
-	"github.com/paketo-buildpacks/libjvm"
-	"github.com/paketo-buildpacks/libjvm/internal"
+	"github.com/anthonydahanne/libjvm"
+	"github.com/anthonydahanne/libjvm/internal"
 )
 
 func testCertificateLoader(t *testing.T, context spec.G, it spec.S) {

@@ -8,10 +8,10 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/anthonydahanne/libjvm/count"
 	"github.com/buildpacks/libcnb"
 	"github.com/heroku/color"
 	"github.com/magiconair/properties"
-	"github.com/paketo-buildpacks/libjvm/count"
 	"github.com/paketo-buildpacks/libpak"
 	"github.com/paketo-buildpacks/libpak/bard"
 	"github.com/paketo-buildpacks/libpak/effect"

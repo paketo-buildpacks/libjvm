@@ -22,7 +22,7 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	"github.com/paketo-buildpacks/libjvm/helper"
+	"github.com/anthonydahanne/libjvm/helper"
 	"github.com/sclevine/spec"
 )
 

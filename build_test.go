@@ -28,7 +28,7 @@ import (
 	"github.com/paketo-buildpacks/libpak"
 	"github.com/sclevine/spec"
 
-	"github.com/paketo-buildpacks/libjvm"
+	"github.com/anthonydahanne/libjvm"
 )
 
 func testBuild(t *testing.T, context spec.G, it spec.S) {

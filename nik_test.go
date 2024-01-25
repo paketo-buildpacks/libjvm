@@ -22,9 +22,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/anthonydahanne/libjvm"
 	"github.com/buildpacks/libcnb"
 	. "github.com/onsi/gomega"
-	"github.com/paketo-buildpacks/libjvm"
 	"github.com/paketo-buildpacks/libpak"
 	"github.com/paketo-buildpacks/libpak/bard"
 	"github.com/paketo-buildpacks/libpak/effect"
