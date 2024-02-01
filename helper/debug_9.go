@@ -26,8 +26,8 @@ import (
 )
 
 type Debug9 struct {
-	Logger                 bard.Logger
-	Debug9ListenerAndError ListenerAndError
+	Logger         bard.Logger
+	ListenerHolder Debug9ListenerHolder
 }
 
 func (d Debug9) Execute() (map[string]string, error) {
@@ -45,14 +45,16 @@ func (d Debug9) Execute() (map[string]string, error) {
 	}
 
 	port := sherpa.GetEnvWithDefault("BPL_DEBUG_PORT", "8000")
-	if &d.Debug9ListenerAndError.Listener == nil {
-		listener, err := net.Listen("tcp", fmt.Sprintf("[::]:%s", port))
-		d.Debug9ListenerAndError = ListenerAndError{listener, err}
+	var host = "*"
+	// if not set, it means no test set that up; it's the real runtime Listener that will be used
+	if d.ListenerHolder == nil {
+		d.ListenerHolder = RealListenerHolder{}
 	}
 
-	var host = "*"
-	if !isIPv6PortBindingOK(&d.Debug9ListenerAndError) {
-		d.Logger.Debugf("Port %s is not available or cannot be opened on [::]; configuring debug agent with 0.0.0.0\n", port)
+	listener, err := d.ListenerHolder.Listen("tcp", fmt.Sprintf("[::]:%s", port))
+	defer listener.Close()
+	if err != nil {
+		d.Logger.Infof("Port %s is not available or cannot be opened on [::]; configuring debug agent with 0.0.0.0\n", port)
 		host = "0.0.0.0"
 	}
 
@@ -77,12 +79,13 @@ func (d Debug9) Execute() (map[string]string, error) {
 	return map[string]string{"JAVA_TOOL_OPTIONS": opts}, nil
 }
 
-func isIPv6PortBindingOK(listenerAndError *ListenerAndError) bool {
-	defer listenerAndError.Listener.Close()
-	return listenerAndError.Err == nil
+type Debug9ListenerHolder interface {
+	Listen(network, address string) (net.Listener, error)
 }
 
-type ListenerAndError struct {
-	Listener net.Listener
-	Err      error
+type RealListenerHolder struct {
+}
+
+func (RealListenerHolder) Listen(network, address string) (net.Listener, error) {
+	return net.Listen(network, address)
 }

@@ -42,7 +42,7 @@ func testDebug9(t *testing.T, context spec.G, it spec.S) {
 		it.Before(func() {
 			Expect(os.Setenv("BPL_DEBUG_ENABLED", "true")).
 				To(Succeed())
-			d.Debug9ListenerAndError = helper.ListenerAndError{Listener: OKListener{}, Err: nil}
+			d.ListenerHolder = TestListenerHolder{true}
 		})
 
 		it.After(func() {
@@ -119,11 +119,11 @@ func testDebug9(t *testing.T, context spec.G, it spec.S) {
 
 		context("IPv6 is not present", func() {
 			it.Before(func() {
-				d.Debug9ListenerAndError = helper.ListenerAndError{Listener: OKListener{}, Err: errors.New("can't open port")}
+				d.ListenerHolder = TestListenerHolder{false}
 			})
 
 			it.After(func() {
-				d.Debug9ListenerAndError = helper.ListenerAndError{}
+				d.ListenerHolder = TestListenerHolder{true}
 			})
 
 			it("replaces '*' host with IPv4 0.0.0.0", func() {
@@ -136,17 +136,29 @@ func testDebug9(t *testing.T, context spec.G, it spec.S) {
 	})
 }
 
-type OKListener struct {
+type TestListenerHolder struct {
+	OK bool
 }
 
-func (receiver OKListener) Close() error {
-	return nil
+type FakeListener struct {
 }
 
-func (receiver OKListener) Accept() (net.Conn, error) {
+func (f FakeListener) Accept() (net.Conn, error) {
 	return nil, nil
 }
 
-func (receiver OKListener) Addr() net.Addr {
+func (f FakeListener) Close() error {
 	return nil
+}
+
+func (f FakeListener) Addr() net.Addr {
+	return nil
+}
+
+func (receiver TestListenerHolder) Listen(network, address string) (net.Listener, error) {
+	if receiver.OK {
+		return FakeListener{}, nil
+	} else {
+		return FakeListener{}, errors.New("unexpected address type")
+	}
 }
