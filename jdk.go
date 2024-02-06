@@ -32,7 +32,7 @@ type JDK struct {
 }
 
 func NewJDK(dependency libpak.BuildModuleDependency, cache libpak.DependencyCache, certificateLoader CertificateLoader) (JDK, error) {
-	expected := map[string]interface{}{"dependency": dependency}
+	expected := map[string]interface{}{"dependency": dependency.GetMetadata()}
 
 	if md, err := certificateLoader.Metadata(); err != nil {
 		return JDK{}, fmt.Errorf("unable to generate certificate loader metadata")
