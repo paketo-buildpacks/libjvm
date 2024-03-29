@@ -81,7 +81,7 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 
 	pr := libpak.PlanEntryResolver{Plan: context.Plan}
 
-	_, jdkRequired, err := pr.Resolve("jdk")
+	jdkPlanEntry, jdkRequired, err := pr.Resolve("jdk")
 	if err != nil {
 		return libcnb.BuildResult{}, fmt.Errorf("unable to resolve jdk plan entry\n%w", err)
 	}
@@ -135,6 +135,9 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 	}
 
 	if t, _ := cr.Resolve("BP_JVM_TYPE"); strings.ToLower(t) == "jdk" {
+		jreSkipped = true
+	}
+	if _, jreSkippedExists := jdkPlanEntry.Metadata["jre-skipped"]; jreSkippedExists {
 		jreSkipped = true
 	}
 

@@ -17,8 +17,10 @@
 package libjvm_test
 
 import (
+	"fmt"
 	"io"
 	"os"
+	"runtime"
 	"testing"
 
 	"github.com/paketo-buildpacks/libpak/bard"
@@ -60,6 +62,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					"id":      "jdk",
 					"version": "1.1.1",
 					"stacks":  []interface{}{"test-stack-id"},
+					"purl":    fmt.Sprintf("?arch=%s", runtime.GOARCH),
 				},
 			},
 		}
@@ -86,6 +89,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					"id":      "jre",
 					"version": "1.1.1",
 					"stacks":  []interface{}{"test-stack-id"},
+					"purl":    fmt.Sprintf("?arch=%s", runtime.GOARCH),
 				},
 			},
 		}
@@ -114,6 +118,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					"id":      "jre",
 					"version": "8.0.0",
 					"stacks":  []interface{}{"test-stack-id"},
+					"purl":    fmt.Sprintf("?arch=%s", runtime.GOARCH),
 				},
 			},
 		}
@@ -145,6 +150,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					"id":      "jre",
 					"version": "11.0.0",
 					"stacks":  []interface{}{"test-stack-id"},
+					"purl":    fmt.Sprintf("?arch=%s", runtime.GOARCH),
 				},
 			},
 		}
@@ -178,6 +184,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					"id":      "jdk",
 					"version": "1.1.1",
 					"stacks":  []interface{}{"test-stack-id"},
+					"purl":    fmt.Sprintf("?arch=%s", runtime.GOARCH),
 				},
 			},
 		}
@@ -207,6 +214,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					"id":      "jdk",
 					"version": "1.1.1",
 					"stacks":  []interface{}{"test-stack-id"},
+					"purl":    fmt.Sprintf("?arch=%s", runtime.GOARCH),
 				},
 			},
 		}
@@ -226,6 +234,30 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(result.BOM.Entries[1].Launch).To(BeTrue())
 	})
 
+	it("contributes JDK as JRE when jre-skipped is set in the build plan", func() {
+		ctx.Plan.Entries = append(ctx.Plan.Entries, libcnb.BuildpackPlanEntry{Name: "jdk", Metadata: map[string]interface{}{
+			"jre-skipped": true,
+		}})
+		ctx.Buildpack.API = "0.6"
+		ctx.Buildpack.Metadata = map[string]interface{}{
+			"dependencies": []map[string]interface{}{
+				{
+					"id":      "jdk",
+					"version": "1.1.1",
+					"stacks":  []interface{}{"test-stack-id"},
+					"purl":    fmt.Sprintf("?arch=%s", runtime.GOARCH),
+				},
+			},
+		}
+		ctx.StackID = "test-stack-id"
+
+		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard)).Build(ctx)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(result.Layers).To(HaveLen(1))
+		Expect(result.Layers[0].Name()).To(Equal("jdk"))
+	})
+
 	it("contributes NIK API <= 0.6", func() {
 
 		ctx.Plan.Entries = append(
@@ -239,6 +271,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					"id":      "native-image-svm",
 					"version": "1.1.1",
 					"stacks":  []interface{}{"test-stack-id"},
+					"purl":    fmt.Sprintf("?arch=%s", runtime.GOARCH),
 				},
 			},
 		}
@@ -270,7 +303,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					"version": "1.1.1",
 					"stacks":  []interface{}{"test-stack-id"},
 					"cpes":    []interface{}{"cpe:2.3:a:bellsoft:nik:1.1.1:*:*:*:*:*:*:*"},
-					"purl":    "pkg:generic/provider-nik@1.1.1?arch=amd64",
+					"purl":    fmt.Sprintf("pkg:generic/provider-nik@1.1.1??arch=%s", runtime.GOARCH),
 				},
 			},
 		}
@@ -306,14 +339,14 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 						"version": "1.1.1",
 						"stacks":  []interface{}{"test-stack-id"},
 						"cpes":    []string{"cpe:2.3:a:oracle:graalvm:21.2.0:*:*:*:community:*:*:*"},
-						"purl":    "pkg:generic/graalvm-jdk@21.2.0",
+						"purl":    fmt.Sprintf("pkg:generic/graalvm-jdk@21.2.0?arch=%s", runtime.GOARCH),
 					},
 					{
 						"id":      "native-image-svm",
 						"version": "2.2.2",
 						"stacks":  []interface{}{"test-stack-id"},
 						"cpes":    []string{"cpe:2.3:a:oracle:graalvm:21.2.0:*:*:*:community:*:*:*"},
-						"purl":    "pkg:generic/graalvm-svm@21.2.0",
+						"purl":    fmt.Sprintf("pkg:generic/graalvm-svm@21.2.0?arch=%s", runtime.GOARCH),
 					},
 				},
 			}
@@ -354,14 +387,14 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 						"version": "1.1.1",
 						"stacks":  []interface{}{"test-stack-id"},
 						"cpes":    []string{"cpe:2.3:a:oracle:graalvm:21.2.0:*:*:*:community:*:*:*"},
-						"purl":    "pkg:generic/graalvm-jdk@21.2.0",
+						"purl":    fmt.Sprintf("pkg:generic/graalvm-jdk@21.2.0?arch=%s", runtime.GOARCH),
 					},
 					{
 						"id":      "native-image-svm",
 						"version": "2.2.2",
 						"stacks":  []interface{}{"test-stack-id"},
 						"cpes":    []string{"cpe:2.3:a:oracle:graalvm:21.2.0:*:*:*:community:*:*:*"},
-						"purl":    "pkg:generic/graalvm-svm@21.2.0",
+						"purl":    fmt.Sprintf("pkg:generic/graalvm-svm@21.2.0?arch=%s", runtime.GOARCH),
 					},
 				},
 			}
@@ -387,6 +420,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					"id":      "native-image-svm",
 					"version": "1.1.1",
 					"stacks":  []interface{}{"test-stack-id"},
+					"purl":    fmt.Sprintf("?arch=%s", runtime.GOARCH),
 				},
 			},
 		}
@@ -425,21 +459,25 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 						"id":      "jdk",
 						"version": "1.1.1",
 						"stacks":  []interface{}{"test-stack-id"},
+						"purl":    fmt.Sprintf("?arch=%s", runtime.GOARCH),
 					},
 					{
 						"id":      "jdk",
 						"version": "2.2.2",
 						"stacks":  []interface{}{"test-stack-id"},
+						"purl":    fmt.Sprintf("?arch=%s", runtime.GOARCH),
 					},
 					{
 						"id":      "jre",
 						"version": "1.1.1",
 						"stacks":  []interface{}{"test-stack-id"},
+						"purl":    fmt.Sprintf("?arch=%s", runtime.GOARCH),
 					},
 					{
 						"id":      "jre",
 						"version": "2.2.2",
 						"stacks":  []interface{}{"test-stack-id"},
+						"purl":    fmt.Sprintf("?arch=%s", runtime.GOARCH),
 					},
 				},
 			}
@@ -470,11 +508,13 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 						"id":      "jdk",
 						"version": "0.0.2",
 						"stacks":  []interface{}{"test-stack-id"},
+						"purl":    fmt.Sprintf("?arch=%s", runtime.GOARCH),
 					},
 					{
 						"id":      "jre",
 						"version": "2.2.2",
 						"stacks":  []interface{}{"test-stack-id"},
+						"purl":    fmt.Sprintf("?arch=%s", runtime.GOARCH),
 					},
 				},
 			}
@@ -500,11 +540,13 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 						"id":      "jdk",
 						"version": "0.0.1",
 						"stacks":  []interface{}{"test-stack-id"},
+						"purl":    fmt.Sprintf("?arch=%s", runtime.GOARCH),
 					},
 					{
 						"id":      "jre",
 						"version": "1.1.1",
 						"stacks":  []interface{}{"test-stack-id"},
+						"purl":    fmt.Sprintf("?arch=%s", runtime.GOARCH),
 					},
 				},
 			}
