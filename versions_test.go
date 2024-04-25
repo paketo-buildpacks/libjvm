@@ -37,4 +37,17 @@ func testVersions(t *testing.T, context spec.G, it spec.S) {
 		Expect(libjvm.IsBeforeJava9("")).To(BeFalse())
 	})
 
+	it("determins whether a version is before Java 18", func() {
+		Expect(libjvm.IsBeforeJava18("17.0.0")).To(BeTrue())
+		Expect(libjvm.IsBeforeJava18("18.0.0")).To(BeFalse())
+		Expect(libjvm.IsBeforeJava18("19.0.0")).To(BeFalse())
+		Expect(libjvm.IsBeforeJava18("")).To(BeFalse())
+	})
+
+	it("determines whether a version is before Java 17", func() {
+		Expect(libjvm.IsBeforeJava17("16.0.0")).To(BeTrue())
+		Expect(libjvm.IsBeforeJava17("17.0.0")).To(BeFalse())
+		Expect(libjvm.IsBeforeJava17("18.0.0")).To(BeFalse())
+		Expect(libjvm.IsBeforeJava17("")).To(BeFalse())
+	})
 }

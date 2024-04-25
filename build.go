@@ -272,7 +272,7 @@ func (b *Build) contributeNIK(jdkDep libpak.BuildpackDependency, nativeDep libpa
 }
 
 func (b *Build) contributeHelpers(context libcnb.BuildContext, depJRE libpak.BuildpackDependency) {
-	helpers := []string{"active-processor-count", "java-opts", "jvm-heap", "link-local-dns", "memory-calculator",
+	helpers := []string{"java-opts", "jvm-heap", "link-local-dns", "memory-calculator",
 		"security-providers-configurer", "jmx", "jfr", "openssl-certificate-loader"}
 
 	if IsBeforeJava9(depJRE.Version) {
@@ -283,6 +283,11 @@ func (b *Build) contributeHelpers(context libcnb.BuildContext, depJRE libpak.Bui
 		helpers = append(helpers, "debug-9")
 		helpers = append(helpers, "nmt")
 	}
+
+	if IsBeforeJava17(depJRE.Version) {
+		helpers = append(helpers, "active-processor-count")
+	}
+
 	found := false
 	for _, custom := range b.CustomHelpers {
 		if found {
