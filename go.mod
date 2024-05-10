@@ -9,12 +9,12 @@ require (
 	github.com/magiconair/properties v1.8.7
 	github.com/mattn/go-shellwords v1.0.12
 	github.com/miekg/dns v1.1.59
-	github.com/onsi/gomega v1.33.0
-	github.com/paketo-buildpacks/libpak v1.69.1
+	github.com/onsi/gomega v1.33.1
+	github.com/paketo-buildpacks/libpak v1.70.0
 	github.com/pavlo-v-chernykh/keystore-go/v4 v4.5.0
 	github.com/sclevine/spec v1.4.0
 	github.com/stretchr/testify v1.9.0
-	golang.org/x/sys v0.19.0
+	golang.org/x/sys v0.20.0
 	software.sslmate.com/src/go-pkcs12 v0.4.0
 )
 
@@ -35,7 +35,7 @@ require (
 	golang.org/x/mod v0.17.0 // indirect
 	golang.org/x/net v0.24.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect
-	golang.org/x/text v0.14.0 // indirect
+	golang.org/x/text v0.15.0 // indirect
 	golang.org/x/tools v0.20.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
