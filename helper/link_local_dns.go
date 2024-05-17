@@ -32,6 +32,12 @@ type LinkLocalDNS struct {
 }
 
 func (l LinkLocalDNS) Execute() (map[string]string, error) {
+	// In some cases, the nameservers are empty.
+	// For example, when using the host network, and host '/etc/resolv.conf' file content is empty.
+	if len(l.Config.Servers) == 0 {
+		return nil, nil
+	}
+
 	if !net.ParseIP(l.Config.Servers[0]).IsLinkLocalUnicast() {
 		return nil, nil
 	}
