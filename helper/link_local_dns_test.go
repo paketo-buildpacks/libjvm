@@ -59,6 +59,15 @@ func testLinkLocalDNS(t *testing.T, context spec.G, it spec.S) {
 		Expect(ioutil.ReadFile(path)).To(Equal([]byte("test")))
 	})
 
+	it("do nothing if no nameservers", func() {
+		config := &ddns.ClientConfig{Servers: []string{}}
+
+		l := helper.LinkLocalDNS{Config: config}
+
+		Expect(l.Execute()).To(BeNil())
+		Expect(ioutil.ReadFile(path)).To(Equal([]byte(`test`)))
+	})
+
 	it("returns an error if $JAVA_SECURITY_PROPERTIES is not set", func() {
 		config := &ddns.ClientConfig{Servers: []string{"169.254.0.1"}}
 		l := helper.LinkLocalDNS{Config: config}
