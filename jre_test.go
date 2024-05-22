@@ -212,6 +212,7 @@ func testJRE(t *testing.T, context spec.G, it spec.S) {
 		Expect(layer.LayerTypes.Build).To(BeTrue())
 		Expect(layer.LayerTypes.Cache).To(BeTrue())
 		Expect(layer.BuildEnvironment["JAVA_HOME.default"]).To(Equal(layer.Path))
+		Expect(layer.BuildEnvironment["JRE_HOME.default"]).To(Equal(layer.Path))
 	})
 
 	it("marks before Java 9 JRE layer for launch", func() {

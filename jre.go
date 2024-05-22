@@ -93,6 +93,7 @@ func (j JRE) Contribute(layer libcnb.Layer) (libcnb.Layer, error) {
 
 		if IsBuildContribution(j.Metadata) {
 			layer.BuildEnvironment.Default("JAVA_HOME", layer.Path)
+			layer.BuildEnvironment.Default("JRE_HOME", layer.Path)
 		}
 
 		if IsLaunchContribution(j.Metadata) {
