@@ -14,7 +14,7 @@ require (
 	github.com/pavlo-v-chernykh/keystore-go/v4 v4.5.0
 	github.com/sclevine/spec v1.4.0
 	github.com/stretchr/testify v1.9.0
-	golang.org/x/sys v0.23.0
+	golang.org/x/sys v0.24.0
 	software.sslmate.com/src/go-pkcs12 v0.4.0
 )
 
