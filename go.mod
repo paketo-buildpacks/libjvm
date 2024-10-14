@@ -4,13 +4,13 @@ go 1.23
 
 require (
 	github.com/Masterminds/semver/v3 v3.3.0
-	github.com/buildpacks/libcnb v1.30.3
+	github.com/buildpacks/libcnb v1.30.4
 	github.com/heroku/color v0.0.6
 	github.com/magiconair/properties v1.8.7
 	github.com/mattn/go-shellwords v1.0.12
 	github.com/miekg/dns v1.1.62
 	github.com/onsi/gomega v1.34.2
-	github.com/paketo-buildpacks/libpak v1.71.0
+	github.com/paketo-buildpacks/libpak v1.72.0
 	github.com/pavlo-v-chernykh/keystore-go/v4 v4.5.0
 	github.com/sclevine/spec v1.4.0
 	github.com/stretchr/testify v1.9.0
