@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/heroku/color"
@@ -20,7 +21,7 @@ func NewJVMVersion(logger bard.Logger) JVMVersion {
 	return JVMVersion{Logger: logger}
 }
 
-func (j JVMVersion) GetJVMVersion(appPath string, cr libpak.ConfigurationResolver) (string, error) {
+func (j JVMVersion) GetJVMVersion(appPath string, cr libpak.ConfigurationResolver, dr libpak.DependencyResolver) (string, error) {
 	version, explicit := cr.Resolve("BP_JVM_VERSION")
 	if explicit {
 		f := color.New(color.Faint)
@@ -47,6 +48,7 @@ func (j JVMVersion) GetJVMVersion(appPath string, cr libpak.ConfigurationResolve
 
 	if len(mavenJavaVersion) > 0 {
 		mavenJavaMajorVersion := extractMajorVersion(mavenJavaVersion)
+		retrieveNextAvailableJavaVersionIfMavenVersionNotAvailable(dr, &mavenJavaMajorVersion)
 		f := color.New(color.Faint)
 		j.Logger.Body(f.Sprintf("Using Java version %s extracted from MANIFEST.MF", mavenJavaMajorVersion))
 		return mavenJavaMajorVersion, nil
@@ -55,6 +57,26 @@ func (j JVMVersion) GetJVMVersion(appPath string, cr libpak.ConfigurationResolve
 	f := color.New(color.Faint)
 	j.Logger.Body(f.Sprintf("Using buildpack default Java version %s", version))
 	return version, nil
+}
+
+func retrieveNextAvailableJavaVersionIfMavenVersionNotAvailable(dr libpak.DependencyResolver, mavenJavaMajorVersion *string) {
+	_, jdkErr := dr.Resolve("jdk", *mavenJavaMajorVersion)
+	_, jreErr := dr.Resolve("jre", *mavenJavaMajorVersion)
+	if libpak.IsNoValidDependencies(jdkErr) && libpak.IsNoValidDependencies(jreErr) {
+		//	the buildpack does not provide the wanted JDK or JRE version - let's check if we can choose a more recent version
+		mavenJavaMajorVersionAsInt, _ := strconv.ParseInt(*mavenJavaMajorVersion, 10, 64)
+		versionToEvaluate := mavenJavaMajorVersionAsInt + 1
+		for versionToEvaluate <= mavenJavaMajorVersionAsInt+5 {
+			_, jdkErr := dr.Resolve("jdk", strconv.FormatInt(versionToEvaluate, 10))
+			_, jreErr := dr.Resolve("jre", strconv.FormatInt(versionToEvaluate, 10))
+			if libpak.IsNoValidDependencies(jdkErr) && libpak.IsNoValidDependencies(jreErr) {
+				versionToEvaluate = versionToEvaluate + 1
+			} else {
+				*mavenJavaMajorVersion = strconv.FormatInt(versionToEvaluate, 10)
+				break
+			}
+		}
+	}
 }
 
 func readJavaVersionFromSDKMANRCFile(appPath string) (string, error) {

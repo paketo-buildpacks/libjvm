@@ -77,7 +77,7 @@ type NativeImage struct {
 }
 
 func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
-	var jdkRequired, jreRequired, jreMissing, jreSkipped, jLinkEnabled, nativeImage bool
+	var jdkRequired, jreRequired, jreMissing, jdkMissing, jreSkipped, jLinkEnabled, nativeImage bool
 
 	pr := libpak.PlanEntryResolver{Plan: context.Plan}
 
@@ -106,15 +106,15 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 		return libcnb.BuildResult{}, fmt.Errorf("unable to create configuration resolver\n%w", err)
 	}
 
-	jvmVersion := NewJVMVersion(b.Logger)
-	v, err := jvmVersion.GetJVMVersion(context.Application.Path, cr)
-	if err != nil {
-		return libcnb.BuildResult{}, fmt.Errorf("unable to determine jvm version\n%w", err)
-	}
-
 	dr, err := libpak.NewDependencyResolver(context)
 	if err != nil {
 		return libcnb.BuildResult{}, fmt.Errorf("unable to create dependency resolver\n%w", err)
+	}
+
+	jvmVersion := NewJVMVersion(b.Logger)
+	v, err := jvmVersion.GetJVMVersion(context.Application.Path, cr, dr)
+	if err != nil {
+		return libcnb.BuildResult{}, fmt.Errorf("unable to determine jvm version\n%w", err)
 	}
 
 	b.DependencyCache, err = libpak.NewDependencyCache(context)
@@ -123,9 +123,13 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 	}
 	b.DependencyCache.Logger = b.Logger
 
+	jdkMissing = false
 	depJDK, err := dr.Resolve("jdk", v)
 	if (jdkRequired && !nativeImage) && err != nil {
-		return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)
+		return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency for JDK %s - make sure the buildpack includes the Java version you have requested\n%w", v, err)
+	}
+	if libpak.IsNoValidDependencies(err) {
+		jdkMissing = true
 	}
 
 	jreMissing = false
@@ -145,7 +149,7 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 	if nativeImage {
 		depNative, err := dr.Resolve("native-image-svm", v)
 		if err != nil {
-			return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency\n%w", err)
+			return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency for native-image-svm %s - make sure the buildpack includes the Java Native version you have requested\n%w", v, err)
 		}
 		if b.Native.BundledWithJDK {
 			if err = b.contributeJDK(depNative); err != nil {
@@ -176,6 +180,9 @@ func (b Build) Build(context libcnb.BuildContext) (libcnb.BuildResult, error) {
 
 	// use JDK as JRE
 	if jreRequired && (jreSkipped || jreMissing) {
+		if jdkMissing {
+			return libcnb.BuildResult{}, fmt.Errorf("unable to find dependency for JRE %s even as a JDK - make sure the buildpack includes the Java version you have requested\n%w", v, err)
+		}
 		b.warnIfJreNotUsed(jreMissing, jreSkipped)
 		if err = b.contributeJDKAsJRE(depJDK, jrePlanEntry, context); err != nil {
 			return libcnb.BuildResult{}, fmt.Errorf("unable to contribute JDK as JRE\n%w", err)
@@ -223,7 +230,7 @@ func (b *Build) contributeJDKAsJRE(jdkDep libpak.BuildpackDependency, jrePlanEnt
 
 	dt := JDKType
 	if err := b.contributeJRE(jdkDep, context.Application.Path, dt, jrePlanEntry.Metadata); err != nil {
-		return fmt.Errorf("unable to contribute JRE\n%w", err)
+		return fmt.Errorf("unable to contribute JDK\n%w", err)
 	}
 	return nil
 }
