@@ -65,16 +65,13 @@ func retrieveNextAvailableJavaVersionIfMavenVersionNotAvailable(dr libpak.Depend
 	if libpak.IsNoValidDependencies(jdkErr) && libpak.IsNoValidDependencies(jreErr) {
 		//	the buildpack does not provide the wanted JDK or JRE version - let's check if we can choose a more recent version
 		mavenJavaMajorVersionAsInt, _ := strconv.ParseInt(*mavenJavaMajorVersion, 10, 64)
-		versionToEvaluate := mavenJavaMajorVersionAsInt + 1
-		for versionToEvaluate <= mavenJavaMajorVersionAsInt+5 {
-			_, jdkErr := dr.Resolve("jdk", strconv.FormatInt(versionToEvaluate, 10))
-			_, jreErr := dr.Resolve("jre", strconv.FormatInt(versionToEvaluate, 10))
-			if libpak.IsNoValidDependencies(jdkErr) && libpak.IsNoValidDependencies(jreErr) {
-				versionToEvaluate = versionToEvaluate + 1
-			} else {
-				*mavenJavaMajorVersion = strconv.FormatInt(versionToEvaluate, 10)
-				break
-			}
+		nextVersionToEvaluate := mavenJavaMajorVersionAsInt + 1
+		_, jdkErr := dr.Resolve("jdk", strconv.FormatInt(nextVersionToEvaluate, 10))
+		_, jreErr := dr.Resolve("jre", strconv.FormatInt(nextVersionToEvaluate, 10))
+		if libpak.IsNoValidDependencies(jdkErr) && libpak.IsNoValidDependencies(jreErr) {
+			// we tried with the next major version, still no Java candidate, we are done trying.
+		} else {
+			*mavenJavaMajorVersion = strconv.FormatInt(nextVersionToEvaluate, 10)
 		}
 	}
 }
