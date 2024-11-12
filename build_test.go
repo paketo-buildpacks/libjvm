@@ -19,6 +19,7 @@ package libjvm_test
 import (
 	"io"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/paketo-buildpacks/libpak/bard"
@@ -54,6 +55,10 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 	it.Before(func() {
 		t.Setenv("BP_ARCH", "amd64")
+	})
+
+	it.After(func() {
+		Expect(os.Unsetenv("BP_JVM_VERSION")).To(Succeed())
 	})
 
 	it("contributes JDK", func() {
@@ -108,6 +113,120 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(result.BOM.Entries[0].Launch).To(BeTrue())
 		Expect(result.BOM.Entries[1].Name).To(Equal("helper"))
 		Expect(result.BOM.Entries[1].Launch).To(BeTrue())
+	})
+
+	it("contributes available next JRE version when Manifest refers to not available version", func() {
+		ctx.Plan.Entries = append(ctx.Plan.Entries, libcnb.BuildpackPlanEntry{Name: "jre", Metadata: LaunchContribution})
+		ctx.Buildpack.API = "0.6"
+
+		appPath, err := os.MkdirTemp("", "application")
+		Expect(prepareAppWithEntry(appPath, "Build-Jdk: 22")).ToNot(HaveOccurred())
+
+		ctx.Application.Path = appPath
+		ctx.Buildpack.Metadata = map[string]interface{}{
+			"dependencies": []map[string]interface{}{
+				{
+					"id":      "jre",
+					"version": "8.0.432",
+					"stacks":  []interface{}{"test-stack-id"},
+				},
+				{
+					"id":      "jre",
+					"version": "23.0.1",
+					"stacks":  []interface{}{"test-stack-id"},
+				},
+				{
+					"id":      "jre",
+					"version": "43.43.43",
+					"stacks":  []interface{}{"test-stack-id"},
+				},
+			},
+		}
+		ctx.StackID = "test-stack-id"
+
+		result, err := libjvm.NewBuild(bard.NewLogger(io.Discard)).Build(ctx)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(result.Layers).To(HaveLen(3))
+		Expect(result.Layers[0].Name()).To(Equal("jre"))
+		Expect(result.Layers[1].Name()).To(Equal("helper"))
+		Expect(result.Layers[2].Name()).To(Equal("java-security-properties"))
+
+		Expect(result.BOM.Entries).To(HaveLen(2))
+		Expect(result.BOM.Entries[0].Name).To(Equal("jre"))
+		Expect(result.BOM.Entries[0].Metadata["version"]).To(Equal("23.0.1"))
+		Expect(result.BOM.Entries[0].Launch).To(BeTrue())
+		Expect(result.BOM.Entries[1].Name).To(Equal("helper"))
+		Expect(result.BOM.Entries[1].Launch).To(BeTrue())
+	})
+
+	it("provides meaningful error message if user requested via sdkmanrc a non available JRE", func() {
+		ctx.Plan.Entries = append(ctx.Plan.Entries, libcnb.BuildpackPlanEntry{Name: "jre", Metadata: LaunchContribution})
+		ctx.Buildpack.API = "0.6"
+
+		appPath, err := os.MkdirTemp("", "application")
+		sdkmanrcFile := filepath.Join(appPath, ".sdkmanrc")
+		Expect(os.WriteFile(sdkmanrcFile, []byte(`java=20.0.2-tem`), 0644)).To(Succeed())
+
+		ctx.Application.Path = appPath
+		ctx.Buildpack.Metadata = map[string]interface{}{
+			"dependencies": []map[string]interface{}{
+				{
+					"id":      "jre",
+					"version": "8.0.432",
+					"stacks":  []interface{}{"test-stack-id"},
+				},
+				{
+					"id":      "jre",
+					"version": "23.0.1",
+					"stacks":  []interface{}{"test-stack-id"},
+				},
+				{
+					"id":      "jre",
+					"version": "43.43.43",
+					"stacks":  []interface{}{"test-stack-id"},
+				},
+			},
+		}
+		ctx.StackID = "test-stack-id"
+
+		_, err = libjvm.NewBuild(bard.NewLogger(io.Discard)).Build(ctx)
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("unable to find dependency for JRE 20 even as a JDK - make sure the buildpack includes the Java version you have requested"))
+		Expect(err.Error()).To(ContainSubstring("no valid dependencies for jre, 20, and test-stack-id in [(jre, 8.0.432, [test-stack-id]) (jre, 23.0.1, [test-stack-id]) (jre, 43.43.43, [test-stack-id])]"))
+	})
+
+	it("provides meaningful error message if user requested via env.var a non available JRE", func() {
+		ctx.Plan.Entries = append(ctx.Plan.Entries, libcnb.BuildpackPlanEntry{Name: "jre", Metadata: LaunchContribution})
+		ctx.Buildpack.API = "0.6"
+
+		Expect(os.Setenv("BP_JVM_VERSION", "24")).To(Succeed())
+
+		ctx.Buildpack.Metadata = map[string]interface{}{
+			"dependencies": []map[string]interface{}{
+				{
+					"id":      "jre",
+					"version": "8.0.432",
+					"stacks":  []interface{}{"test-stack-id"},
+				},
+				{
+					"id":      "jre",
+					"version": "23.0.1",
+					"stacks":  []interface{}{"test-stack-id"},
+				},
+				{
+					"id":      "jre",
+					"version": "43.43.43",
+					"stacks":  []interface{}{"test-stack-id"},
+				},
+			},
+		}
+		ctx.StackID = "test-stack-id"
+
+		_, err := libjvm.NewBuild(bard.NewLogger(io.Discard)).Build(ctx)
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("unable to find dependency for JRE 24 even as a JDK - make sure the buildpack includes the Java version you have requested"))
+		Expect(err.Error()).To(ContainSubstring("no valid dependencies for jre, 24, and test-stack-id in [(jre, 8.0.432, [test-stack-id]) (jre, 23.0.1, [test-stack-id]) (jre, 43.43.43, [test-stack-id])]"))
 	})
 
 	it("contributes security-providers-classpath-8 before Java 9", func() {

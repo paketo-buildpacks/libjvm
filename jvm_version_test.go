@@ -17,7 +17,7 @@
 package libjvm_test
 
 import (
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -43,7 +43,7 @@ func testJVMVersion(t *testing.T, context spec.G, it spec.S) {
 	it.Before(func() {
 		var err error
 
-		appPath, err = ioutil.TempDir("", "application")
+		appPath, err = os.MkdirTemp("", "application")
 		Expect(err).NotTo(HaveOccurred())
 
 		buildpack = libcnb.Buildpack{
@@ -56,7 +56,7 @@ func testJVMVersion(t *testing.T, context spec.G, it spec.S) {
 				},
 			},
 		}
-		logger = bard.NewLogger(ioutil.Discard)
+		logger = bard.NewLogger(io.Discard)
 	})
 
 	it.After(func() {
@@ -68,7 +68,7 @@ func testJVMVersion(t *testing.T, context spec.G, it spec.S) {
 
 		cr, err := libpak.NewConfigurationResolver(buildpack, &logger)
 		Expect(err).ToNot(HaveOccurred())
-		version, err := jvmVersion.GetJVMVersion(appPath, cr)
+		version, err := jvmVersion.GetJVMVersion(appPath, cr, libpak.DependencyResolver{})
 		Expect(err).ToNot(HaveOccurred())
 		Expect(version).To(Equal("1.1.1"))
 	})
@@ -87,7 +87,7 @@ func testJVMVersion(t *testing.T, context spec.G, it spec.S) {
 
 			cr, err := libpak.NewConfigurationResolver(buildpack, &logger)
 			Expect(err).ToNot(HaveOccurred())
-			version, err := jvmVersion.GetJVMVersion(appPath, cr)
+			version, err := jvmVersion.GetJVMVersion(appPath, cr, libpak.DependencyResolver{})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(version).To(Equal("17"))
 		})
@@ -103,7 +103,7 @@ func testJVMVersion(t *testing.T, context spec.G, it spec.S) {
 
 			cr, err := libpak.NewConfigurationResolver(buildpack, &logger)
 			Expect(err).ToNot(HaveOccurred())
-			version, err := jvmVersion.GetJVMVersion(appPath, cr)
+			version, err := jvmVersion.GetJVMVersion(appPath, cr, libpak.DependencyResolver{})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(version).To(Equal("8"))
 		})
@@ -124,7 +124,7 @@ func testJVMVersion(t *testing.T, context spec.G, it spec.S) {
 
 			cr, err := libpak.NewConfigurationResolver(buildpack, &logger)
 			Expect(err).ToNot(HaveOccurred())
-			version, err := jvmVersion.GetJVMVersion(appPath, cr)
+			version, err := jvmVersion.GetJVMVersion(appPath, cr, libpak.DependencyResolver{})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(version).To(Equal("17"))
 		})
@@ -135,7 +135,7 @@ func testJVMVersion(t *testing.T, context spec.G, it spec.S) {
 
 		it.Before(func() {
 			sdkmanrcFile = filepath.Join(appPath, ".sdkmanrc")
-			Expect(ioutil.WriteFile(sdkmanrcFile, []byte(`java=17.0.2-tem`), 0644)).To(Succeed())
+			Expect(os.WriteFile(sdkmanrcFile, []byte(`java=17.0.2-tem`), 0644)).To(Succeed())
 		})
 
 		it("from .sdkmanrc file", func() {
@@ -143,7 +143,7 @@ func testJVMVersion(t *testing.T, context spec.G, it spec.S) {
 
 			cr, err := libpak.NewConfigurationResolver(buildpack, &logger)
 			Expect(err).ToNot(HaveOccurred())
-			version, err := jvmVersion.GetJVMVersion(appPath, cr)
+			version, err := jvmVersion.GetJVMVersion(appPath, cr, libpak.DependencyResolver{})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(version).To(Equal("17"))
 		})
@@ -154,7 +154,7 @@ func testJVMVersion(t *testing.T, context spec.G, it spec.S) {
 
 		it.Before(func() {
 			sdkmanrcFile = filepath.Join(appPath, ".sdkmanrc")
-			Expect(ioutil.WriteFile(sdkmanrcFile, []byte(`java=17.0.2-tem
+			Expect(os.WriteFile(sdkmanrcFile, []byte(`java=17.0.2-tem
 java=11.0.2-tem`), 0644)).To(Succeed())
 		})
 
@@ -163,7 +163,7 @@ java=11.0.2-tem`), 0644)).To(Succeed())
 
 			cr, err := libpak.NewConfigurationResolver(buildpack, &logger)
 			Expect(err).ToNot(HaveOccurred())
-			version, err := jvmVersion.GetJVMVersion(appPath, cr)
+			version, err := jvmVersion.GetJVMVersion(appPath, cr, libpak.DependencyResolver{})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(version).To(Equal("17"))
 		})
@@ -177,7 +177,7 @@ func prepareAppWithEntry(appPath, entry string) error {
 	}
 	manifest := filepath.Join(appPath, "META-INF", "MANIFEST.MF")
 	manifestContent := []byte(entry)
-	err = ioutil.WriteFile(manifest, manifestContent, 0644)
+	err = os.WriteFile(manifest, manifestContent, 0644)
 	if err != nil {
 		return err
 	}
