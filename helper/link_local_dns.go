@@ -51,8 +51,6 @@ func (l LinkLocalDNS) Execute() (map[string]string, error) {
 		return nil, nil
 	}
 
-	l.Logger.Info("JVM DNS caching disabled in favor of link-local DNS caching")
-
 	f, err := os.OpenFile(file, os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
 		return nil, fmt.Errorf("unable to open %s\n%w", file, err)
@@ -66,6 +64,9 @@ networkaddress.cache.negative.ttl=0
 	if err != nil {
 		return nil, fmt.Errorf("unable to write DNS configuration to %s\n%w", file, err)
 	}
+
+	// Log the success message only after the file write is confirmed.
+	l.Logger.Info("JVM DNS caching disabled in favor of link-local DNS caching")
 
 	return nil, nil
 }
