@@ -35,13 +35,13 @@ func Classes(path string) (int, error) {
 	if _, err := os.Stat(file); err != nil && !os.IsNotExist(err) {
 		return 0, fmt.Errorf("unable to stat %s\n%w", file, err)
 	} else if os.IsNotExist(err) {
-		return JarClasses(path)
+		return JarClasses(path, true)
 	} else {
 		return ModuleClasses(file)
 	}
 }
 
-func JarClasses(path string) (int, error) {
+func JarClasses(path string, followSymlinks bool) (int, error) {
 	count := 0
 
 	if err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
@@ -54,6 +54,21 @@ func JarClasses(path string) (int, error) {
 				count++
 				return nil
 			}
+		}
+
+		// follow symlink just once to avoid potential infinite loop
+		if followSymlinks && info.Mode()&os.ModeSymlink != 0 {
+			linkTarget, err := os.Readlink(path)
+			if err != nil {
+				return err
+			}
+
+			countInLinkTarget, err := JarClasses(linkTarget, false)
+			if err != nil {
+				return err
+			}
+
+			count = count + countInLinkTarget
 		}
 
 		if !strings.HasSuffix(path, ".jar") || info.IsDir() {
@@ -129,7 +144,7 @@ func JarClassesFrom(paths ...string) (int, int, error) {
 	var agentClassCount, skippedPaths int
 
 	for _, path := range paths {
-		if c, err := JarClasses(path); err == nil {
+		if c, err := JarClasses(path, true); err == nil {
 			agentClassCount += c
 		} else if errors.Is(err, fs.ErrNotExist) {
 			skippedPaths++
