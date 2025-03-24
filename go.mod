@@ -1,8 +1,6 @@
 module github.com/paketo-buildpacks/libjvm
 
-go 1.23.0
-
-toolchain go1.23.6
+go 1.24
 
 require (
 	github.com/Masterminds/semver/v3 v3.3.1
@@ -10,8 +8,8 @@ require (
 	github.com/heroku/color v0.0.6
 	github.com/magiconair/properties v1.8.9
 	github.com/mattn/go-shellwords v1.0.12
-	github.com/miekg/dns v1.1.63
-	github.com/onsi/gomega v1.36.2
+	github.com/miekg/dns v1.1.64
+	github.com/onsi/gomega v1.36.3
 	github.com/paketo-buildpacks/libpak v1.73.0
 	github.com/pavlo-v-chernykh/keystore-go/v4 v4.5.0
 	github.com/sclevine/spec v1.4.0
@@ -21,7 +19,7 @@ require (
 )
 
 require (
-	github.com/BurntSushi/toml v1.4.0 // indirect
+	github.com/BurntSushi/toml v1.5.0 // indirect
 	github.com/creack/pty v1.1.24 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
