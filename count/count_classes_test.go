@@ -55,15 +55,19 @@ func testCountClasses(t *testing.T, context spec.G, it spec.S) {
 	})
 
 	it("counts files in single archive", func() {
-		Expect(count.JarClasses("testdata/stub-dependency.jar")).To(Equal(2))
+		Expect(count.JarClasses("testdata/stub-dependency.jar", true)).To(Equal(2))
 	})
 
 	it("counts files with nested archives 1 level down", func() {
 		Expect(count.Classes("testdata/nested")).To(Equal(4))
 	})
 
-	it("counts files including any nested 1 level down", func() {
-		Expect(count.Classes("testdata")).To(Equal(6))
+	it("counts files following symlinks", func() {
+		Expect(count.Classes("testdata/symlinks/links")).To(Equal(4))
+	})
+
+	it("counts files including any nested 1 level down and symlinks", func() {
+		Expect(count.Classes("testdata")).To(Equal(12))
 	})
 
 	it("skips empty zip/jar files with none in the name", func() {
