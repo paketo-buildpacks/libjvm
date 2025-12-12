@@ -1,8 +1,6 @@
 module github.com/paketo-buildpacks/libjvm
 
-go 1.24.0
-
-toolchain go1.24.9
+go 1.25
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
@@ -10,13 +8,13 @@ require (
 	github.com/heroku/color v0.0.6
 	github.com/magiconair/properties v1.8.10
 	github.com/mattn/go-shellwords v1.0.12
-	github.com/miekg/dns v1.1.68
-	github.com/onsi/gomega v1.38.2
+	github.com/miekg/dns v1.1.69
+	github.com/onsi/gomega v1.38.3
 	github.com/paketo-buildpacks/libpak v1.73.0
 	github.com/pavlo-v-chernykh/keystore-go/v4 v4.5.0
 	github.com/sclevine/spec v1.4.0
 	github.com/stretchr/testify v1.11.1
-	golang.org/x/sys v0.37.0
+	golang.org/x/sys v0.39.0
 	software.sslmate.com/src/go-pkcs12 v0.6.0
 )
 
@@ -34,11 +32,11 @@ require (
 	github.com/stretchr/objx v0.5.3 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/crypto v0.43.0 // indirect
-	golang.org/x/mod v0.29.0 // indirect
-	golang.org/x/net v0.46.0 // indirect
-	golang.org/x/sync v0.17.0 // indirect
-	golang.org/x/text v0.30.0 // indirect
-	golang.org/x/tools v0.38.0 // indirect
+	golang.org/x/crypto v0.46.0 // indirect
+	golang.org/x/mod v0.31.0 // indirect
+	golang.org/x/net v0.48.0 // indirect
+	golang.org/x/sync v0.19.0 // indirect
+	golang.org/x/text v0.32.0 // indirect
+	golang.org/x/tools v0.40.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
