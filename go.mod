@@ -1,6 +1,6 @@
 module github.com/paketo-buildpacks/libjvm
 
-go 1.26
+go 1.27
 
 require (
 	github.com/Masterminds/semver/v3 v3.5.0
@@ -9,7 +9,7 @@ require (
 	github.com/magiconair/properties v1.18.11
 	github.com/mattn/go-shellwords v1.0.14
 	github.com/miekg/dns v1.1.73
-	github.com/onsi/gomega v1.42.1
+	github.com/onsi/gomega v1.43.0
 	github.com/paketo-buildpacks/libpak v1.73.0
 	github.com/pavlo-v-chernykh/keystore-go/v4 v4.5.0
 	github.com/sclevine/spec v1.4.0
