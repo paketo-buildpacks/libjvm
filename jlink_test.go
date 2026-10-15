@@ -162,6 +162,33 @@ func testJLink(t *testing.T, context spec.G, it spec.S) {
 		Expect(e.Args).To(ContainElement("ALL-MODULE-PATH"))
 	})
 
+	it("sets JAVA_HOME and JRE_HOME for build when contributed at build time", func() {
+
+		args := []string{"--no-man-pages", "--no-header-files", "--strip-debug", "--add-modules", "java.se"}
+		exec := &mocks.Executor{}
+		j, err := libjvm.NewJLink(ctx.Application.Path, exec, args, cl, BuildContribution, true)
+		Expect(err).NotTo(HaveOccurred())
+		j.Logger = bard.NewLogger(io.Discard)
+
+		layer, err := ctx.Layers.Layer("jlink")
+		Expect(err).NotTo(HaveOccurred())
+
+		exec.On("Execute", mock.Anything).Run(func(args mock.Arguments) {
+			err = os.MkdirAll(filepath.Join(ctx.Layers.Path, "jlink"), os.ModePerm)
+			jre, err := os.Open("testdata/3aa01010c0d3592ea248c8353d60b361231fa9bf9a7479b4f06451fef3e64524/stub-jre-11.tar.gz")
+			Expect(err).NotTo(HaveOccurred())
+			err = crush.Extract(jre, layer.Path, 1)
+			Expect(err).NotTo(HaveOccurred())
+		}).Return(nil)
+
+		layer, err = j.Contribute(layer)
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(layer.LayerTypes.Build).To(BeTrue())
+		Expect(layer.BuildEnvironment["JAVA_HOME.default"]).To(Equal(layer.Path))
+		Expect(layer.BuildEnvironment["JRE_HOME.default"]).To(Equal(layer.Path))
+	})
+
 	it("contributes jlink JRE with user provided args & missing modules", func() {
 
 		args := []string{"--no-man-pages", "--no-header-files", "--strip-debug"}
